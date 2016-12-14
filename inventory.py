@@ -48,6 +48,12 @@ class InventoryCommand:
             'ToolTip':  self.toolTip
             }
 
+    def IsActive(self):
+        if FreeCADGui.ActiveDocument:
+            return True
+        else:
+            return False
+
 class GDTGuiClass:
 
     def __init__(self):

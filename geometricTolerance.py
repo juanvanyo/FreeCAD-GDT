@@ -54,4 +54,15 @@ class GeometricToleranceCommand:
             'ToolTip':  self.toolTip
             }
 
+    def IsActive(self):
+        if FreeCADGui.Selection.getSelection():
+            for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
+                if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
+                    pass
+                else:
+                    return False
+        else:
+            return False
+        return True
+
 FreeCADGui.addCommand('dd_geometricTolerance', GeometricToleranceCommand())

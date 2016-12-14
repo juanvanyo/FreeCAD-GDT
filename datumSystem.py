@@ -44,4 +44,14 @@ class DatumSystemCommand:
             'ToolTip':  self.toolTip
             }
 
+    def IsActive(self):
+        if FreeCADGui.ActiveDocument:
+            #if listDF[1] <> '':
+            if len(listDF) > 1:
+                return True
+            else:
+                return False
+        else:
+            return False
+
 FreeCADGui.addCommand('dd_datumSystem', DatumSystemCommand())
