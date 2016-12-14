@@ -22,8 +22,6 @@
 #***************************************************************************
 import GDT
 
-FreeCAD.Console.PrintMessage("Hello World!\n")
-
 class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 	Icon = ':/dd/icons/GDT.svg'
 	MenuText = 'GD&T'

@@ -165,10 +165,10 @@ class GDTGuiClass(QtGui.QWidget):
         else:
             pass
         indexInventory+=1
-        FreeCAD.Console.PrintMessage(indexInventory-1)
-        FreeCAD.Console.PrintMessage(': ')
-        FreeCAD.Console.PrintMessage(inventory[indexInventory-1])
-        FreeCAD.Console.PrintMessage('\n')
+            # FreeCAD.Console.PrintMessage(indexInventory-1)
+            # FreeCAD.Console.PrintMessage(': ')
+            # FreeCAD.Console.PrintMessage(inventory[indexInventory-1])
+            # FreeCAD.Console.PrintMessage('\n')
         FreeCADGui.Control.closeDialog()
 
 def GDTDialog_hbox( label, inputWidget):
@@ -255,7 +255,7 @@ class comboLabelWidget:
             self.k=0
         elif self.Text == 'Secondary:':
             self.k=1
-        elif self.Text == 'Terciary:':
+        elif self.Text == 'Tertiary:':
             self.k=2
         elif self.Text == 'Characteristic:':
             self.k=3
@@ -276,12 +276,11 @@ class comboLabelWidget:
                     combo[self.k].addItem( self.List[i][1] )
                 else:
                     combo[self.k].addItem( self.List[i] )
-        if self.Text == 'Secondary:' or self.Text == 'Terciary:':
+        if self.Text == 'Secondary:' or self.Text == 'Tertiary:':
             combo[self.k].setEnabled(False)
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[0] )
         self.updateDate()
-        #FreeCAD.Console.PrintMessage("combo: "+str(combo)+"\n")
         combo[self.k].activated.connect(self.updateDate)
         return GDTDialog_hbox(self.Text,combo[self.k])
 
@@ -299,7 +298,7 @@ class comboLabelWidget:
             secondary = self.List[combo[self.k].currentIndex()][0]
             if combo[self.k].currentIndex() <> 0:
                 combo[2].setEnabled(True)
-        elif self.Text == 'Terciary:':
+        elif self.Text == 'Tertiary:':
             textDS[2] = combo[self.k].currentText()
             terciary = self.List[combo[self.k].currentIndex()][0]
         elif self.Text == 'Characteristic:':

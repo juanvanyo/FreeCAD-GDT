@@ -74,7 +74,7 @@ class GDTGuiClass:
 
                 if str(inventory[i][0]).find('2') == 0:
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Name = True, Parent = self.parent, IndexInv = i))
-                    self.dialogWidgets.append( groupBoxWidget_inv(Text='Constituents', List=[comboLabelWidget_inv(Text='Primary:',List=listDF, Parent = self.parent, IndexInv = i),comboLabelWidget_inv(Text='Secondary:',List=listDF, Parent = self.parent, IndexInv = i), comboLabelWidget_inv(Text='Terciary:',List=listDF, Parent = self.parent, IndexInv = i)], Parent = self.parent, IndexInv = i) )
+                    self.dialogWidgets.append( groupBoxWidget_inv(Text='Constituents', List=[comboLabelWidget_inv(Text='Primary:',List=listDF, Parent = self.parent, IndexInv = i),comboLabelWidget_inv(Text='Secondary:',List=listDF, Parent = self.parent, IndexInv = i), comboLabelWidget_inv(Text='Tertiary:',List=listDF, Parent = self.parent, IndexInv = i)], Parent = self.parent, IndexInv = i) )
 
                 if str(inventory[i][0]).find('3') == 0:
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Name = True, Parent = self.parent, IndexInv = i))
@@ -207,7 +207,7 @@ class comboLabelWidget_inv:
                 self.combo.setCurrentIndex(pos)
             textDS[1] = self.combo.currentText()
             secondary = self.List[self.combo.currentIndex()][0]
-        elif self.Text == 'Terciary:':
+        elif self.Text == 'Tertiary:':
             if len(inventory[indexInv]) > 4:
                 actualValue = inventory[inventory[indexInv][4]][1]
                 pos = self.getPos(actualValue)
@@ -240,7 +240,7 @@ class comboLabelWidget_inv:
         elif self.Text == 'Secondary:':
             textDS[1] = self.combo.currentText()
             secondary = self.List[self.combo.currentIndex()][0]
-        elif self.Text == 'Terciary:':
+        elif self.Text == 'Tertiary:':
             textDS[2] = self.combo.currentText()
             terciary = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Characteristic:':

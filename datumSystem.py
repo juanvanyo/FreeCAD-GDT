@@ -23,7 +23,7 @@
 from GDT import *
 
 gdt = GDTWidget()
-gdt.dialogWidgets.append( groupBoxWidget(Text='Constituents', List=[comboLabelWidget(Text='Primary:',List=listDF),comboLabelWidget(Text='Secondary:',List=listDF), comboLabelWidget(Text='Terciary:',List=listDF)]) )
+gdt.dialogWidgets.append( groupBoxWidget(Text='Constituents', List=[comboLabelWidget(Text='Primary:',List=listDF),comboLabelWidget(Text='Secondary:',List=listDF), comboLabelWidget(Text='Tertiary:',List=listDF)]) )
 
 class DatumSystemCommand:
     def __init__(self):
