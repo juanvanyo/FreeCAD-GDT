@@ -26,6 +26,7 @@ gdt = GDTWidget()
 dictionaryDF = []
 dictionaryDF = map(chr, range(64, 91)) #64 because the first argument is not used
 gdt.dialogWidgets.append( textLabelWidget(Text='Datum feature:',Mask='>A', Dictionary=dictionaryDF) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+gdt.dialogWidgets.append( CheckBoxWidget(Text = 'Create corresponding Datum System') )
 
 class DatumFeatureCommand:
     def __init__(self):
