@@ -64,6 +64,10 @@ datumSystem = 0
 annotationPlane = 'Annotation Plane'
 
 combo = ['','','','','']
+checkBoxState = True
+auxDictionaryDS=[]
+for i in range(100):
+    auxDictionaryDS.append('DS'+str(i))
 
 class GDTWidget:
     def __init__(self):
@@ -130,12 +134,18 @@ class GDTGuiClass(QtGui.QWidget):
         self.setLayout(vbox)
 
     def updateIndex(self):
-        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, terciary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane
+        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, terciary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS
         textName = textName.encode('utf-8')
         if idGDTaux == 1:
             indexDF+=1
             listDF.append( [ indexInventory, textName ] )
             inventory.append( [ idGDTaux, textName, annotationPlane ] )
+            if checkBoxState:
+                listDS.append( [ indexInventory+1, auxDictionaryDS[indexDS] + ': ' + textName ] )
+                inventory.append( [ 2, auxDictionaryDS[indexDS] + ': ' + textName, indexInventory ] )
+                indexInventory+=1
+                indexDS+=1
+
         elif idGDTaux == 2:
             separator = ' | '
             indexDS+=1
@@ -382,6 +392,28 @@ class textLabeCombolWidget:
         else:
             pass
         return indexGDT
+
+class CheckBoxWidget:
+    def __init__(self, Text='Label'):
+        self.Text = Text
+
+    def generateWidget( self ):
+        self.checkBox = QtGui.QCheckBox(self.Text)
+        self.checkBox.setChecked(True)
+        global checkBoxState
+        checkBoxState = True
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.checkBox)
+        hbox.addStretch(1)
+        self.checkBox.stateChanged.connect(self.updateState)
+        return hbox
+
+    def updateState(self):
+        global checkBoxState
+        if self.checkBox.isChecked():
+            checkBoxState = True
+        else:
+            checkBoxState = False
 
 class helpGDTCommand:
     def Activated(self):
