@@ -33,6 +33,12 @@ listOfCharacteristics2 = ['','','','','','','','']
 listOfIconsOfFeatureControlFrame = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
 listOfToolTips = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
 
+textNameList = []
+textDSList = []
+primaryList = []
+secondaryList = []
+tertiaryList = []
+
 class InventoryCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/inventory.svg'
@@ -57,40 +63,69 @@ class InventoryCommand:
 class GDTGuiClass:
 
     def __init__(self):
+        global textDSList, primaryList, secondaryList, tertiaryList, textNameList, inventory
         self.widgetsGDT = []
-        global inventory
+        primaryList = []
+        secondaryList = []
+        tertiaryList = []
+        textNameList = []
+        textDSList = []
         for i in range(len(inventory)):
             if str(inventory[i][0]).find('1') == 0 or str(inventory[i][0]).find('2') == 0 or str(inventory[i][0]).find('3') == 0 or str(inventory[i][0]).find('4') == 0:
                 self.widget = QtGui.QWidget()
-                title = inventory[i][1]
+                if len(inventory[i][1]) > 4:
+                    textNameList.append((inventory[i][1])[:inventory[i][1].find(':')])
+                else:
+                    textNameList.append((inventory[i][1]))
+                if inventory[i][0] == 2:
+                    textDS=['','','']
+                    separator = ' | '
+                    if len(inventory[i]) > 2:
+                        textDS[0] = inventory[inventory[i][2]][1]
+                        if len(inventory[i]) > 3:
+                            textDS[1] = inventory[inventory[i][3]][1]
+                            if len(inventory[i]) > 4:
+                                textDS[2] = inventory[inventory[i][4]][1]
+                                inventory[i][1] = textNameList[i]+ ': ' + separator.join(textDS)
+                            else:
+                                inventory[i][1] = textNameList[i]+ ': ' + separator.join([textDS[0], textDS[1]])
+                        else:
+                            inventory[i][1] = textNameList[i]+ ': ' + textDS[0]
+                    else:
+                        inventory[i][1] = textNameList[i]
+                self.widget.title = inventory[i][1]
+                primaryList.append(0)
+                secondaryList.append(0)
+                tertiaryList.append(0)
+                textDSList.append(['','',''])
                 if str(inventory[i][0]).find('3') == 0:
                     iconPath = listOfIconsOfCharacteristic[ inventory[i][2] ]
                 else:
                     iconPath = listOfIcons[ inventory[i][0] - 1 ]
-                self.widget.setWindowTitle( title )
+                self.widget.setWindowTitle( self.widget.title )
                 self.widget.setWindowIcon( QtGui.QIcon( iconPath ) )
                 self.widgetsGDT.append(self.widget)
+                self.widgetsGDT[i].gdtID = inventory[i][0]
                 self.parent = self.widgetsGDT[i]
                 self.dialogWidgets = []
                 vbox = QtGui.QVBoxLayout(self.parent)
                 hbox = QtGui.QHBoxLayout(self.parent)
 
                 if str(inventory[i][0]).find('1') == 0:
-                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Datum feature:', Mask='>A', Name = True, Parent = self.parent, IndexInv = i))
+                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Datum feature:', Mask='>A', Parent = self.parent, IndexInv = i))
 
                 if str(inventory[i][0]).find('2') == 0:
-                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Name = True, Parent = self.parent, IndexInv = i))
+                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i))
                     self.dialogWidgets.append( groupBoxWidget_inv(Text='Constituents', List=[comboLabelWidget_inv(Text='Primary:',List=listDF, Parent = self.parent, IndexInv = i),comboLabelWidget_inv(Text='Secondary:',List=listDF, Parent = self.parent, IndexInv = i), comboLabelWidget_inv(Text='Tertiary:',List=listDF, Parent = self.parent, IndexInv = i)], Parent = self.parent, IndexInv = i) )
 
                 if str(inventory[i][0]).find('3') == 0:
-                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Name = True, Parent = self.parent, IndexInv = i))
+                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i))
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=listOfCharacteristics, Icons=listOfIconsOfCharacteristic, Parent = self.parent, IndexInv = i) )
                     self.dialogWidgets.append( textLabeCombolWidget_inv(Text='Tolerance value:', Mask='00.00', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips, Parent = self.parent, IndexInv = i) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=listDS, Parent = self.parent, IndexInv = i) )
 
                 if str(inventory[i][0]).find('4') == 0:
-                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Name = True, Parent = self.parent, IndexInv = i))
-
+                    self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i))
 
                 for widg in self.dialogWidgets:
                     w = widg.generateWidget()
@@ -99,25 +134,67 @@ class GDTGuiClass:
                     else:
                         vbox.addWidget( w )
 
-                buttonModify = QtGui.QPushButton('Modify',self.parent)
-                buttonModify.clicked.connect(self.modifyFunc)
-                buttonDelate = QtGui.QPushButton('Delete',self.parent)
-                buttonDelate.clicked.connect(self.deleteFunc)
+                buttonModify = QtGui.QPushButton('Modify')
+                buttonModify.clicked.connect(lambda aux = i: self.modifyFunc(aux))
+                buttonDelate = QtGui.QPushButton('Delete')
+                buttonDelate.clicked.connect(lambda aux = i: self.deleteFunc(aux))
                 hbox.addStretch(1)
                 hbox.addWidget( buttonModify )
                 hbox.addWidget( buttonDelate )
                 hbox.addStretch(1)
                 vbox.addLayout(hbox)
-
                 self.widget.setLayout(vbox)
-
         self.form = self.widgetsGDT
 
-    def modifyFunc(self):
-        pass
+    def modifyFunc(self,i):
+        global inventory, listDF, listDS, primaryList, secondaryList, tertiaryList, textNameList
+        if self.widgetsGDT[i].gdtID == 1:
+            inventory[i] = [self.widgetsGDT[i].gdtID, textNameList[i], annotationPlane]
+            pos = self.getPos(i, listDF)
+            listDF[pos] = [i, textNameList[i]]
+        elif self.widgetsGDT[i].gdtID == 2:
+            pos = self.getPos(i, listDS)
+            separator = ' | '
+            if textDSList[i][0] <> '':
+                if textDSList[i][1] <> '':
+                    if textDSList[i][2] <> '':
+                        listDS[pos] = [ i, textNameList[i] + ': ' + separator.join(textDSList[i]) ]
+                        inventory[i] = [ self.widgetsGDT[i].gdtID, textNameList[i] + ': ' + separator.join(textDSList[i]), primaryList[i], secondaryList[i], tertiaryList[i] ]
+                    else:
+                        listDS[pos] = [ i, textNameList[i] + ': ' + separator.join([textDSList[i][0], textDSList[i][1]]) ]
+                        inventory[i] = [ self.widgetsGDT[i].gdtID, textNameList[i] + ': ' + separator.join([textDSList[i][0], textDSList[i][1]]), primaryList[i], secondaryList[i] ]
+                else:
+                    listDS[pos] = [ i, textNameList[i] + ': ' + textDSList[i][0] ]
+                    inventory[i] = [ self.widgetsGDT[i].gdtID, textNameList[i] + ': ' + textDSList[i][0], primaryList[i] ]
+            else:
+                listDS[pos] = [ i, textNameList[i] ]
+                inventory[i] = [ self.widgetsGDT[i].gdtID, textNameList[i] ]
+        elif self.widgetsGDT[i].gdtID == 3:
+            inventory[i][1] = textNameList[i]
+        elif self.widgetsGDT[i].gdtID == 4:
+            inventory[i][1] = textNameList[i]
+        else:
+            pass
+        FreeCADGui.Control.closeDialog()
+        Gui.Control.showDialog( GDTGuiClass() )
 
-    def deleteFunc(self):
-        pass
+    def getPos(self, actualValue, List):
+        for i in range(len(List)):
+            if List[i][0] == actualValue:
+                return i
+
+    def deleteFunc(self,i):
+        global inventory
+        if self.widgetsGDT[i].gdtID == 1:
+            FreeCAD.Console.PrintMessage('DF')
+        elif self.widgetsGDT[i].gdtID == 2:
+            FreeCAD.Console.PrintMessage('DS')
+        elif self.widgetsGDT[i].gdtID == 3:
+            FreeCAD.Console.PrintMessage('GT')
+        elif self.widgetsGDT[i].gdtID == 4:
+            FreeCAD.Console.PrintMessage('AP')
+        else:
+            pass
 
     def reject(self): #close button
         FreeCADGui.Control.closeDialog()
@@ -126,10 +203,9 @@ class GDTGuiClass:
         return 0x00200000 #close button
 
 class textLabelWidget_inv:
-    def __init__(self, Text='Label', Mask = None, Name = False, Parent = None, IndexInv = 0):
+    def __init__(self, Text='Label', Mask = None, Parent = None, IndexInv = 0):
         self.Text = Text
         self.Mask = Mask
-        self.Name = Name
         self.parent = Parent
         self.indexInv = IndexInv
 
@@ -137,34 +213,14 @@ class textLabelWidget_inv:
         self.lineEdit = QtGui.QLineEdit(self.parent)
         if self.Mask <> None:
             self.lineEdit.setInputMask(self.Mask)
-        global inventory
         self.lineEdit.setText(inventory[self.indexInv][1])
         self.text = inventory[self.indexInv][1]
-        if self.Name == True:
-            self.lineEdit.textChanged.connect(self.valueChanged1)
-        else:
-            self.lineEdit.textChanged.connect(self.valueChanged2)
-        if self.Name == True:
-                textName = self.text[:3].strip()
-        else:
-            if self.Text == 'Datum feature:':
-                textName = self.text.strip()
-            else:
-                textGDT = self.text.strip()
-        return GDTDialog_hbox_inv(self.Text, self.lineEdit, parent2 = self.parent)
+        self.lineEdit.textChanged.connect(lambda Txt = self.text, aux = self.indexInv: self.valueChanged(Txt, aux))
+        return GDTDialog_hbox_inv(self.Text, self.lineEdit, parent = self.parent)
 
-    def valueChanged1(self, argGDT):
-        self.text = argGDT.strip()
-        global textName
-        textName = self.text
-
-    def valueChanged2(self, argGDT):
-        self.text = argGDT.strip()
-        global textName, textGDT, indexGDT
-        if self.Text == 'Datum feature:':
-            textName = self.text
-        else:
-            textGDT = self.text
+    def valueChanged(self, argGDT, i):
+        global textNameList
+        textNameList[i] = argGDT.strip()
 
 class comboLabelWidget_inv:
     def __init__(self, Text='Label', List=[[0,'']], Icons=None, ToolTip = None, Parent = None, IndexInv = 0):
@@ -173,11 +229,10 @@ class comboLabelWidget_inv:
         self.Icons = Icons
         self.ToolTip = ToolTip
         self.parent = Parent
-        self.indexInv = IndexInv
+        self.IndexInv = IndexInv
 
     def generateWidget( self ):
-        global textDS
-        textDS = ['','','']
+
         self.combo = QtGui.QComboBox(self.parent)
         for i in range(len(self.List)):
             if self.Icons <> None:
@@ -192,41 +247,43 @@ class comboLabelWidget_inv:
                     self.combo.addItem( self.List[i] )
         if self.ToolTip <> None:
             self.combo.setToolTip( self.ToolTip[0] )
-        self.updateCurrentIndex(self.indexInv)
-        self.updateDate()
-        self.combo.activated.connect(self.updateDate)
+        self.updateCurrentIndex(self.IndexInv)
+        self.comboIndex = self.combo.currentText()
+        self.updateDate(comboIndex = self.comboIndex, IndexInv = self.IndexInv)
+        self.combo.activated.connect(lambda comboIndex = self.comboIndex, IndexInv = self.IndexInv: self.updateDate(comboIndex, IndexInv))
 
-        return GDTDialog_hbox_inv(self.Text,self.combo, parent2 = self.parent)
+        return GDTDialog_hbox_inv(self.Text,self.combo, parent = self.parent)
 
-    def updateCurrentIndex(self, indexInv):
+    def updateCurrentIndex(self, IndexInv):
+        global textDSList, primaryList, secondaryList, tertiaryList
         if self.Text == 'Primary:':
-            if len(inventory[indexInv]) > 2:
-                actualValue = inventory[inventory[indexInv][2]][1]
+            if len(inventory[IndexInv]) > 2:
+                actualValue = inventory[inventory[IndexInv][2]][1]
                 pos = self.getPos(actualValue)
                 self.combo.setCurrentIndex(pos)
-            textDS[0] = self.combo.currentText()
-            primary = self.List[self.combo.currentIndex()][0]
+            textDSList[IndexInv][0] = self.combo.currentText()
+            primaryList[IndexInv] = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Secondary:':
-            if len(inventory[indexInv]) > 3:
-                actualValue = inventory[inventory[indexInv][3]][1]
+            if len(inventory[IndexInv]) > 3:
+                actualValue = inventory[inventory[IndexInv][3]][1]
                 pos = self.getPos(actualValue)
                 self.combo.setCurrentIndex(pos)
-            textDS[1] = self.combo.currentText()
-            secondary = self.List[self.combo.currentIndex()][0]
+            textDSList[IndexInv][1] = self.combo.currentText()
+            secondaryList[IndexInv] = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Tertiary:':
-            if len(inventory[indexInv]) > 4:
-                actualValue = inventory[inventory[indexInv][4]][1]
+            if len(inventory[IndexInv]) > 4:
+                actualValue = inventory[inventory[IndexInv][4]][1]
                 pos = self.getPos(actualValue)
                 self.combo.setCurrentIndex(pos)
-            textDS[2] = self.combo.currentText()
-            terciary = self.List[self.combo.currentIndex()][0]
+            textDSList[IndexInv][2] = self.combo.currentText()
+            tertiaryList[IndexInv] = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Characteristic:':
-            pos = inventory[indexInv][2]
+            pos = inventory[IndexInv][2]
             self.combo.setCurrentIndex(pos)
             characteristic = self.combo.currentIndex()
         elif self.Text == 'Datum system:':
-            if inventory[indexInv][5] <> None:
-                actualValue = inventory[inventory[indexInv][5]][1]
+            if inventory[IndexInv][5] <> None:
+                actualValue = inventory[inventory[IndexInv][5]][1]
                 pos = self.getPos(actualValue)
                 self.combo.setCurrentIndex(pos)
             datumSystem = self.List[self.combo.currentIndex()][0]
@@ -236,19 +293,19 @@ class comboLabelWidget_inv:
             if self.List[i][1] == actualValue:
                 return i
 
-    def updateDate(self):
-        global textDS, primary, secondary, terciary, characteristic, datumSystem
+    def updateDate(self, comboIndex, IndexInv):
+        global textDSList, primaryList, secondaryList, tertiaryList, characteristic, datumSystem
         if self.ToolTip <> None:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Primary:':
-            textDS[0] = self.combo.currentText()
-            primary = self.List[self.combo.currentIndex()][0]
+            textDSList[IndexInv][0] = self.combo.currentText()
+            primaryList[IndexInv] = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Secondary:':
-            textDS[1] = self.combo.currentText()
-            secondary = self.List[self.combo.currentIndex()][0]
+            textDSList[IndexInv][1] = self.combo.currentText()
+            secondaryList[IndexInv] = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Tertiary:':
-            textDS[2] = self.combo.currentText()
-            terciary = self.List[self.combo.currentIndex()][0]
+            textDSList[IndexInv][2] = self.combo.currentText()
+            tertiaryList[IndexInv] = self.List[self.combo.currentIndex()][0]
         elif self.Text == 'Characteristic:':
             characteristic = self.combo.currentIndex()
         elif self.Text == 'Datum system:':
@@ -328,8 +385,8 @@ class textLabeCombolWidget_inv:
             pass
         return indexGDT
 
-def GDTDialog_hbox_inv( label, inputWidget, parent2):
-    hbox = QtGui.QHBoxLayout( parent2 )
+def GDTDialog_hbox_inv( label, inputWidget, parent):
+    hbox = QtGui.QHBoxLayout( parent )
     hbox.addWidget( QtGui.QLabel(label) )
     if inputWidget <> None:
         hbox.addStretch(1)
