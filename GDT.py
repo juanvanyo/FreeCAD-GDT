@@ -56,7 +56,7 @@ inventory = []
 indexInventory = 0
 primary = 0
 secondary = 0
-terciary = 0
+tertiary = 0
 characteristic = 0
 toleranceValue = 0
 featureControlFrame = 0
@@ -134,7 +134,7 @@ class GDTGuiClass(QtGui.QWidget):
         self.setLayout(vbox)
 
     def updateIndex(self):
-        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, terciary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS
+        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS
         textName = textName.encode('utf-8')
         if idGDTaux == 1:
             indexDF+=1
@@ -153,7 +153,7 @@ class GDTGuiClass(QtGui.QWidget):
                 if textDS[1] <> '':
                     if textDS[2] <> '':
                         listDS.append( [ indexInventory, textName + ': ' + separator.join(textDS) ] )
-                        inventory.append( [ idGDTaux, textName + ': ' + separator.join(textDS), primary, secondary, terciary ] )
+                        inventory.append( [ idGDTaux, textName + ': ' + separator.join(textDS), primary, secondary, tertiary ] )
                     else:
                         listDS.append( [ indexInventory, textName + ': ' + separator.join([textDS[0], textDS[1]]) ] )
                         inventory.append( [ idGDTaux, textName + ': ' + separator.join([textDS[0], textDS[1]]), primary, secondary ] )
@@ -295,7 +295,7 @@ class comboLabelWidget:
         return GDTDialog_hbox(self.Text,combo[self.k])
 
     def updateDate(self):
-        global textDS, primary, secondary, terciary, characteristic, datumSystem, combo
+        global textDS, primary, secondary, tertiary, characteristic, datumSystem, combo
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[combo[self.k].currentIndex()] )
         if self.Text == 'Primary:':
@@ -310,7 +310,7 @@ class comboLabelWidget:
                 combo[2].setEnabled(True)
         elif self.Text == 'Tertiary:':
             textDS[2] = combo[self.k].currentText()
-            terciary = self.List[combo[self.k].currentIndex()][0]
+            tertiary = self.List[combo[self.k].currentIndex()][0]
         elif self.Text == 'Characteristic:':
             characteristic = combo[self.k].currentIndex()
         elif self.Text == 'Datum system:':
