@@ -290,11 +290,12 @@ class comboLabelWidget:
             combo[self.k].setEnabled(False)
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[0] )
-        self.updateDate()
-        combo[self.k].activated.connect(self.updateDate)
+        self.comboIndex = combo[self.k].currentIndex()
+        self.updateDate(self.comboIndex, enable = False)
+        combo[self.k].activated.connect(lambda comboIndex = self.comboIndex, enable = True: self.updateDate(self.comboIndex, enable))
         return GDTDialog_hbox(self.Text,combo[self.k])
 
-    def updateDate(self):
+    def updateDate(self, comboIndex, enable):
         global textDS, primary, secondary, tertiary, characteristic, datumSystem, combo
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[combo[self.k].currentIndex()] )
@@ -303,11 +304,22 @@ class comboLabelWidget:
             primary = self.List[combo[self.k].currentIndex()][0]
             if combo[self.k].currentIndex() <> 0:
                 combo[1].setEnabled(True)
+            elif enable:
+                combo[1].setEnabled(False)
+                combo[2].setEnabled(False)
+                textDS[1] = ''
+                textDS[2] = ''
+                primary = 0
+                secondary = 0
         elif self.Text == 'Secondary:':
             textDS[1] = combo[self.k].currentText()
             secondary = self.List[combo[self.k].currentIndex()][0]
             if combo[self.k].currentIndex() <> 0:
                 combo[2].setEnabled(True)
+            elif enable:
+                combo[2].setEnabled(False)
+                textDS[2] = ''
+                secondary = 0
         elif self.Text == 'Tertiary:':
             textDS[2] = combo[self.k].currentText()
             tertiary = self.List[combo[self.k].currentIndex()][0]
