@@ -96,9 +96,9 @@ class GDTGuiClass:
                     else:
                         inventory[i][1] = textNameList[i]
                 self.widget.title = inventory[i][1]
-                primaryList.append(0)
-                secondaryList.append(0)
-                tertiaryList.append(0)
+                primaryList.append(None)
+                secondaryList.append(None)
+                tertiaryList.append(None)
                 textDSList.append(['','',''])
                 comboList.append(['','','','',''])
                 if str(inventory[i][0]).find('3') == 0:
@@ -262,16 +262,22 @@ class comboLabelWidget_inv:
                     comboList[self.IndexInv][self.k].addItem( self.List[i] )
         if self.ToolTip <> None:
             comboList[self.IndexInv][self.k].setToolTip( self.ToolTip[0] )
-        self.updateCurrentIndex(self.IndexInv)
+        self.updateCurrentItem(self.IndexInv)
         if self.Text == 'Secondary:' and comboList[self.IndexInv][self.k].currentIndex() == 0 or self.Text == 'Tertiary:' and comboList[self.IndexInv][self.k].currentIndex() == 0:
             comboList[self.IndexInv][self.k].setEnabled(False)
         self.comboIndex = comboList[self.IndexInv][self.k].currentIndex()
-        self.updateDate(comboIndex = self.comboIndex, IndexInv = self.IndexInv, enable = False)
-        comboList[self.IndexInv][self.k].activated.connect(lambda comboIndex = self.comboIndex, IndexInv = self.IndexInv, enable = True: self.updateDate(comboIndex, IndexInv, enable))
+        if self.k == 2:
+            self.updateItemsEnabled(self.IndexInv, 1)
+            self.updateItemsEnabled(self.IndexInv, 2)
+            if comboList[self.IndexInv][0].currentIndex() <> 0:
+                comboList[self.IndexInv][1].setEnabled(True)
+                if comboList[self.IndexInv][1].currentIndex() <> 0:
+                    comboList[self.IndexInv][2].setEnabled(True)
+        comboList[self.IndexInv][self.k].activated.connect(lambda comboIndex = self.comboIndex, IndexInv = self.IndexInv: self.updateDate(comboIndex, IndexInv))
 
         return GDTDialog_hbox_inv(self.Text, comboList[self.IndexInv][self.k], parent = self.parent)
 
-    def updateCurrentIndex(self, IndexInv):
+    def updateCurrentItem(self, IndexInv):
         global textDSList, primaryList, secondaryList, tertiaryList, comboList
         if self.Text == 'Primary:':
             if len(inventory[IndexInv]) > 2:
@@ -310,43 +316,63 @@ class comboLabelWidget_inv:
             if self.List[i][1] == actualValue:
                 return i
 
-    def updateDate(self, comboIndex, IndexInv, enable):
+    def updateDate(self, comboIndex, IndexInv):
         global textDSList, primaryList, secondaryList, tertiaryList, characteristic, datumSystem, comboList
         if self.ToolTip <> None:
             comboList[IndexInv][self.k].setToolTip( self.ToolTip[comboList[IndexInv][self.k].currentIndex()] )
         if self.Text == 'Primary:':
             textDSList[IndexInv][0] = comboList[IndexInv][self.k].currentText()
             primaryList[IndexInv] = self.List[comboList[IndexInv][self.k].currentIndex()][0]
-            if enable and comboList[IndexInv][self.k].currentIndex() <> 0:
+            if comboList[IndexInv][self.k].currentIndex() <> 0:
                 comboList[IndexInv][1].setEnabled(True)
-            elif enable and comboList[IndexInv][self.k].currentIndex() == 0:
+            else:
                 comboList[IndexInv][1].setEnabled(False)
                 comboList[IndexInv][2].setEnabled(False)
+                comboList[IndexInv][1].setCurrentIndex(0)
+                comboList[IndexInv][2].setCurrentIndex(0)
                 textDSList[IndexInv][1] = ''
                 textDSList[IndexInv][2] = ''
-                primaryList[IndexInv] = 0
-                secondaryList[IndexInv] = 0
+                secondaryList[IndexInv] = None
+                tertiaryList[IndexInv] = None
+            self.updateItemsEnabled(IndexInv, self.k)
         elif self.Text == 'Secondary:':
             textDSList[IndexInv][1] = comboList[IndexInv][self.k].currentText()
             secondaryList[IndexInv] = self.List[comboList[IndexInv][self.k].currentIndex()][0]
-            if enable and comboList[IndexInv][self.k].currentIndex() <> 0:
+            if comboList[IndexInv][self.k].currentIndex() <> 0:
                 comboList[IndexInv][2].setEnabled(True)
-            elif enable and comboList[IndexInv][self.k].currentIndex() == 0:
-                comboList[IndexInv][1].setEnabled(False)
+            else:
+                comboList[IndexInv][2].setEnabled(False)
+                comboList[IndexInv][2].setCurrentIndex(0)
                 textDSList[IndexInv][2] = ''
-                secondaryList[IndexInv] = 0
+                tertiaryList[IndexInv] = None
+            self.updateItemsEnabled(IndexInv, self.k)
         elif self.Text == 'Tertiary:':
             textDSList[IndexInv][2] = comboList[IndexInv][self.k].currentText()
             tertiaryList[IndexInv] = self.List[comboList[IndexInv][self.k].currentIndex()][0]
-            if comboList[IndexInv][0].currentIndex() <> 0:
-                comboList[IndexInv][1].setEnabled(True)
-                if comboList[IndexInv][1].currentIndex() <> 0:
-                    comboList[IndexInv][2].setEnabled(True)
-            enable = True
+            self.updateItemsEnabled(IndexInv, self.k)
         elif self.Text == 'Characteristic:':
             characteristic = comboList[IndexInv][self.k].currentIndex()
         elif self.Text == 'Datum system:':
             datumSystem = self.List[comboList[IndexInv][self.k].currentIndex()][0]
+
+    def updateItemsEnabled(self, IndexInv, comboIndex):
+        global comboList
+        comboIndex0 = comboIndex
+        comboIndex1 = (comboIndex+1) % 3
+        comboIndex2 = (comboIndex+2) % 3
+
+        for i in range(comboList[IndexInv][comboIndex1].count()):
+            comboList[IndexInv][comboIndex1].model().item(i).setEnabled(True)
+        if comboList[IndexInv][comboIndex0].currentIndex() <> 0:
+            comboList[IndexInv][comboIndex1].model().item(comboList[IndexInv][comboIndex0].currentIndex()).setEnabled(False)
+        if comboList[IndexInv][comboIndex2].currentIndex() <> 0:
+            comboList[IndexInv][comboIndex1].model().item(comboList[IndexInv][comboIndex2].currentIndex()).setEnabled(False)
+        for i in range(comboList[IndexInv][comboIndex2].count()):
+            comboList[IndexInv][comboIndex2].model().item(i).setEnabled(True)
+        if comboList[IndexInv][comboIndex0].currentIndex() <> 0:
+            comboList[IndexInv][comboIndex2].model().item(comboList[IndexInv][comboIndex0].currentIndex()).setEnabled(False)
+        if comboList[IndexInv][comboIndex1].currentIndex() <> 0:
+            comboList[IndexInv][comboIndex2].model().item(comboList[IndexInv][comboIndex1].currentIndex()).setEnabled(False)
 
 class groupBoxWidget_inv:
     def __init__(self, Text='Label', List=[], Parent = None, IndexInv = 0):

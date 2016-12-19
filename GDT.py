@@ -54,9 +54,9 @@ listAP = []
 
 inventory = []
 indexInventory = 0
-primary = 0
-secondary = 0
-tertiary = 0
+primary = None
+secondary = None
+tertiary = None
 characteristic = 0
 toleranceValue = 0
 featureControlFrame = 0
@@ -272,7 +272,7 @@ class comboLabelWidget:
         elif self.Text == 'Datum system:':
             self.k=4
         else:
-            self.k=5
+            self.k=0
 
         combo[self.k] = QtGui.QComboBox()
         for i in range(len(self.List)):
@@ -291,11 +291,12 @@ class comboLabelWidget:
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[0] )
         self.comboIndex = combo[self.k].currentIndex()
-        self.updateDate(self.comboIndex, enable = False)
-        combo[self.k].activated.connect(lambda comboIndex = self.comboIndex, enable = True: self.updateDate(self.comboIndex, enable))
+        if self.k <> 0 and self.k <> 1:
+            self.updateDate(self.comboIndex)
+        combo[self.k].activated.connect(lambda comboIndex = self.comboIndex: self.updateDate(self.comboIndex))
         return GDTDialog_hbox(self.Text,combo[self.k])
 
-    def updateDate(self, comboIndex, enable):
+    def updateDate(self, comboIndex):
         global textDS, primary, secondary, tertiary, characteristic, datumSystem, combo
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[combo[self.k].currentIndex()] )
@@ -304,29 +305,54 @@ class comboLabelWidget:
             primary = self.List[combo[self.k].currentIndex()][0]
             if combo[self.k].currentIndex() <> 0:
                 combo[1].setEnabled(True)
-            elif enable:
+            else:
                 combo[1].setEnabled(False)
                 combo[2].setEnabled(False)
+                combo[1].setCurrentIndex(0)
+                combo[2].setCurrentIndex(0)
                 textDS[1] = ''
                 textDS[2] = ''
-                primary = 0
-                secondary = 0
+                secondary = None
+                tertiary = None
+            self.updateItemsEnabled(self.k)
         elif self.Text == 'Secondary:':
             textDS[1] = combo[self.k].currentText()
             secondary = self.List[combo[self.k].currentIndex()][0]
             if combo[self.k].currentIndex() <> 0:
                 combo[2].setEnabled(True)
-            elif enable:
+            else:
                 combo[2].setEnabled(False)
+                combo[2].setCurrentIndex(0)
                 textDS[2] = ''
-                secondary = 0
+                tertiary = None
+            self.updateItemsEnabled(self.k)
         elif self.Text == 'Tertiary:':
             textDS[2] = combo[self.k].currentText()
             tertiary = self.List[combo[self.k].currentIndex()][0]
+            self.updateItemsEnabled(self.k)
         elif self.Text == 'Characteristic:':
             characteristic = combo[self.k].currentIndex()
         elif self.Text == 'Datum system:':
             datumSystem = self.List[combo[self.k].currentIndex()][0]
+
+    def updateItemsEnabled(self, comboIndex):
+        global comboList
+        comboIndex0 = comboIndex
+        comboIndex1 = (comboIndex+1) % 3
+        comboIndex2 = (comboIndex+2) % 3
+
+        for i in range(combo[comboIndex1].count()):
+            combo[comboIndex1].model().item(i).setEnabled(True)
+        if combo[comboIndex0].currentIndex() <> 0:
+            combo[comboIndex1].model().item(combo[comboIndex0].currentIndex()).setEnabled(False)
+        if combo[comboIndex2].currentIndex() <> 0:
+            combo[comboIndex1].model().item(combo[comboIndex2].currentIndex()).setEnabled(False)
+        for i in range(combo[comboIndex2].count()):
+            combo[comboIndex2].model().item(i).setEnabled(True)
+        if combo[comboIndex0].currentIndex() <> 0:
+            combo[comboIndex2].model().item(combo[comboIndex0].currentIndex()).setEnabled(False)
+        if combo[comboIndex1].currentIndex() <> 0:
+            combo[comboIndex2].model().item(combo[comboIndex1].currentIndex()).setEnabled(False)
 
 class groupBoxWidget:
     def __init__(self, Text='Label', List=[]):
