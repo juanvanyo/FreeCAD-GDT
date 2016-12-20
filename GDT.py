@@ -175,10 +175,6 @@ class GDTGuiClass(QtGui.QWidget):
         else:
             pass
         indexInventory+=1
-            # FreeCAD.Console.PrintMessage(indexInventory-1)
-            # FreeCAD.Console.PrintMessage(': ')
-            # FreeCAD.Console.PrintMessage(inventory[indexInventory-1])
-            # FreeCAD.Console.PrintMessage('\n')
         FreeCADGui.Control.closeDialog()
 
 def GDTDialog_hbox( label, inputWidget):
@@ -243,7 +239,7 @@ class textLabelWidget:
         elif idGDTaux == 2:
             indexGDT = indexDS
         if idGDTaux == 3:
-            indexGDT=indexGT
+            indexGDT = indexGT
         elif idGDTaux == 4:
             indexGDT = indexAP
         else:
@@ -272,7 +268,7 @@ class comboLabelWidget:
         elif self.Text == 'Datum system:':
             self.k=4
         else:
-            self.k=0
+            self.k=5
 
         combo[self.k] = QtGui.QComboBox()
         for i in range(len(self.List)):
@@ -336,11 +332,17 @@ class comboLabelWidget:
             datumSystem = self.List[combo[self.k].currentIndex()][0]
 
     def updateItemsEnabled(self, comboIndex):
-        global comboList
+        global combo
         comboIndex0 = comboIndex
         comboIndex1 = (comboIndex+1) % 3
         comboIndex2 = (comboIndex+2) % 3
 
+        for i in range(combo[comboIndex0].count()):
+            combo[comboIndex0].model().item(i).setEnabled(True)
+        if combo[comboIndex1].currentIndex() <> 0:
+            combo[comboIndex0].model().item(combo[comboIndex1].currentIndex()).setEnabled(False)
+        if combo[comboIndex2].currentIndex() <> 0:
+            combo[comboIndex0].model().item(combo[comboIndex2].currentIndex()).setEnabled(False)
         for i in range(combo[comboIndex1].count()):
             combo[comboIndex1].model().item(i).setEnabled(True)
         if combo[comboIndex0].currentIndex() <> 0:
@@ -424,7 +426,7 @@ class textLabeCombolWidget:
         elif idGDTaux == 2:
             indexGDT = indexDS
         if idGDTaux == 3:
-            indexGDT=indexGT
+            indexGDT = indexGT
         elif idGDTaux == 4:
             indexGDT = indexAP
         else:
