@@ -164,7 +164,16 @@ class GDTGuiClass:
                 hbox.addStretch(1)
                 vbox.addLayout(hbox)
                 self.widget.setLayout(vbox)
-        self.form = self.widgetsGDT
+                
+        # Sort by type the elements
+        sortByType = []
+        for i in range(len(inventory)):
+            sortByType.append((i, (inventory[i][0])*1000+i))
+        sortByType.sort(key=lambda sortByType: sortByType[1])
+        self.auxWidgetsGDT = []
+        for i in range(len(self.widgetsGDT)):
+            self.auxWidgetsGDT.append(self.widgetsGDT[sortByType[i][0]])
+        self.form = self.auxWidgetsGDT
 
     def modifyFunc(self,i):
         global inventory, listDF, listDS, primaryList, secondaryList, tertiaryList, textNameList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList
