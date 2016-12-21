@@ -233,11 +233,13 @@ class GDTGuiClass:
                         listDS[j][1] = listDS[j][1].replace(prevName, '')
                     inventory[listDS[j][0]][1] = listDS[j][1]
         elif self.widgetsGDT[k].gdtID == 2:
-            FreeCAD.Console.PrintMessage('DS')
+            inventory[i] = [0, '']
+            pos = self.getPos(i, listDS)
+            listDS.pop(pos)
         elif self.widgetsGDT[k].gdtID == 3:
-            FreeCAD.Console.PrintMessage('GT')
+            inventory[i] = [0, '', 0, 0, 0, None]
         elif self.widgetsGDT[k].gdtID == 4:
-            FreeCAD.Console.PrintMessage('AP')
+            inventory[i] = [0, None]
         FreeCADGui.Control.closeDialog()
         Gui.Control.showDialog( GDTGuiClass() )
 
