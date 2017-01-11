@@ -42,9 +42,10 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 		except ImportError:
 			FreeCAD.Console.PrintWarning("Error: Initializing one or more of the GD&T modules failed, GD&T will not work as expected.\n")
 
-		self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_anotationPlane','dd_inventory']
-		self.appendToolbar("GD&T Tools",self.cmdList)
- 		self.appendMenu("GD&T Tools",self.cmdList+['dd_helpGDT'])
+		self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_anotationPlane']
+		self.inventory = ['dd_inventory']
+		self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)
+ 		self.appendMenu("GD&T Tools",self.cmdList+self.inventory+['dd_helpGDT'])
 
 		self.appendToolbar('GD&T Help', [ 'dd_helpGDT' ])
 
@@ -62,7 +63,17 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 	def ContextMenu(self, recipient):
         # "This is executed whenever the user right-clicks on screen"
         # "recipient" will be either "view" or "tree"
-		if (FreeCADGui.Selection.getSelection()):
-			self.appendContextMenu("GD&T Tools",self.cmdList) # add commands to the context menu
+		showCmdList = True
+		if FreeCADGui.Selection.getSelection():
+			for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
+				if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
+					pass
+				else:
+					showCmdList = False
+		else:
+			showCmdList = False
+		if showCmdList:
+			self.appendContextMenu("",self.cmdList) # add commands to the context menu
+		self.appendContextMenu("",self.inventory)
 
 FreeCADGui.addWorkbench(GeometricDimensioningAndTolerancingWorkbench)
