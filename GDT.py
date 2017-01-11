@@ -26,6 +26,9 @@ import FreeCAD as App
 import FreeCAD, FreeCADGui, Part, os
 from svgLib_dd import SvgTextRenderer, SvgTextParser
 import traceback
+import Draft
+import Part
+from pivy import coin
 
 try:
     from PySide import QtCore,QtGui,QtSvg
@@ -34,6 +37,7 @@ except ImportError:
 
 __dir__ = os.path.dirname(__file__)
 iconPath = os.path.join( __dir__, 'Gui','Resources', 'icons' )
+FontPath = os.path.join( __dir__, 'Fonts/')
 path_dd_resources =  os.path.join( os.path.dirname(__file__), 'Gui', 'Resources', 'dd_resources.rcc')
 resourcesLoaded = QtCore.QResource.registerResource(path_dd_resources)
 assert resourcesLoaded
@@ -455,12 +459,66 @@ class CheckBoxWidget:
         else:
             checkBoxState = False
 
+class LabeledLine(Draft._DraftObject):
+    def __init__(self, obj):
+        Draft._DraftObject.__init__(self,obj,"LabeledLine")
+        obj.addProperty("App::PropertyLinkList","Components","Draft",
+                        "The line and text components of this labeled line")
+
+    def onChanged(self, fp, prop):
+        if prop in ["Components"]:
+            self.createGeometry(fp)
+
+    def execute(self, fp):
+        self.createGeometry(fp)
+
+    def createGeometry(self,fp):
+        plm = fp.Placement
+        shps = []
+        for c in fp.Components:
+            shps.append(c.Shape)
+        if shps:
+            shape = Part.makeCompound(shps)
+            fp.Shape = shape
+        fp.Placement = plm
+
+
 class helpGDTCommand:
     def Activated(self):
-        QtGui.QMessageBox.information(
-            QtGui.qApp.activeWindow(),
-            'Geometric Dimensioning & Tolerancing Help',
-            'Developing...' )
+        # QtGui.QMessageBox.information(
+        #     QtGui.qApp.activeWindow(),
+        #     'Geometric Dimensioning & Tolerancing Help',
+        #     'Developing...' )
+        # set the parameters
+        sizeOfLine = 5
+        s=FreeCADGui.Selection.getSelectionEx()
+        obj=s[0]
+        faceSel = obj.SubObjects[0]
+        Direction = faceSel.normalAt(0,0)
+        P1 = faceSel.CenterOfMass
+        P2 = Direction * sizeOfLine + P1
+        Direction2 = Direction
+        for i in range(3):
+            if Direction[i] == 0:
+                Direction2[i] = 1.0
+            else:
+                Direction2[i] = 0.0
+        P3 = Direction2 * sizeOfLine + P2
+        LabelText = "Some Text for My Line"
+        FontName = 'Arial.ttf'
+        FontFile = FontPath+FontName
+        Size = 1.0
+        myLine1 = Draft.makeLine(P1,P2)
+        myLine2 = Draft.makeLine(P2,P3)
+        myString = Draft.makeShapeString(LabelText,FontFile,Size)
+        myString.Placement.move(P3)
+        #myString.Placement.move(myLine.Shape.BoundBox.Center)
+
+        # make the feature
+        feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
+        LabeledLine(feat)
+        feat.Components = [myLine1,myLine2,myString]
+        Draft._ViewProviderDraft(feat.ViewObject)
     def GetResources(self):
         return {
             'Pixmap' : ':/dd/icons/helpGDT.svg',
