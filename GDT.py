@@ -484,41 +484,50 @@ class LabeledLine(Draft._DraftObject):
 
 
 class helpGDTCommand:
+
     def Activated(self):
         # QtGui.QMessageBox.information(
         #     QtGui.qApp.activeWindow(),
         #     'Geometric Dimensioning & Tolerancing Help',
         #     'Developing...' )
         # set the parameters
-        sizeOfLine = 5
-        s=FreeCADGui.Selection.getSelectionEx()
-        obj=s[0]
-        faceSel = obj.SubObjects[0]
-        Direction = faceSel.normalAt(0,0)
-        P1 = faceSel.CenterOfMass
-        P2 = Direction * sizeOfLine + P1
-        Direction2 = Direction
-        for i in range(3):
-            if Direction[i] == 0:
-                Direction2[i] = 1.0
-            else:
-                Direction2[i] = 0.0
-        P3 = Direction2 * sizeOfLine + P2
-        LabelText = "Some Text for My Line"
-        FontName = 'Arial.ttf'
-        FontFile = FontPath+FontName
-        Size = 1.0
-        myLine1 = Draft.makeLine(P1,P2)
-        myLine2 = Draft.makeLine(P2,P3)
-        myString = Draft.makeShapeString(LabelText,FontFile,Size)
-        myString.Placement.move(P3)
-        #myString.Placement.move(myLine.Shape.BoundBox.Center)
+        # p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
+        # point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
+        point = FreeCADGui.activeDocument().activeView().addEventCallback("SoMouseButtonEvent",self.logPosition)
 
-        # make the feature
-        feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
-        LabeledLine(feat)
-        feat.Components = [myLine1,myLine2,myString]
-        Draft._ViewProviderDraft(feat.ViewObject)
+    def logPosition(self, info):
+       down = (info["State"] == "DOWN")
+       if (down):
+           sizeOfLine = 5
+           Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
+           P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+           p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
+           point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
+           aux = FreeCAD.Vector(0.0,0.0,0.0)
+           for i in range(3):
+               aux[i] = Direction[i]*point[i]
+           P2 = aux + P1
+           Direction2 = Direction
+           if Direction[0] <> 0:
+               Direction2 = FreeCAD.Vector(0.0, 1.0, 0.0)
+           else:
+               Direction2 = FreeCAD.Vector(1.0, 0.0, 0.0)
+           P3 = Direction2 * sizeOfLine + P2
+           LabelText = "Some Text for My Line"
+           FontName = 'Arial.ttf'
+           FontFile = FontPath+FontName
+           Size = 1.0
+           myLine1 = Draft.makeLine(P1,P2)
+           myLine2 = Draft.makeLine(P2,P3)
+           myString = Draft.makeShapeString(LabelText,FontFile,Size)
+           myString.Placement.move(P3)
+
+           # make the feature
+           feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
+           LabeledLine(feat)
+           feat.Components = [myLine1,myLine2,myString]
+           Draft._ViewProviderDraft(feat.ViewObject)
+
     def GetResources(self):
         return {
             'Pixmap' : ':/dd/icons/helpGDT.svg',
