@@ -491,42 +491,104 @@ class helpGDTCommand:
         #     'Geometric Dimensioning & Tolerancing Help',
         #     'Developing...' )
         # set the parameters
-        # p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
-        # point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
-        point = FreeCADGui.activeDocument().activeView().addEventCallback("SoMouseButtonEvent",self.logPosition)
 
-    def logPosition(self, info):
-       down = (info["State"] == "DOWN")
-       if (down):
-           sizeOfLine = 5
-           Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
-           P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-           p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
-           point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
-           aux = FreeCAD.Vector(0.0,0.0,0.0)
-           for i in range(3):
-               aux[i] = Direction[i]*point[i]
-           P2 = aux + P1
-           Direction2 = Direction
-           if Direction[0] <> 0:
-               Direction2 = FreeCAD.Vector(0.0, 1.0, 0.0)
-           else:
-               Direction2 = FreeCAD.Vector(1.0, 0.0, 0.0)
-           P3 = Direction2 * sizeOfLine + P2
-           LabelText = "Some Text for My Line"
-           FontName = 'Arial.ttf'
-           FontFile = FontPath+FontName
-           Size = 1.0
-           myLine1 = Draft.makeLine(P1,P2)
-           myLine2 = Draft.makeLine(P2,P3)
-           myString = Draft.makeShapeString(LabelText,FontFile,Size)
-           myString.Placement.move(P3)
+        self.view = Draft.get3DView()
 
-           # make the feature
-           feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
-           LabeledLine(feat)
-           feat.Components = [myLine1,myLine2,myString]
-           Draft._ViewProviderDraft(feat.ViewObject)
+        self.point = FreeCAD.Vector(0.0,0.0,0.0)
+        def click(event_cb):
+            event = event_cb.getEvent()
+            if event.getButton() == 1:
+                if event.getState() == coin.SoMouseButtonEvent.DOWN:
+                    #accept()
+                    p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
+                    self.point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
+                    print(self.point)
+                    self.view.removeEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),self.callbackClick)
+                    plotLines()
+
+        # adding callback functions
+        self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
+
+        def plotLines():
+            sizeOfLine = 5
+            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
+            P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+            aux = FreeCAD.Vector(0.0,0.0,0.0)
+            P2 = FreeCAD.Vector(0.0,0.0,0.0)
+            for i in range(3):
+                aux[i] = Direction[i]*self.point[i]
+                if aux[i] == 0.0:
+                    P2[i] = P1[i]
+                else:
+                    P2[i] = aux[i]
+            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2])
+            LabelText = "Some Text for My Line"
+            FontName = 'Arial.ttf'
+            FontFile = FontPath+FontName
+            Size = 1.0
+            myLine1 = Draft.makeLine(P1,P2)
+            myLine2 = Draft.makeLine(P2,P3)
+            myString = Draft.makeShapeString(LabelText,FontFile,Size)
+            myString.Placement.move(P3)
+
+            # make the feature
+            feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
+            LabeledLine(feat)
+            feat.Components = [myLine1,myLine2,myString]
+            Draft._ViewProviderDraft(feat.ViewObject)
+
+
+
+
+    #     self.callbackMove = self.view.addEventCallbackPivy(coin.SoLocation2Event.getClassTypeId(),move)
+    #
+    # def move(event_cb):
+    #     event = event_cb.getEvent()
+    #     mousepos = event.getPosition()
+    #     ctrl = event.wasCtrlDown()
+    #     shift = event.wasShiftDown()
+    #     self.pt = FreeCADGui.Snapper.snap(mousepos,lastpoint=last,active=ctrl,constrain=shift)
+    #     if hasattr(FreeCAD,"DraftWorkingPlane"):
+    #         self.ui.displayPoint(self.pt,last,plane=FreeCAD.DraftWorkingPlane,mask=FreeCADGui.Snapper.affinity)
+    #     if movecallback:
+    #         movecallback(self.pt,self.snapInfo)
+
+
+
+#     point = FreeCADGui.activeDocument().activeView().addEventCallback("SoMouseButtonEvent",self.logPosition)
+#
+# def logPosition(self, info):
+#    down = (info["State"] == "DOWN")
+#    if (down):
+#        sizeOfLine = 5
+#        Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
+#        P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+#        p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
+#        point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
+#        aux = FreeCAD.Vector(0.0,0.0,0.0)
+#        for i in range(3):
+#            aux[i] = Direction[i]*point[i]
+#        P2 = aux + P1
+#        Direction2 = Direction
+#        if Direction[0] <> 0:
+#            Direction2 = FreeCAD.Vector(0.0, 1.0, 0.0)
+#        else:
+#            Direction2 = FreeCAD.Vector(1.0, 0.0, 0.0)
+#        P3 = Direction2 * sizeOfLine + P2
+#        LabelText = "Some Text for My Line"
+#        FontName = 'Arial.ttf'
+#        FontFile = FontPath+FontName
+#        Size = 1.0
+#        myLine1 = Draft.makeLine(P1,P2)
+#        myLine2 = Draft.makeLine(P2,P3)
+#        myString = Draft.makeShapeString(LabelText,FontFile,Size)
+#        myString.Placement.move(P3)
+#
+#        # make the feature
+#        feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
+#        LabeledLine(feat)
+#        feat.Components = [myLine1,myLine2,myString]
+#        Draft._ViewProviderDraft(feat.ViewObject)
 
     def GetResources(self):
         return {
