@@ -23,12 +23,19 @@
 
 import numpy
 import FreeCAD as App
-import FreeCAD, FreeCADGui, Part, os
+import FreeCAD, math, sys, os, DraftVecUtils, Draft_rc
+from FreeCAD import Vector
 from svgLib_dd import SvgTextRenderer, SvgTextParser
 import traceback
 import Draft
 import Part
 from pivy import coin
+if FreeCAD.GuiUp:
+    import FreeCADGui, WorkingPlane
+    gui = True
+else:
+    print("FreeCAD Gui not present. GDT module will have some features disabled.")
+    gui = False
 
 try:
     from PySide import QtCore,QtGui,QtSvg
@@ -47,7 +54,7 @@ indexDF = 1
 indexDS = 1
 indexGT = 1
 indexAP = 1
-idGDTaux = 0 #Consultar la manera correcta de hacerlo
+idGDTaux = 0
 textName = ''
 textGDT = ''
 textDS = ['','','']
@@ -139,16 +146,60 @@ class GDTGuiClass(QtGui.QWidget):
 
     def updateIndex(self):
         global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS
-        textName = textName.encode('utf-8')
+        self.textName = textName.encode('utf-8')
+        self.view = Draft.get3DView()
+        self.point = FreeCAD.Vector(0.0,0.0,0.0)
+
+        import DraftTools, WorkingPlane
+        def click(event_cb):
+            event = event_cb.getEvent()
+            if event.getButton() == 1:
+                if event.getState() == coin.SoMouseButtonEvent.DOWN:
+                    p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
+                    self.point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
+                    print(self.point)
+                    self.view.removeEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),self.callbackClick)
+                    plotLines()
+
+        def plotLines():
+            sizeOfLine = 5
+            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
+            P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+            aux = FreeCAD.Vector(0.0,0.0,0.0)
+            P2 = FreeCAD.Vector(0.0,0.0,0.0)
+            for i in range(3):
+                aux[i] = Direction[i]*self.point[i]
+                if aux[i] == 0.0:
+                    P2[i] = P1[i]
+                else:
+                    P2[i] = aux[i]
+            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2])
+            Size = 1.0
+            points = [P1,P2,P3]
+            myWire = Draft.makeWire(points,closed=False,face=True,support=None)
+            #myLine1 = Draft.makeLine(P1,P2)
+            #myLine2 = Draft.makeLine(P2,P3)
+            #myString = Draft.makeShapeString(LabelText,FontFile,Size)
+            #myString.Placement.move(P3)
+            myLable = Draft.makeText(self.textName,point=P3,screen=True)
+            # make the feature
+            #feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
+            #LabeledLine(feat)
+            #feat.Components = [myWire,myLable]
+            #Draft._ViewProviderDraft(feat.ViewObject)
+
         if idGDTaux == 1:
             indexDF+=1
-            listDF.append( [ indexInventory, textName ] )
-            inventory.append( [ idGDTaux, textName, annotationPlane ] )
+            listDF.append( [ indexInventory, self.textName ] )
+            inventory.append( [ idGDTaux, self.textName, annotationPlane ] )
             if checkBoxState:
-                listDS.append( [ indexInventory+1, auxDictionaryDS[indexDS] + ': ' + textName ] )
-                inventory.append( [ 2, auxDictionaryDS[indexDS] + ': ' + textName, indexInventory ] )
+                listDS.append( [ indexInventory+1, auxDictionaryDS[indexDS] + ': ' + self.textName ] )
+                inventory.append( [ 2, auxDictionaryDS[indexDS] + ': ' + self.textName, indexInventory ] )
                 indexInventory+=1
                 indexDS+=1
+            # adding callback functions
+            self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
+
 
         elif idGDTaux == 2:
             separator = ' | '
@@ -156,26 +207,26 @@ class GDTGuiClass(QtGui.QWidget):
             if textDS[0] <> '':
                 if textDS[1] <> '':
                     if textDS[2] <> '':
-                        listDS.append( [ indexInventory, textName + ': ' + separator.join(textDS) ] )
-                        inventory.append( [ idGDTaux, textName + ': ' + separator.join(textDS), primary, secondary, tertiary ] )
+                        listDS.append( [ indexInventory, self.textName + ': ' + separator.join(textDS) ] )
+                        inventory.append( [ idGDTaux, self.textName + ': ' + separator.join(textDS), primary, secondary, tertiary ] )
                     else:
-                        listDS.append( [ indexInventory, textName + ': ' + separator.join([textDS[0], textDS[1]]) ] )
-                        inventory.append( [ idGDTaux, textName + ': ' + separator.join([textDS[0], textDS[1]]), primary, secondary ] )
+                        listDS.append( [ indexInventory, self.textName + ': ' + separator.join([textDS[0], textDS[1]]) ] )
+                        inventory.append( [ idGDTaux, self.textName + ': ' + separator.join([textDS[0], textDS[1]]), primary, secondary ] )
                 else:
-                    listDS.append( [ indexInventory, textName + ': ' + textDS[0] ] )
-                    inventory.append( [ idGDTaux, textName + ': ' + textDS[0], primary ] )
+                    listDS.append( [ indexInventory, self.textName + ': ' + textDS[0] ] )
+                    inventory.append( [ idGDTaux, self.textName + ': ' + textDS[0], primary ] )
             else:
-                listDS.append( [ indexInventory, textName ] )
-                inventory.append( [ idGDTaux, textName ] )
+                listDS.append( [ indexInventory, self.textName ] )
+                inventory.append( [ idGDTaux, self.textName ] )
         if idGDTaux == 3:
             indexGT+=1
-            listGT.append( [ indexInventory, textName ] )
+            listGT.append( [ indexInventory, self.textName ] )
             toleranceValue = textGDT
-            inventory.append( [ idGDTaux, textName, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane ] )
+            inventory.append( [ idGDTaux, self.textName, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane ] )
         elif idGDTaux == 4:
             indexAP+=1
-            listAP.append( [ indexInventory, textName ] )
-            inventory.append( [ idGDTaux, textName, annotationPlane ] )
+            listAP.append( [ indexInventory, self.textName ] )
+            inventory.append( [ idGDTaux, self.textName, annotationPlane ] )
         else:
             pass
         indexInventory+=1
@@ -459,29 +510,28 @@ class CheckBoxWidget:
         else:
             checkBoxState = False
 
-class LabeledLine(Draft._DraftObject):
-    def __init__(self, obj):
-        Draft._DraftObject.__init__(self,obj,"LabeledLine")
-        obj.addProperty("App::PropertyLinkList","Components","Draft",
-                        "The line and text components of this labeled line")
-
-    def onChanged(self, fp, prop):
-        if prop in ["Components"]:
-            self.createGeometry(fp)
-
-    def execute(self, fp):
-        self.createGeometry(fp)
-
-    def createGeometry(self,fp):
-        plm = fp.Placement
-        shps = []
-        for c in fp.Components:
-            shps.append(c.Shape)
-        if shps:
-            shape = Part.makeCompound(shps)
-            fp.Shape = shape
-        fp.Placement = plm
-
+# class LabeledLine(Draft._DraftObject):
+#     def __init__(self, obj):
+#         Draft._DraftObject.__init__(self,obj,"LabeledLine")
+#         obj.addProperty("App::PropertyLinkList","Components","Draft",
+#                         "The line and text components of this labeled line")
+#
+#     def onChanged(self, fp, prop):
+#         if prop in ["Components"]:
+#             self.createGeometry(fp)
+#
+#     def execute(self, fp):
+#         self.createGeometry(fp)
+#
+#     def createGeometry(self,fp):
+#         plm = fp.Placement
+#         shps = []
+#         for c in fp.Components:
+#             shps.append(c.Shape)
+#         if shps:
+#             shape = Part.makeCompound(shps)
+#             fp.Shape = shape
+#         fp.Placement = plm
 
 class helpGDTCommand:
 
@@ -491,7 +541,8 @@ class helpGDTCommand:
         #     'Geometric Dimensioning & Tolerancing Help',
         #     'Developing...' )
         # set the parameters
-
+        #obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
+        #_Annotation(obj)
         self.view = Draft.get3DView()
 
         self.point = FreeCAD.Vector(0.0,0.0,0.0)
@@ -522,23 +573,22 @@ class helpGDTCommand:
                 else:
                     P2[i] = aux[i]
             P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2])
-            LabelText = "Some Text for My Line"
+            LabelText = ["Some Text for My Line"]
             FontName = 'Arial.ttf'
             FontFile = FontPath+FontName
             Size = 1.0
-            myLine1 = Draft.makeLine(P1,P2)
-            myLine2 = Draft.makeLine(P2,P3)
-            myString = Draft.makeShapeString(LabelText,FontFile,Size)
-            myString.Placement.move(P3)
-
+            points = [P1,P2,P3]
+            myWire = Draft.makeWire(points,closed=False,face=True,support=None)
+            #myLine1 = Draft.makeLine(P1,P2)
+            #myLine2 = Draft.makeLine(P2,P3)
+            #myString = Draft.makeShapeString(LabelText,FontFile,Size)
+            #myString.Placement.move(P3)
+            myLable = Draft.makeText(LabelText,point=P3,screen=True)
             # make the feature
-            feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
-            LabeledLine(feat)
-            feat.Components = [myLine1,myLine2,myString]
-            Draft._ViewProviderDraft(feat.ViewObject)
-
-
-
+            #feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
+            #LabeledLine(feat)
+            #feat.Components = [myWire,myLable]
+            #Draft._ViewProviderDraft(feat.ViewObject)
 
     #     self.callbackMove = self.view.addEventCallbackPivy(coin.SoLocation2Event.getClassTypeId(),move)
     #
@@ -552,43 +602,6 @@ class helpGDTCommand:
     #         self.ui.displayPoint(self.pt,last,plane=FreeCAD.DraftWorkingPlane,mask=FreeCADGui.Snapper.affinity)
     #     if movecallback:
     #         movecallback(self.pt,self.snapInfo)
-
-
-
-#     point = FreeCADGui.activeDocument().activeView().addEventCallback("SoMouseButtonEvent",self.logPosition)
-#
-# def logPosition(self, info):
-#    down = (info["State"] == "DOWN")
-#    if (down):
-#        sizeOfLine = 5
-#        Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
-#        P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-#        p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
-#        point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
-#        aux = FreeCAD.Vector(0.0,0.0,0.0)
-#        for i in range(3):
-#            aux[i] = Direction[i]*point[i]
-#        P2 = aux + P1
-#        Direction2 = Direction
-#        if Direction[0] <> 0:
-#            Direction2 = FreeCAD.Vector(0.0, 1.0, 0.0)
-#        else:
-#            Direction2 = FreeCAD.Vector(1.0, 0.0, 0.0)
-#        P3 = Direction2 * sizeOfLine + P2
-#        LabelText = "Some Text for My Line"
-#        FontName = 'Arial.ttf'
-#        FontFile = FontPath+FontName
-#        Size = 1.0
-#        myLine1 = Draft.makeLine(P1,P2)
-#        myLine2 = Draft.makeLine(P2,P3)
-#        myString = Draft.makeShapeString(LabelText,FontFile,Size)
-#        myString.Placement.move(P3)
-#
-#        # make the feature
-#        feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
-#        LabeledLine(feat)
-#        feat.Components = [myLine1,myLine2,myString]
-#        Draft._ViewProviderDraft(feat.ViewObject)
 
     def GetResources(self):
         return {
