@@ -157,36 +157,77 @@ class GDTGuiClass(QtGui.QWidget):
                 if event.getState() == coin.SoMouseButtonEvent.DOWN:
                     p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
                     self.point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
-                    print(self.point)
+                    FreeCAD.Console.PrintMessage('Punto seleccionado: ' + str(self.point) + '\n')
                     self.view.removeEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),self.callbackClick)
                     plotLines()
 
         def plotLines():
-            sizeOfLine = 5
-            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
+            sizeOfLine = 1.0
+            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+            # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis
             P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
             aux = FreeCAD.Vector(0.0,0.0,0.0)
             P2 = FreeCAD.Vector(0.0,0.0,0.0)
+            posToModify = 0
             for i in range(3):
                 aux[i] = Direction[i]*self.point[i]
                 if aux[i] == 0.0:
                     P2[i] = P1[i]
                 else:
-                    P2[i] = aux[i]
-            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2])
+                    posToModify = i
+
+            P2[posToModify] = aux[posToModify]
+            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2]) # Revisar este punto 
             Size = 1.0
             points = [P1,P2,P3]
+            P4 = FreeCAD.Vector(P3[0],P3[1]-sizeOfLine,P3[2])
+            points.append(P4)
+            P5 = FreeCAD.Vector(P3[0],P3[1]+sizeOfLine,P3[2])
+            points.append(P5)
+            P6 = FreeCAD.Vector(P5[0]+sizeOfLine*3,P5[1],P5[2])
+            points.append(P6)
+            P7 = FreeCAD.Vector(P6[0],P6[1]-sizeOfLine*2,P6[2])
+            points.append(P7)
+            P8 = FreeCAD.Vector(P7[0]-sizeOfLine,P7[1],P7[2])
+            points.append(P8)
+            P9 = FreeCAD.Vector(P8[0]-sizeOfLine,P8[1],P8[2])
+            points.append(P9)
+            P10 = FreeCAD.Vector(P9[0]-sizeOfLine,P9[1],P9[2])
+            points.append(P10)
+            P11=P9
+            points.append(P11)
+            h=math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
+            P12 = FreeCAD.Vector(P11[0]+sizeOfLine/2,P11[1]-h,P11[2])
+            points.append(P12)
+            P13=P8
+            points.append(P13)
+            P14=P12
+            points.append(P14)
+            P15 = FreeCAD.Vector(P14[0],P11[1]-sizeOfLine*3,P11[2])
+            points.append(P15)
+            P16 = FreeCAD.Vector(P15[0]+sizeOfLine,P15[1],P15[2])
+            points.append(P16)
+            P17 = FreeCAD.Vector(P16[0],P16[1]-sizeOfLine*2,P15[2])
+            points.append(P17)
+            P18 = FreeCAD.Vector(P17[0]-sizeOfLine*2,P17[1],P17[2])
+            points.append(P18)
+            P19 = FreeCAD.Vector(P18[0],P18[1]+sizeOfLine*2,P18[2])
+            points.append(P19)
+            P20=P15
+            points.append(P20)
+
+            PText = FreeCAD.Vector(P18[0]+sizeOfLine/5,P18[1]+sizeOfLine/5,P18[2])
             myWire = Draft.makeWire(points,closed=False,face=True,support=None)
-            #myLine1 = Draft.makeLine(P1,P2)
-            #myLine2 = Draft.makeLine(P2,P3)
-            #myString = Draft.makeShapeString(LabelText,FontFile,Size)
-            #myString.Placement.move(P3)
-            myLable = Draft.makeText(self.textName,point=P3,screen=True)
-            # make the feature
-            #feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
-            #LabeledLine(feat)
-            #feat.Components = [myWire,myLable]
-            #Draft._ViewProviderDraft(feat.ViewObject)
+            myWire.ViewObject.LineColor = (1.0, 0.65, 0.0)
+            myLable = Draft.makeText(self.textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
+            myLable.ViewObject.TextColor = (1.0, 0.65, 0.0)
+            myLable.ViewObject.FontSize = 2.2
+            FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
+            FreeCAD.Console.PrintMessage('P1: ' + str(P1) + '\n')
+            FreeCAD.Console.PrintMessage('P2: ' + str(P2) + '\n')
+            FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
+            FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
+
 
         if idGDTaux == 1:
             indexDF+=1
