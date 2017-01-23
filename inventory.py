@@ -117,7 +117,7 @@ class GDTGuiClass:
                 textDSList.append(['','',''])
                 comboList.append(['','','','',''])
                 characteristicList.append(0)
-                toleranceValueList.append('0.0')
+                toleranceValueList.append(0.0)
                 featureControlFrameList.append(0)
                 datumSystemList.append(None)
                 if str(inventory[i][0]).find('3') == 0:
@@ -143,7 +143,7 @@ class GDTGuiClass:
                 if str(inventory[i][0]).find('3') == 0:
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=listOfCharacteristics, Icons=listOfIconsOfCharacteristic, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
-                    self.dialogWidgets.append( textLabeCombolWidget_inv(Text='Tolerance value:', Mask='00.00', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+                    self.dialogWidgets.append( textLabeCombolWidget_inv(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=listDS, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
 
                 if str(inventory[i][0]).find('4') == 0:
@@ -445,10 +445,35 @@ class groupBoxWidget_inv:
         self.group.setLayout(vbox)
         return self.group
 
+def getDefaultUnit(dim):
+    '''return default Unit of Measure for a Dimension based on user preference
+    Units Schema'''
+    # only Length and Angle so far
+    from FreeCAD import Units
+    if dim == 'Length':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
+        UOM = qty.getUserPreferred()[2]
+    elif dim == 'Angle':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
+        UOM = qty.getUserPreferred()[2]
+    else:
+        UOM = "xx"
+    return UOM
+
+def makeFormatSpec(decimals=4,dim='Length'):
+    ''' return a % format spec with specified decimals for a specified
+    dimension based on on user preference Units Schema'''
+    if dim == 'Length':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
+    elif dim == 'Angle':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
+    else:
+        fmtSpec = "%." + str(decimals) + "f " + "??"
+    return fmtSpec
+
 class textLabeCombolWidget_inv:
-    def __init__(self, Text='Label', Mask=None, List=[''], Icons=None, ToolTip = None, Parent = None, IndexInv = 0, IndexWidg = 0):
+    def __init__(self, Text='Label', List=[''], Icons=None, ToolTip = None, Parent = None, IndexInv = 0, IndexWidg = 0):
         self.Text = Text
-        self.Mask = Mask
         self.List = List
         self.Icons = Icons
         self.ToolTip = ToolTip
@@ -457,6 +482,10 @@ class textLabeCombolWidget_inv:
         self.indexWidg = IndexWidg
 
     def generateWidget( self ):
+        self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
+        self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
+        self.uiloader = FreeCADGui.UiLoader()
         self.combo = QtGui.QComboBox(self.parent)
         for i in range(len(self.List)):
             if self.Icons <> None:
@@ -470,16 +499,14 @@ class textLabeCombolWidget_inv:
         self.updateDate()
         self.combo.activated.connect(self.updateDate)
         hbox = QtGui.QHBoxLayout(self.parent)
-        self.lineEdit = QtGui.QLineEdit(self.parent)
-        if self.Mask <> None:
-            self.lineEdit.setInputMask(self.Mask)
-        self.lineEdit.setText(inventory[self.indexInv][3])
-        self.text = inventory[self.indexInv][3]
-        toleranceValueList[self.indexWidg] = self.text
-        self.valueChanged(self.text, self.indexWidg)
-        self.lineEdit.textChanged.connect(lambda Txt = self.text, aux = self.indexWidg: self.valueChanged(Txt, aux))
-        textGDT = self.text.strip()
-        hbox.addLayout( GDTDialog_hbox(self.Text,self.lineEdit) )
+        self.inputfield = self.uiloader.createWidget("Gui::InputField")
+        auxText = self.FORMAT % (inventory[self.indexInv][3])
+        auxText = auxText.replace('.',',')
+        self.inputfield.setText(auxText)
+        global toleranceValueList
+        toleranceValueList[self.indexWidg] = inventory[self.indexInv][3]
+        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
+        hbox.addLayout( GDTDialog_hbox(self.Text,self.inputfield) )
         hbox.addStretch(1)
         hbox.addWidget(self.combo)
         return hbox
@@ -491,9 +518,9 @@ class textLabeCombolWidget_inv:
         if self.Text == 'Tolerance value:':
             featureControlFrameList[self.indexWidg] = self.combo.currentIndex()
 
-    def valueChanged(self, argGDT, i):
+    def valueChanged(self,d,i):
         global toleranceValueList
-        toleranceValueList[i] = argGDT.strip()
+        toleranceValueList[i] = d
 
 def GDTDialog_hbox_inv( label, inputWidget, parent):
     hbox = QtGui.QHBoxLayout( parent )

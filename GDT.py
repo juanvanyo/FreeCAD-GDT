@@ -69,7 +69,7 @@ primary = None
 secondary = None
 tertiary = None
 characteristic = 0
-toleranceValue = 0
+toleranceValue = 0.0
 featureControlFrame = 0
 datumSystem = 0
 annotationPlane = 'Annotation Plane'
@@ -163,9 +163,7 @@ class GDTGuiClass(QtGui.QWidget):
 
         def plotLines():
             sizeOfLine = 1.0
-            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
             # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis
-            P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
             aux = FreeCAD.Vector(0.0,0.0,0.0)
             P2 = FreeCAD.Vector(0.0,0.0,0.0)
             posToModify = 0
@@ -177,7 +175,7 @@ class GDTGuiClass(QtGui.QWidget):
                     posToModify = i
 
             P2[posToModify] = aux[posToModify]
-            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2]) # Revisar este punto 
+            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2]) # Revisar este punto
             Size = 1.0
             points = [P1,P2,P3]
             P4 = FreeCAD.Vector(P3[0],P3[1]-sizeOfLine,P3[2])
@@ -228,6 +226,11 @@ class GDTGuiClass(QtGui.QWidget):
             FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
             FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
 
+        def crossproduct(first, other=FreeCAD.Vector(0,0,1)): # from (http://www.freecadweb.org/wiki/index.php?title=FreeCAD_vector_math_library)
+        	# crossproduct(Vector,Vector) - returns the cross product of both vectors.
+            # If only one is specified, cross product is made with vertical axis, thus returning its perpendicular in XY plane
+         	if isinstance(first,FreeCAD.Vector) and isinstance(other,FreeCAD.Vector):
+         		return FreeCAD.Vector(first.y*other.z - first.z*other.y, first.z*other.x - first.x*other.z, first.x*other.y - first.y*other.x)
 
         if idGDTaux == 1:
             indexDF+=1
@@ -239,6 +242,13 @@ class GDTGuiClass(QtGui.QWidget):
                 indexInventory+=1
                 indexDS+=1
             # adding callback functions
+            #SelectPlane.Activated(self)
+            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+            P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+            Perpendicular = crossproduct(Direction,FreeCAD.Vector(1.0,0.0,0.0))
+            FreeCADGui.Snapper.show()
+            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Perpendicular, 0.0)
+            FreeCADGui.Snapper.grid.set()
             self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
 
 
@@ -262,7 +272,6 @@ class GDTGuiClass(QtGui.QWidget):
         if idGDTaux == 3:
             indexGT+=1
             listGT.append( [ indexInventory, self.textName ] )
-            toleranceValue = textGDT
             inventory.append( [ idGDTaux, self.textName, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane ] )
         elif idGDTaux == 4:
             indexAP+=1
@@ -465,16 +474,44 @@ class groupBoxWidget:
         self.group.setLayout(vbox)
         return self.group
 
+def getDefaultUnit(dim):
+    '''return default Unit of Measure for a Dimension based on user preference
+    Units Schema'''
+    # only Length and Angle so far
+    from FreeCAD import Units
+    if dim == 'Length':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
+        UOM = qty.getUserPreferred()[2]
+    elif dim == 'Angle':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
+        UOM = qty.getUserPreferred()[2]
+    else:
+        UOM = "xx"
+    return UOM
+
+def makeFormatSpec(decimals=4,dim='Length'):
+    ''' return a % format spec with specified decimals for a specified
+    dimension based on on user preference Units Schema'''
+    if dim == 'Length':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
+    elif dim == 'Angle':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
+    else:
+        fmtSpec = "%." + str(decimals) + "f " + "??"
+    return fmtSpec
+
 class textLabeCombolWidget:
-    def __init__(self, Text='Label', Mask=None, Dictionary = None, List=[''], Icons=None, ToolTip = None):
+    def __init__(self, Text='Label', List=[''], Icons=None, ToolTip = None):
         self.Text = Text
-        self.Mask = Mask
-        self.Dictionary = Dictionary
         self.List = List
         self.Icons = Icons
         self.ToolTip = ToolTip
 
     def generateWidget( self ):
+        self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
+        self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
+        self.uiloader = FreeCADGui.UiLoader()
         self.combo = QtGui.QComboBox()
         for i in range(len(self.List)):
             if self.Icons <> None:
@@ -485,22 +522,12 @@ class textLabeCombolWidget:
            self.combo.setToolTip( self.ToolTip[0] )
         self.combo.activated.connect(self.updateDate)
         hbox = QtGui.QHBoxLayout()
-        self.lineEdit = QtGui.QLineEdit()
-        if self.Mask <> None:
-            self.lineEdit.setInputMask(self.Mask)
-        if self.Dictionary == None:
-            self.lineEdit.setText('text')
-            self.text = 'text'
-        else:
-            self.updateActiveWidget()
-            global textName, textGDT, indexGDT
-            if indexGDT > len(self.Dictionary)-1:
-                indexGDT = len(self.Dictionary)-1
-            self.lineEdit.setText(self.Dictionary[indexGDT])
-            self.text = self.Dictionary[indexGDT]
-        self.lineEdit.textChanged.connect(self.valueChanged)
-        textGDT = self.text.strip()
-        hbox.addLayout( GDTDialog_hbox(self.Text,self.lineEdit) )
+        self.inputfield = self.uiloader.createWidget("Gui::InputField")
+        self.inputfield.setText(self.FORMAT % 0)
+        global toleranceValue
+        toleranceValue = 0
+        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),self.valueChanged)
+        hbox.addLayout( GDTDialog_hbox(self.Text,self.inputfield) )
         hbox.addStretch(1)
         hbox.addWidget(self.combo)
         return hbox
@@ -511,23 +538,10 @@ class textLabeCombolWidget:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
             featureControlFrame = self.combo.currentIndex()
-    def valueChanged(self, argGDT):
-        global textGDT
-        textGDT = argGDT.strip()
 
-    def updateActiveWidget(self):
-        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux
-        if idGDTaux == 1:
-            indexGDT = indexDF
-        elif idGDTaux == 2:
-            indexGDT = indexDS
-        if idGDTaux == 3:
-            indexGDT = indexGT
-        elif idGDTaux == 4:
-            indexGDT = indexAP
-        else:
-            pass
-        return indexGDT
+    def valueChanged(self,d):
+        global toleranceValue
+        toleranceValue = d
 
 class CheckBoxWidget:
     def __init__(self, Text='Label'):
