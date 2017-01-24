@@ -21,6 +21,7 @@
 #***************************************************************************
 
 from GDT import *
+import  DraftTools
 
 gdt = GDTWidget()
 
@@ -46,6 +47,14 @@ class GeometricToleranceCommand:
         self.idGDT = 3
 
     def Activated(self):
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible == False:
+                    FreeCADGui.Snapper.grid.reset()
+                    FreeCADGui.Snapper.grid.on()
+                    FreeCADGui.Snapper.forceGridOff=False
+            else:
+                FreeCADGui.Snapper.show()
         gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
 
     def GetResources(self):

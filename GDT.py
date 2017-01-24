@@ -153,7 +153,6 @@ class GDTGuiClass(QtGui.QWidget):
         self.view = Draft.get3DView()
         self.point = FreeCAD.Vector(0.0,0.0,0.0)
 
-        import DraftTools, WorkingPlane
         def click(event_cb):
             event = event_cb.getEvent()
             if event.getButton() == 1:
@@ -384,11 +383,9 @@ class fieldLabelWidget:
         self.Text = Text
 
     def generateWidget( self ):
-        import DraftTools, WorkingPlane
         global offsetValue, Direction, P1
         Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
         P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-        FreeCADGui.Snapper.show()
         FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Direction, 0.0)
         FreeCADGui.Snapper.grid.set()
         self.FORMAT = makeFormatSpec(0,'Length')
@@ -494,6 +491,8 @@ class comboLabelWidget:
             datumSystem = self.List[combo[self.k].currentIndex()][0]
         elif self.Text == 'Active annotation plane:':
             annotationPlane = self.List[combo[self.k].currentIndex()][0]
+            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(inventory[annotationPlane][2], inventory[annotationPlane][3], inventory[annotationPlane][4])
+            FreeCADGui.Snapper.grid.set()
 
     def updateItemsEnabled(self, comboIndex):
         global combo

@@ -23,6 +23,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 from PySide import QtGui,QtCore
 from GDT import *
+import  DraftTools
 
 listOfIcons = [':/dd/icons/datumFeature.svg',':/dd/icons/datumSystem.svg',':/dd/icons/geometricTolerance.svg',':/dd/icons/annotationPlane.svg']
 
@@ -54,6 +55,14 @@ class InventoryCommand:
         self.toolTip = 'Inventory of the elements of GD&T'
 
     def Activated(self):
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible == False:
+                    FreeCADGui.Snapper.grid.reset()
+                    FreeCADGui.Snapper.grid.on()
+                    FreeCADGui.Snapper.forceGridOff=False
+            else:
+                FreeCADGui.Snapper.show()
         Gui.Control.showDialog( GDTGuiClass() )
 
     def GetResources(self):
@@ -327,7 +336,6 @@ class fieldLabelButtonWidget_inv:
         self.indexWidg = IndexWidg
 
     def generateWidget( self ):
-        import DraftTools, WorkingPlane
         global offsetValueList, DirectionList, P1List
         hbox = QtGui.QHBoxLayout(self.parent)
         P1List[self.indexWidg] = inventory[self.indexInv][2]
@@ -337,10 +345,10 @@ class fieldLabelButtonWidget_inv:
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.uiloader = FreeCADGui.UiLoader()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
-        auxText = self.FORMAT % (inventory[self.indexInv][4])
-        auxText = auxText.replace('.',',')
-        self.inputfield.setText(auxText)
-        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
+        self.auxText = self.FORMAT % (inventory[self.indexInv][4])
+        self.auxText = self.auxText.replace('.',',')
+        self.inputfield.setText(self.auxText)
+        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
 
         self.button = QtGui.QPushButton('Visualize')
         self.button.clicked.connect(lambda i = self.indexInv, k = self.indexWidg: self.visualizeFunc(i, k))
@@ -362,6 +370,7 @@ class fieldLabelButtonWidget_inv:
         offsetValueList[k] = inventory[i][4]
         FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1List[k], DirectionList[k], offsetValueList[k])
         FreeCADGui.Snapper.grid.set()
+        self.inputfield.setText(self.auxText)
 
 class comboLabelWidget_inv:
     def __init__(self, Text='Label', List=[[0,'']], Icons=None, ToolTip = None, Parent = None, IndexInv = 0, IndexWidg = 0):
@@ -507,6 +516,8 @@ class comboLabelWidget_inv:
             datumSystemList[IndexWidg] = self.List[comboList[IndexWidg][self.k].currentIndex()][0]
         elif self.Text == 'Active annotation plane:':
             annotationPlaneList[IndexWidg] = self.List[comboList[IndexWidg][self.k].currentIndex()][0]
+            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(inventory[annotationPlaneList[IndexWidg]][2], inventory[annotationPlaneList[IndexWidg]][3], inventory[annotationPlaneList[IndexWidg]][4])
+            FreeCADGui.Snapper.grid.set()
 
     def updateItemsEnabled(self, IndexWidg, comboIndex):
         comboIndex0 = comboIndex
