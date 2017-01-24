@@ -153,19 +153,14 @@ class GDTGuiClass(QtGui.QWidget):
         self.view = Draft.get3DView()
         self.point = FreeCAD.Vector(0.0,0.0,0.0)
 
-        def click(event_cb):
-            event = event_cb.getEvent()
-            if event.getButton() == 1:
-                if event.getState() == coin.SoMouseButtonEvent.DOWN:
-                    p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
-                    self.point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
-                    FreeCAD.Console.PrintMessage('Punto seleccionado: ' + str(self.point) + '\n')
-                    self.view.removeEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),self.callbackClick)
-                    plotLines()
+        def cb(point):
+            if point:
+                self.point = point
+                FreeCAD.Console.PrintMessage('Punto seleccionado: ' + str(self.point) + '\n')
+                plotLines()
 
         def plotLines():
             sizeOfLine = 1.0
-            # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis
             aux = FreeCAD.Vector(0.0,0.0,0.0)
             P2 = FreeCAD.Vector(0.0,0.0,0.0)
             posToModify = 0
@@ -228,29 +223,29 @@ class GDTGuiClass(QtGui.QWidget):
             FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
             FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
 
-        def crossproduct(first, other=FreeCAD.Vector(0,0,1)): # from (http://www.freecadweb.org/wiki/index.php?title=FreeCAD_vector_math_library)
-        	# crossproduct(Vector,Vector) - returns the cross product of both vectors.
-            # If only one is specified, cross product is made with vertical axis, thus returning its perpendicular in XY plane
-         	if isinstance(first,FreeCAD.Vector) and isinstance(other,FreeCAD.Vector):
-         		return FreeCAD.Vector(first.y*other.z - first.z*other.y, first.z*other.x - first.x*other.z, first.x*other.y - first.y*other.x)
-
         if idGDTaux == 1:
             indexDF+=1
             listDF.append( [ indexInventory, self.textName ] )
             inventory.append( [ idGDTaux, self.textName, annotationPlane ] )
+            auxIndexInventory = indexInventory
             if checkBoxState:
                 listDS.append( [ indexInventory+1, auxDictionaryDS[indexDS] + ': ' + self.textName ] )
                 inventory.append( [ 2, auxDictionaryDS[indexDS] + ': ' + self.textName, indexInventory ] )
                 indexInventory+=1
                 indexDS+=1
             # adding callback functions
+            myPlane = WorkingPlane.plane()
             # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
-            # P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-            # Perpendicular = crossproduct(Direction,FreeCAD.Vector(1.0,0.0,0.0))
-            # FreeCADGui.Snapper.show()
-            # FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Perpendicular, 0.0)
-            # FreeCADGui.Snapper.grid.set()
+            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
+            PCenter = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+            P1=PCenter.projectToPlane(inventory[inventory[auxIndexInventory][2]][2],inventory[inventory[auxIndexInventory][2]][3]) # P1=PCenter.projectToPlane(P1AP,DirectionAP)
+            # FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
+            # FreeCAD.Console.PrintMessage('DirectionAP: ' + str(inventory[inventory[auxIndexInventory][2]][3]) + '\n')
+            # FreeCAD.Console.PrintMessage('Perpendicular: ' + str(Perpendicular) + '\n')
+            # FreeCAD.Console.PrintMessage('P1AP: ' + str(inventory[inventory[auxIndexInventory][2]][2]) + '\n')
+            # FreeCAD.Console.PrintMessage('PCenter: ' + str(PCenter) + '\n')
             # self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
+            FreeCADGui.Snapper.getPoint(callback=cb)
 
 
         elif idGDTaux == 2:
@@ -649,7 +644,7 @@ class helpGDTCommand:
 
         def plotLines():
             sizeOfLine = 5
-            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0)
+            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
             P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
             aux = FreeCAD.Vector(0.0,0.0,0.0)
             P2 = FreeCAD.Vector(0.0,0.0,0.0)
