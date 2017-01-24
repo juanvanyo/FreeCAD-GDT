@@ -37,12 +37,12 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 			import datumFeature
 			import datumSystem
 			import geometricTolerance
-			import anotationPlane
+			import annotationPlane
 			import inventory
 		except ImportError:
 			FreeCAD.Console.PrintWarning("Error: Initializing one or more of the GD&T modules failed, GD&T will not work as expected.\n")
 
-		self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_anotationPlane']
+		self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_annotationPlane']
 		self.inventory = ['dd_inventory']
 		self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)
  		self.appendMenu("GD&T Tools",self.cmdList+self.inventory+['dd_helpGDT'])

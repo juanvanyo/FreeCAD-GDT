@@ -61,7 +61,7 @@ textDS = ['','','']
 listDF = [[None,'']]
 listDS = [[None,'']]
 listGT = []
-listAP = []
+listAP = [[None,'']]
 
 inventory = []
 indexInventory = 0
@@ -73,6 +73,9 @@ toleranceValue = 0.0
 featureControlFrame = 0
 datumSystem = 0
 annotationPlane = 'Annotation Plane'
+offsetValue = 0
+P1 = FreeCAD.Vector(0.0,0.0,0.0)
+Direction = FreeCAD.Vector(0.0,0.0,0.0)
 
 combo = ['','','','','']
 checkBoxState = True
@@ -145,7 +148,7 @@ class GDTGuiClass(QtGui.QWidget):
         self.setLayout(vbox)
 
     def updateIndex(self):
-        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS
+        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS, P1, Direction, offsetValue
         self.textName = textName.encode('utf-8')
         self.view = Draft.get3DView()
         self.point = FreeCAD.Vector(0.0,0.0,0.0)
@@ -247,6 +250,7 @@ class GDTGuiClass(QtGui.QWidget):
             P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
             Perpendicular = crossproduct(Direction,FreeCAD.Vector(1.0,0.0,0.0))
             FreeCADGui.Snapper.show()
+            # FreeCAD.DraftWorkingPlane.alignToPointAndAxis(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 0.0)
             FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Perpendicular, 0.0)
             FreeCADGui.Snapper.grid.set()
             self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
@@ -276,11 +280,37 @@ class GDTGuiClass(QtGui.QWidget):
         elif idGDTaux == 4:
             indexAP+=1
             listAP.append( [ indexInventory, self.textName ] )
-            inventory.append( [ idGDTaux, self.textName, annotationPlane ] )
+            inventory.append( [ idGDTaux, self.textName, P1, Direction, offsetValue ] )
         else:
             pass
         indexInventory+=1
         FreeCADGui.Control.closeDialog()
+
+def getDefaultUnit(dim):
+    '''return default Unit of Measure for a Dimension based on user preference
+    Units Schema'''
+    # only Length and Angle so far
+    from FreeCAD import Units
+    if dim == 'Length':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
+        UOM = qty.getUserPreferred()[2]
+    elif dim == 'Angle':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
+        UOM = qty.getUserPreferred()[2]
+    else:
+        UOM = "xx"
+    return UOM
+
+def makeFormatSpec(decimals=4,dim='Length'):
+    ''' return a % format spec with specified decimals for a specified
+    dimension based on on user preference Units Schema'''
+    if dim == 'Length':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
+    elif dim == 'Angle':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
+    else:
+        fmtSpec = "%." + str(decimals) + "f " + "??"
+    return fmtSpec
 
 def GDTDialog_hbox( label, inputWidget):
     hbox = QtGui.QHBoxLayout()
@@ -350,6 +380,33 @@ class textLabelWidget:
         else:
             pass
         return indexGDT
+
+class fieldLabelWidget:
+    def __init__(self, Text='Label'):
+        self.Text = Text
+
+    def generateWidget( self ):
+        import DraftTools, WorkingPlane
+        global offsetValue, Direction, P1
+        Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+        P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+        FreeCADGui.Snapper.show()
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Direction, 0.0)
+        FreeCADGui.Snapper.grid.set()
+        self.FORMAT = makeFormatSpec(0,'Length')
+        self.uiloader = FreeCADGui.UiLoader()
+        self.inputfield = self.uiloader.createWidget("Gui::InputField")
+        self.inputfield.setText(self.FORMAT % 0)
+        offsetValue = 0
+        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),self.valueChanged)
+
+        return GDTDialog_hbox(self.Text,self.inputfield)
+
+    def valueChanged(self, d):
+        global offsetValue, Direction, P1
+        offsetValue = d
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Direction, offsetValue)
+        FreeCADGui.Snapper.grid.set()
 
 class comboLabelWidget:
     def __init__(self, Text='Label', List=[[None,'']], Icons=None, ToolTip = None):
@@ -474,33 +531,7 @@ class groupBoxWidget:
         self.group.setLayout(vbox)
         return self.group
 
-def getDefaultUnit(dim):
-    '''return default Unit of Measure for a Dimension based on user preference
-    Units Schema'''
-    # only Length and Angle so far
-    from FreeCAD import Units
-    if dim == 'Length':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
-        UOM = qty.getUserPreferred()[2]
-    elif dim == 'Angle':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
-        UOM = qty.getUserPreferred()[2]
-    else:
-        UOM = "xx"
-    return UOM
-
-def makeFormatSpec(decimals=4,dim='Length'):
-    ''' return a % format spec with specified decimals for a specified
-    dimension based on on user preference Units Schema'''
-    if dim == 'Length':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
-    elif dim == 'Angle':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
-    else:
-        fmtSpec = "%." + str(decimals) + "f " + "??"
-    return fmtSpec
-
-class textLabeCombolWidget:
+class fieldLabeCombolWidget:
     def __init__(self, Text='Label', List=[''], Icons=None, ToolTip = None):
         self.Text = Text
         self.List = List

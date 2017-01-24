@@ -43,6 +43,10 @@ characteristicList = []
 toleranceValueList = []
 featureControlFrameList = []
 datumSystemList = []
+annotationPlaneList = []
+offsetValueList = []
+P1List = []
+DirectionList = []
 
 class InventoryCommand:
     def __init__(self):
@@ -68,7 +72,7 @@ class InventoryCommand:
 class GDTGuiClass:
 
     def __init__(self):
-        global textDSList, primaryList, secondaryList, tertiaryList, textNameList, inventory, comboList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList
+        global textDSList, primaryList, secondaryList, tertiaryList, textNameList, inventory, comboList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList, P1List, DirectionList, offsetValueList
         self.widgetsGDT = []
         primaryList = []
         secondaryList = []
@@ -120,6 +124,9 @@ class GDTGuiClass:
                 toleranceValueList.append(0.0)
                 featureControlFrameList.append(0)
                 datumSystemList.append(None)
+                offsetValueList.append(0)
+                P1List.append(FreeCAD.Vector(0.0,0.0,0.0))
+                DirectionList.append(FreeCAD.Vector(0.0,0.0,0.0))
                 if str(inventory[i][0]).find('3') == 0:
                     iconPath = listOfIconsOfCharacteristic[ inventory[i][2] ]
                 else:
@@ -143,11 +150,13 @@ class GDTGuiClass:
                 if str(inventory[i][0]).find('3') == 0:
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=listOfCharacteristics, Icons=listOfIconsOfCharacteristic, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
-                    self.dialogWidgets.append( textLabeCombolWidget_inv(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+                    self.dialogWidgets.append( fieldLabeCombolWidget_inv(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=listDS, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
 
                 if str(inventory[i][0]).find('4') == 0:
+                    FreeCADGui.Snapper.show()
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
+                    self.dialogWidgets.append(fieldLabelWidget_inv(Text = 'Offset:', IndexInv = i, IndexWidg = self.iWidg))
 
                 for widg in self.dialogWidgets:
                     w = widg.generateWidget()
@@ -182,7 +191,7 @@ class GDTGuiClass:
         self.form = self.auxWidgetsGDT
 
     def modifyFunc(self, i, k):
-        global inventory, listDF, listDS, primaryList, secondaryList, tertiaryList, textNameList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList
+        global inventory, listDF, listDS, listAP, primaryList, secondaryList, tertiaryList, textNameList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList, P1List, DirectionList, offsetValueList
         if self.widgetsGDT[k].gdtID == 1:
             prevName = inventory[i][1]
             inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], annotationPlane ]
@@ -213,12 +222,14 @@ class GDTGuiClass:
         elif self.widgetsGDT[k].gdtID == 3:
             inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], characteristicList[k], toleranceValueList[k], featureControlFrameList[k], datumSystemList[k], annotationPlane ]
         elif self.widgetsGDT[k].gdtID == 4:
-            inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], annotationPlane ]
+            pos = self.getPos(i, listAP)
+            listAP[pos] = [i, textNameList[k]]
+            inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], P1List[k], DirectionList[k], offsetValueList[k] ]
         FreeCADGui.Control.closeDialog()
         Gui.Control.showDialog( GDTGuiClass() )
 
     def deleteFunc(self, i, k):
-        global inventory, listDF
+        global inventory, listDF, listDS, listAP
         if self.widgetsGDT[k].gdtID == 1:
             prevName = inventory[i][1]
             inventory[i] = [ 0, '', None ]
@@ -239,7 +250,9 @@ class GDTGuiClass:
         elif self.widgetsGDT[k].gdtID == 3:
             inventory[i] = [0, '', 0, 0, 0, None]
         elif self.widgetsGDT[k].gdtID == 4:
-            inventory[i] = [0, None]
+            inventory[i] = [0, '', FreeCAD.Vector(0.0,0.0,0.0), FreeCAD.Vector(0.0,0.0,0.0), 0]
+            pos = self.getPos(i, listAP)
+            listAP.pop(pos)
         FreeCADGui.Control.closeDialog()
         Gui.Control.showDialog( GDTGuiClass() )
 
@@ -253,6 +266,32 @@ class GDTGuiClass:
 
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
         return 0x00200000 #close button
+
+def getDefaultUnit(dim):
+    '''return default Unit of Measure for a Dimension based on user preference
+    Units Schema'''
+    # only Length and Angle so far
+    from FreeCAD import Units
+    if dim == 'Length':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
+        UOM = qty.getUserPreferred()[2]
+    elif dim == 'Angle':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
+        UOM = qty.getUserPreferred()[2]
+    else:
+        UOM = "xx"
+    return UOM
+
+def makeFormatSpec(decimals=4,dim='Length'):
+    ''' return a % format spec with specified decimals for a specified
+    dimension based on on user preference Units Schema'''
+    if dim == 'Length':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
+    elif dim == 'Angle':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
+    else:
+        fmtSpec = "%." + str(decimals) + "f " + "??"
+    return fmtSpec
 
 class textLabelWidget_inv:
     def __init__(self, Text='Label', Mask = None, Parent = None, IndexInv = 0, IndexWidg = 0):
@@ -274,6 +313,32 @@ class textLabelWidget_inv:
     def valueChanged(self, argGDT, i):
         global textNameList
         textNameList[i] = argGDT.strip()
+
+class fieldLabelWidget_inv:
+    def __init__(self, Text='Label', IndexInv = 0, IndexWidg = 0):
+        self.Text = Text
+        self.indexInv = IndexInv
+        self.indexWidg = IndexWidg
+
+    def generateWidget( self ):
+        import DraftTools, WorkingPlane
+        global offsetValueList, DirectionList, P1List
+        P1List[self.indexWidg] = inventory[self.indexInv][2]
+        DirectionList[self.indexWidg] = inventory[self.indexInv][3]
+        offsetValueList[self.indexWidg] = inventory[self.indexInv][4]
+        self.FORMAT = makeFormatSpec(0,'Length')
+        self.uiloader = FreeCADGui.UiLoader()
+        self.inputfield = self.uiloader.createWidget("Gui::InputField")
+        self.inputfield.setText(self.FORMAT % inventory[self.indexInv][4])
+        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.FORMAT % (inventory[self.indexInv][4]), aux = self.indexWidg: self.valueChanged(Double, aux))
+
+        return GDTDialog_hbox(self.Text,self.inputfield)
+
+    def valueChanged(self, d, i):
+        global offsetValue, Direction, P1
+        offsetValueList[i] = d
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1List[i], DirectionList[i], offsetValueList[i])
+        FreeCADGui.Snapper.grid.set()
 
 class comboLabelWidget_inv:
     def __init__(self, Text='Label', List=[[0,'']], Icons=None, ToolTip = None, Parent = None, IndexInv = 0, IndexWidg = 0):
@@ -445,33 +510,7 @@ class groupBoxWidget_inv:
         self.group.setLayout(vbox)
         return self.group
 
-def getDefaultUnit(dim):
-    '''return default Unit of Measure for a Dimension based on user preference
-    Units Schema'''
-    # only Length and Angle so far
-    from FreeCAD import Units
-    if dim == 'Length':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
-        UOM = qty.getUserPreferred()[2]
-    elif dim == 'Angle':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
-        UOM = qty.getUserPreferred()[2]
-    else:
-        UOM = "xx"
-    return UOM
-
-def makeFormatSpec(decimals=4,dim='Length'):
-    ''' return a % format spec with specified decimals for a specified
-    dimension based on on user preference Units Schema'''
-    if dim == 'Length':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
-    elif dim == 'Angle':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
-    else:
-        fmtSpec = "%." + str(decimals) + "f " + "??"
-    return fmtSpec
-
-class textLabeCombolWidget_inv:
+class fieldLabeCombolWidget_inv:
     def __init__(self, Text='Label', List=[''], Icons=None, ToolTip = None, Parent = None, IndexInv = 0, IndexWidg = 0):
         self.Text = Text
         self.List = List

@@ -31,7 +31,7 @@ gdt.dialogWidgets.append( comboLabelWidget(Text='Characteristic:', List=listOfCh
 listOfCharacteristics2 = ['','','','','','','','']
 listOfIconsOfFeatureControlFrame = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
 listOfToolTips = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
-gdt.dialogWidgets.append( textLabeCombolWidget(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+gdt.dialogWidgets.append( fieldLabeCombolWidget(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
 
 gdt.dialogWidgets.append( comboLabelWidget(Text='Datum system:', List=listDS) )
 

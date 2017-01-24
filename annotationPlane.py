@@ -23,6 +23,7 @@
 from GDT import *
 
 gdt = GDTWidget()
+gdt.dialogWidgets.append( fieldLabelWidget(Text='Offset:') )
 class AnnotationPlaneCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/annotationPlane.svg'
@@ -53,4 +54,4 @@ class AnnotationPlaneCommand:
             return False
         return True
 
-FreeCADGui.addCommand('dd_anotationPlane', AnnotationPlaneCommand())
+FreeCADGui.addCommand('dd_annotationPlane', AnnotationPlaneCommand())
