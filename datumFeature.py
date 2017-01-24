@@ -26,6 +26,7 @@ gdt = GDTWidget()
 dictionaryDF = []
 dictionaryDF = map(chr, range(64, 91)) #64 because the first argument is not used
 gdt.dialogWidgets.append( textLabelWidget(Text='Datum feature:',Mask='>A', Dictionary=dictionaryDF) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+gdt.dialogWidgets.append( comboLabelWidget(Text='Active annotation plane:', List=listAP) )
 gdt.dialogWidgets.append( CheckBoxWidget(Text = 'Create corresponding Datum System') )
 
 class DatumFeatureCommand:
@@ -48,6 +49,9 @@ class DatumFeatureCommand:
             }
 
     def IsActive(self):
+        global listAP
+        if len(listAP) == 0:
+            return False
         if FreeCADGui.Selection.getSelection():
             for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
                 if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':

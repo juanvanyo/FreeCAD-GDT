@@ -61,7 +61,7 @@ textDS = ['','','']
 listDF = [[None,'']]
 listDS = [[None,'']]
 listGT = []
-listAP = [[None,'']]
+listAP = []
 
 inventory = []
 indexInventory = 0
@@ -72,12 +72,12 @@ characteristic = 0
 toleranceValue = 0.0
 featureControlFrame = 0
 datumSystem = 0
-annotationPlane = 'Annotation Plane'
+annotationPlane = 0
 offsetValue = 0
 P1 = FreeCAD.Vector(0.0,0.0,0.0)
 Direction = FreeCAD.Vector(0.0,0.0,0.0)
 
-combo = ['','','','','']
+combo = ['','','','','','']
 checkBoxState = True
 auxDictionaryDS=[]
 for i in range(100):
@@ -95,7 +95,7 @@ class GDTWidget:
         self.idGDT=idGDT
         global idGDTaux, combo
         idGDTaux = idGDT
-        combo = ['','','','','']
+        combo = ['','','','','','']
         extraWidgets = []
         if dictionary <> None:
             extraWidgets.append(textLabelWidget('Name:','NNNn', self.dictionary, Name = True)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
@@ -245,15 +245,13 @@ class GDTGuiClass(QtGui.QWidget):
                 indexInventory+=1
                 indexDS+=1
             # adding callback functions
-            #SelectPlane.Activated(self)
-            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
-            P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-            Perpendicular = crossproduct(Direction,FreeCAD.Vector(1.0,0.0,0.0))
-            FreeCADGui.Snapper.show()
-            # FreeCAD.DraftWorkingPlane.alignToPointAndAxis(FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,1), 0.0)
-            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Perpendicular, 0.0)
-            FreeCADGui.Snapper.grid.set()
-            self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
+            # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+            # P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+            # Perpendicular = crossproduct(Direction,FreeCAD.Vector(1.0,0.0,0.0))
+            # FreeCADGui.Snapper.show()
+            # FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Perpendicular, 0.0)
+            # FreeCADGui.Snapper.grid.set()
+            # self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
 
 
         elif idGDTaux == 2:
@@ -429,8 +427,10 @@ class comboLabelWidget:
             self.k=3
         elif self.Text == 'Datum system:':
             self.k=4
-        else:
+        elif self.Text == 'Active annotation plane:':
             self.k=5
+        else:
+            self.k=6
 
         combo[self.k] = QtGui.QComboBox()
         for i in range(len(self.List)):
@@ -455,7 +455,7 @@ class comboLabelWidget:
         return GDTDialog_hbox(self.Text,combo[self.k])
 
     def updateDate(self, comboIndex):
-        global textDS, primary, secondary, tertiary, characteristic, datumSystem, combo
+        global textDS, primary, secondary, tertiary, characteristic, datumSystem, combo, annotationPlane
         if self.ToolTip <> None:
             combo[self.k].setToolTip( self.ToolTip[combo[self.k].currentIndex()] )
         if self.Text == 'Primary:':
@@ -492,6 +492,8 @@ class comboLabelWidget:
             characteristic = combo[self.k].currentIndex()
         elif self.Text == 'Datum system:':
             datumSystem = self.List[combo[self.k].currentIndex()][0]
+        elif self.Text == 'Active annotation plane:':
+            annotationPlane = self.List[combo[self.k].currentIndex()][0]
 
     def updateItemsEnabled(self, comboIndex):
         global combo

@@ -72,7 +72,7 @@ class InventoryCommand:
 class GDTGuiClass:
 
     def __init__(self):
-        global textDSList, primaryList, secondaryList, tertiaryList, textNameList, inventory, comboList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList, P1List, DirectionList, offsetValueList
+        global textDSList, primaryList, secondaryList, tertiaryList, textNameList, inventory, comboList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList, P1List, DirectionList, offsetValueList, annotationPlaneList
         self.widgetsGDT = []
         primaryList = []
         secondaryList = []
@@ -84,6 +84,8 @@ class GDTGuiClass:
         toleranceValueList = []
         featureControlFrameList = []
         datumSystemList = []
+        offsetValueList = []
+        annotationPlaneList = []
         self.iWidg = -1
         for i in range(len(inventory)):
             if str(inventory[i][0]).find('1') == 0 or str(inventory[i][0]).find('2') == 0 or str(inventory[i][0]).find('3') == 0 or str(inventory[i][0]).find('4') == 0:
@@ -119,12 +121,13 @@ class GDTGuiClass:
                 secondaryList.append(None)
                 tertiaryList.append(None)
                 textDSList.append(['','',''])
-                comboList.append(['','','','',''])
+                comboList.append(['','','','','',''])
                 characteristicList.append(0)
                 toleranceValueList.append(0.0)
                 featureControlFrameList.append(0)
                 datumSystemList.append(None)
                 offsetValueList.append(0)
+                annotationPlaneList.append(None)
                 P1List.append(FreeCAD.Vector(0.0,0.0,0.0))
                 DirectionList.append(FreeCAD.Vector(0.0,0.0,0.0))
                 if str(inventory[i][0]).find('3') == 0:
@@ -142,6 +145,7 @@ class GDTGuiClass:
 
                 if str(inventory[i][0]).find('1') == 0:
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Datum feature:', Mask='>A', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
+                    self.dialogWidgets.append( comboLabelWidget_inv(Text='Active annotation plane:', List=listAP, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
 
                 if str(inventory[i][0]).find('2') == 0:
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
@@ -191,10 +195,10 @@ class GDTGuiClass:
         self.form = self.auxWidgetsGDT
 
     def modifyFunc(self, i, k):
-        global inventory, listDF, listDS, listAP, primaryList, secondaryList, tertiaryList, textNameList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList, P1List, DirectionList, offsetValueList
+        global inventory, listDF, listDS, listAP, primaryList, secondaryList, tertiaryList, textNameList, characteristicList, toleranceValueList, featureControlFrameList, datumSystemList, P1List, DirectionList, offsetValueList, annotationPlaneList
         if self.widgetsGDT[k].gdtID == 1:
             prevName = inventory[i][1]
-            inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], annotationPlane ]
+            inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], annotationPlaneList[k] ]
             pos = self.getPos(i, listDF)
             listDF[pos] = [i, textNameList[k]]
             prevName = ' '+prevName
@@ -220,7 +224,7 @@ class GDTGuiClass:
                 listDS[pos] = [ i, textNameList[k] ]
                 inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k] ]
         elif self.widgetsGDT[k].gdtID == 3:
-            inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], characteristicList[k], toleranceValueList[k], featureControlFrameList[k], datumSystemList[k], annotationPlane ]
+            inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], characteristicList[k], toleranceValueList[k], featureControlFrameList[k], datumSystemList[k], annotationPlaneList[k] ]
         elif self.widgetsGDT[k].gdtID == 4:
             pos = self.getPos(i, listAP)
             listAP[pos] = [i, textNameList[k]]
@@ -232,7 +236,7 @@ class GDTGuiClass:
         global inventory, listDF, listDS, listAP
         if self.widgetsGDT[k].gdtID == 1:
             prevName = inventory[i][1]
-            inventory[i] = [ 0, '', None ]
+            inventory[i] = [ 0, '', 0 ]
             pos = self.getPos(i, listDF)
             listDF.pop(pos)
             prevName = ' '+prevName
@@ -248,7 +252,7 @@ class GDTGuiClass:
             pos = self.getPos(i, listDS)
             listDS.pop(pos)
         elif self.widgetsGDT[k].gdtID == 3:
-            inventory[i] = [0, '', 0, 0, 0, None]
+            inventory[i] = [0, '', 0, 0, 0, 0]
         elif self.widgetsGDT[k].gdtID == 4:
             inventory[i] = [0, '', FreeCAD.Vector(0.0,0.0,0.0), FreeCAD.Vector(0.0,0.0,0.0), 0]
             pos = self.getPos(i, listAP)
@@ -328,11 +332,14 @@ class fieldLabelButtonWidget_inv:
         P1List[self.indexWidg] = inventory[self.indexInv][2]
         DirectionList[self.indexWidg] = inventory[self.indexInv][3]
         offsetValueList[self.indexWidg] = inventory[self.indexInv][4]
-        self.FORMAT = makeFormatSpec(0,'Length')
+        self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.uiloader = FreeCADGui.UiLoader()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
-        self.inputfield.setText(self.FORMAT % inventory[self.indexInv][4])
-        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.FORMAT % (inventory[self.indexInv][4]), aux = self.indexWidg: self.valueChanged(Double, aux))
+        auxText = self.FORMAT % (inventory[self.indexInv][4])
+        auxText = auxText.replace('.',',')
+        self.inputfield.setText(auxText)
+        QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
 
         self.button = QtGui.QPushButton('Visualize')
         self.button.clicked.connect(lambda i = self.indexInv, k = self.indexWidg: self.visualizeFunc(i, k))
@@ -377,8 +384,10 @@ class comboLabelWidget_inv:
             self.k=3
         elif self.Text == 'Datum system:':
             self.k=4
-        else:
+        elif self.Text == 'Active annotation plane:':
             self.k=5
+        else:
+            self.k=6
         comboList[self.indexWidg][self.k] = QtGui.QComboBox(self.parent)
         for i in range(len(self.List)):
             if self.Icons <> None:
@@ -408,7 +417,7 @@ class comboLabelWidget_inv:
         return GDTDialog_hbox_inv(self.Text, comboList[self.indexWidg][self.k], parent = self.parent)
 
     def updateCurrentItem(self, IndexInv, IndexWidg):
-        global textDSList, primaryList, secondaryList, tertiaryList, comboList, characteristicList, datumSystemList
+        global textDSList, primaryList, secondaryList, tertiaryList, comboList, characteristicList, datumSystemList, annotationPlaneList
         if self.Text == 'Primary:':
             if len(inventory[IndexInv]) > 2:
                 actualValue = inventory[inventory[IndexInv][2]][1]
@@ -440,6 +449,17 @@ class comboLabelWidget_inv:
                 pos = self.getPos(actualValue)
                 comboList[IndexWidg][self.k].setCurrentIndex(pos)
             datumSystemList[IndexWidg] = self.List[comboList[IndexWidg][self.k].currentIndex()][0]
+        elif self.Text == 'Active annotation plane:':
+            if inventory[IndexInv][0] == 1:
+                APpos = 2
+            else:
+                APpos = 6
+            if inventory[IndexInv][APpos] <> None:
+                actualValue = inventory[inventory[IndexInv][APpos]][1]
+                pos = self.getPos(actualValue)
+                comboList[IndexWidg][self.k].setCurrentIndex(pos)
+            annotationPlaneList[IndexWidg] = self.List[comboList[IndexWidg][self.k].currentIndex()][0]
+
 
     def getPos(self, actualValue):
         for i in range(len(self.List)):
@@ -447,7 +467,7 @@ class comboLabelWidget_inv:
                 return i
 
     def updateDate(self, comboIndex, IndexWidg):
-        global textDSList, primaryList, secondaryList, tertiaryList, characteristic, datumSystem, comboList, characteristicList, datumSystemList
+        global textDSList, primaryList, secondaryList, tertiaryList, characteristic, datumSystem, comboList, characteristicList, datumSystemList, annotationPlaneList
         if self.ToolTip <> None:
             comboList[IndexWidg][self.k].setToolTip( self.ToolTip[comboList[IndexWidg][self.k].currentIndex()] )
         if self.Text == 'Primary:':
@@ -484,6 +504,8 @@ class comboLabelWidget_inv:
             characteristicList[IndexWidg] = comboList[IndexWidg][self.k].currentIndex()
         elif self.Text == 'Datum system:':
             datumSystemList[IndexWidg] = self.List[comboList[IndexWidg][self.k].currentIndex()][0]
+        elif self.Text == 'Active annotation plane:':
+            annotationPlaneList[IndexWidg] = self.List[comboList[IndexWidg][self.k].currentIndex()][0]
 
     def updateItemsEnabled(self, IndexWidg, comboIndex):
         comboIndex0 = comboIndex
