@@ -34,6 +34,7 @@ listOfToolTips = ['Feature control frame', 'Free state', 'Least material conditi
 gdt.dialogWidgets.append( fieldLabeCombolWidget(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
 
 gdt.dialogWidgets.append( comboLabelWidget(Text='Datum system:', List=listDS) )
+gdt.dialogWidgets.append( comboLabelWidget(Text='Active annotation plane:', List=listAP) )
 
 class GeometricToleranceCommand:
     def __init__(self):
@@ -55,6 +56,9 @@ class GeometricToleranceCommand:
             }
 
     def IsActive(self):
+        global listAP
+        if len(listAP) == 0:
+            return False
         if FreeCADGui.Selection.getSelection():
             for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
                 if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':

@@ -156,6 +156,7 @@ class GDTGuiClass:
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=listOfCharacteristics, Icons=listOfIconsOfCharacteristic, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
                     self.dialogWidgets.append( fieldLabeCombolWidget_inv(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
                     self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=listDS, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
+                    self.dialogWidgets.append( comboLabelWidget_inv(Text='Active annotation plane:', List=listAP, Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg) )
 
                 if str(inventory[i][0]).find('4') == 0:
                     FreeCADGui.Snapper.show()
