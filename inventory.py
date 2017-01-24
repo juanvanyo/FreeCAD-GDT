@@ -156,7 +156,7 @@ class GDTGuiClass:
                 if str(inventory[i][0]).find('4') == 0:
                     FreeCADGui.Snapper.show()
                     self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
-                    self.dialogWidgets.append(fieldLabelWidget_inv(Text = 'Offset:', IndexInv = i, IndexWidg = self.iWidg))
+                    self.dialogWidgets.append(fieldLabelButtonWidget_inv(Text = 'Offset:', Parent = self.parent, IndexInv = i, IndexWidg = self.iWidg))
 
                 for widg in self.dialogWidgets:
                     w = widg.generateWidget()
@@ -314,15 +314,17 @@ class textLabelWidget_inv:
         global textNameList
         textNameList[i] = argGDT.strip()
 
-class fieldLabelWidget_inv:
-    def __init__(self, Text='Label', IndexInv = 0, IndexWidg = 0):
+class fieldLabelButtonWidget_inv:
+    def __init__(self, Text='Label', Parent = None, IndexInv = 0, IndexWidg = 0):
         self.Text = Text
+        self.parent = Parent
         self.indexInv = IndexInv
         self.indexWidg = IndexWidg
 
     def generateWidget( self ):
         import DraftTools, WorkingPlane
         global offsetValueList, DirectionList, P1List
+        hbox = QtGui.QHBoxLayout(self.parent)
         P1List[self.indexWidg] = inventory[self.indexInv][2]
         DirectionList[self.indexWidg] = inventory[self.indexInv][3]
         offsetValueList[self.indexWidg] = inventory[self.indexInv][4]
@@ -332,12 +334,25 @@ class fieldLabelWidget_inv:
         self.inputfield.setText(self.FORMAT % inventory[self.indexInv][4])
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.FORMAT % (inventory[self.indexInv][4]), aux = self.indexWidg: self.valueChanged(Double, aux))
 
-        return GDTDialog_hbox(self.Text,self.inputfield)
+        self.button = QtGui.QPushButton('Visualize')
+        self.button.clicked.connect(lambda i = self.indexInv, k = self.indexWidg: self.visualizeFunc(i, k))
+        hbox.addLayout( GDTDialog_hbox(self.Text,self.inputfield) )
+        hbox.addStretch(1)
+        hbox.addWidget(self.button)
+        return hbox
 
     def valueChanged(self, d, i):
         global offsetValue, Direction, P1
         offsetValueList[i] = d
         FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1List[i], DirectionList[i], offsetValueList[i])
+        FreeCADGui.Snapper.grid.set()
+
+    def visualizeFunc(self, i, k):
+        global offsetValue, Direction, P1
+        P1List[k] = inventory[i][2]
+        DirectionList[k] = inventory[i][3]
+        offsetValueList[k] = inventory[i][4]
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1List[k], DirectionList[k], offsetValueList[k])
         FreeCADGui.Snapper.grid.set()
 
 class comboLabelWidget_inv:
