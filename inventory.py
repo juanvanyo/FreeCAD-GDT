@@ -288,32 +288,6 @@ class GDTGuiClass:
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
         return 0x00200000 #close button
 
-def getDefaultUnit(dim):
-    '''return default Unit of Measure for a Dimension based on user preference
-    Units Schema'''
-    # only Length and Angle so far
-    from FreeCAD import Units
-    if dim == 'Length':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
-        UOM = qty.getUserPreferred()[2]
-    elif dim == 'Angle':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
-        UOM = qty.getUserPreferred()[2]
-    else:
-        UOM = "xx"
-    return UOM
-
-def makeFormatSpec(decimals=4,dim='Length'):
-    ''' return a % format spec with specified decimals for a specified
-    dimension based on on user preference Units Schema'''
-    if dim == 'Length':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
-    elif dim == 'Angle':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
-    else:
-        fmtSpec = "%." + str(decimals) + "f " + "??"
-    return fmtSpec
-
 class textLabelWidget_inv:
     def __init__(self, Text='Label', Mask = None, Parent = None, IndexInv = 0, IndexWidg = 0):
         self.Text = Text
@@ -353,7 +327,6 @@ class fieldLabelButtonWidget_inv:
         self.uiloader = FreeCADGui.UiLoader()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
         self.auxText = self.FORMAT % (inventory[self.indexInv][4])
-        self.auxText = self.auxText.replace('.',',')
         self.inputfield.setText(self.auxText)
         self.firstAttempt = True
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
@@ -598,8 +571,7 @@ class fieldLabeCombolWidget_inv:
         self.combo.activated.connect(self.updateDate)
         hbox = QtGui.QHBoxLayout(self.parent)
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
-        valueToShow = stringencodecoin(inventory[self.indexInv][3])
-        auxText = self.FORMAT % (valueToShow)
+        auxText = self.FORMAT % (inventory[self.indexInv][3])
         self.inputfield.setText(auxText)
         global toleranceValueList
         toleranceValueList[self.indexWidg] = inventory[self.indexInv][3]

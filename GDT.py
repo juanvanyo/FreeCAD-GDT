@@ -52,17 +52,31 @@ except ImportError:
 # General functions
 #---------------------------------------------------------------------------
 
-def stringencodecoin(ustr):
-    """stringencodecoin(str): Encodes a unicode object to be used as a string in coin"""
-    try:
-        from pivy import coin
-        coin4 = coin.COIN_MAJOR_VERSION >= 4
-    except (ImportError, AttributeError):
-        coin4 = False
-    if coin4:
-        return ustr.encode('utf-8')
+def getDefaultUnit(dim):
+    '''return default Unit of Measure for a Dimension based on user preference
+    Units Schema'''
+    # only Length and Angle so far
+    from FreeCAD import Units
+    if dim == 'Length':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
+        UOM = qty.getUserPreferred()[2]
+    elif dim == 'Angle':
+        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
+        UOM = qty.getUserPreferred()[2]
     else:
-        return ustr.encode('latin1')
+        UOM = "xx"
+    return UOM
+
+def makeFormatSpec(decimals=4,dim='Length'):
+    ''' return a % format spec with specified decimals for a specified
+    dimension based on on user preference Units Schema'''
+    if dim == 'Length':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
+    elif dim == 'Angle':
+        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
+    else:
+        fmtSpec = "%." + str(decimals) + "f " + "??"
+    return fmtSpec
 
 __dir__ = os.path.dirname(__file__)
 iconPath = os.path.join( __dir__, 'Gui','Resources', 'icons' )
@@ -320,32 +334,6 @@ class GDTGuiClass(QtGui.QWidget):
                     FreeCADGui.Snapper.forceGridOff=True
 
         FreeCADGui.Control.closeDialog()
-
-def getDefaultUnit(dim):
-    '''return default Unit of Measure for a Dimension based on user preference
-    Units Schema'''
-    # only Length and Angle so far
-    from FreeCAD import Units
-    if dim == 'Length':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Length)
-        UOM = qty.getUserPreferred()[2]
-    elif dim == 'Angle':
-        qty = FreeCAD.Units.Quantity(1.0,FreeCAD.Units.Angle)
-        UOM = qty.getUserPreferred()[2]
-    else:
-        UOM = "xx"
-    return UOM
-
-def makeFormatSpec(decimals=4,dim='Length'):
-    ''' return a % format spec with specified decimals for a specified
-    dimension based on on user preference Units Schema'''
-    if dim == 'Length':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Length')
-    elif dim == 'Angle':
-        fmtSpec = "%." + str(decimals) + "f "+ getDefaultUnit('Angle')
-    else:
-        fmtSpec = "%." + str(decimals) + "f " + "??"
-    return fmtSpec
 
 def GDTDialog_hbox( label, inputWidget):
     hbox = QtGui.QHBoxLayout()
