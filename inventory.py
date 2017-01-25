@@ -55,14 +55,6 @@ class InventoryCommand:
         self.toolTip = 'Inventory of the elements of GD&T'
 
     def Activated(self):
-        if hasattr(FreeCADGui,"Snapper"):
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible == False:
-                    FreeCADGui.Snapper.grid.reset()
-                    FreeCADGui.Snapper.grid.on()
-                    FreeCADGui.Snapper.forceGridOff=False
-            else:
-                FreeCADGui.Snapper.show()
         Gui.Control.showDialog( GDTGuiClass() )
 
     def GetResources(self):
@@ -240,6 +232,11 @@ class GDTGuiClass:
             listAP[pos] = [i, textNameList[k]]
             inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], P1List[k], DirectionList[k], offsetValueList[k] ]
         FreeCADGui.Control.closeDialog()
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible:
+                    FreeCADGui.Snapper.grid.off()
+                    FreeCADGui.Snapper.forceGridOff=True
         Gui.Control.showDialog( GDTGuiClass() )
 
     def deleteFunc(self, i, k):
@@ -268,6 +265,11 @@ class GDTGuiClass:
             pos = self.getPos(i, listAP)
             listAP.pop(pos)
         FreeCADGui.Control.closeDialog()
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible:
+                    FreeCADGui.Snapper.grid.off()
+                    FreeCADGui.Snapper.forceGridOff=True
         Gui.Control.showDialog( GDTGuiClass() )
 
     def getPos(self, actualValue, List):
@@ -276,6 +278,11 @@ class GDTGuiClass:
                 return i
 
     def reject(self): #close button
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible:
+                    FreeCADGui.Snapper.grid.off()
+                    FreeCADGui.Snapper.forceGridOff=True
         FreeCADGui.Control.closeDialog()
 
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
@@ -348,6 +355,7 @@ class fieldLabelButtonWidget_inv:
         self.auxText = self.FORMAT % (inventory[self.indexInv][4])
         self.auxText = self.auxText.replace('.',',')
         self.inputfield.setText(self.auxText)
+        self.firstAttempt = True
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
 
         self.button = QtGui.QPushButton('Visualize')
@@ -360,8 +368,10 @@ class fieldLabelButtonWidget_inv:
     def valueChanged(self, d, i):
         global offsetValue, Direction, P1
         offsetValueList[i] = d
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1List[i], DirectionList[i], offsetValueList[i])
-        FreeCADGui.Snapper.grid.set()
+        if self.firstAttempt == False:
+            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1List[i], DirectionList[i], offsetValueList[i])
+            FreeCADGui.Snapper.grid.set()
+        self.firstAttempt = False
 
     def visualizeFunc(self, i, k):
         global offsetValue, Direction, P1

@@ -116,6 +116,11 @@ class GDTDialog:
         self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
 
     def reject(self): #close button
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible:
+                    FreeCADGui.Snapper.grid.off()
+                    FreeCADGui.Snapper.forceGridOff=True
         FreeCADGui.Control.closeDialog()
 
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
@@ -214,14 +219,19 @@ class GDTGuiClass(QtGui.QWidget):
             PText = FreeCAD.Vector(P18[0]+sizeOfLine/5,P18[1]+sizeOfLine/5,P18[2])
             myWire = Draft.makeWire(points,closed=False,face=True,support=None)
             myWire.ViewObject.LineColor = (1.0, 0.65, 0.0)
-            myLable = Draft.makeText(self.textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
-            myLable.ViewObject.TextColor = (1.0, 0.65, 0.0)
-            myLable.ViewObject.FontSize = 2.2
-            FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
-            FreeCAD.Console.PrintMessage('P1: ' + str(P1) + '\n')
-            FreeCAD.Console.PrintMessage('P2: ' + str(P2) + '\n')
-            FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
-            FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
+            myLabel = Draft.makeText(self.textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
+            myLabel.ViewObject.TextColor = (1.0, 0.65, 0.0)
+            myLabel.ViewObject.FontSize = 2.2
+            # FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
+            # FreeCAD.Console.PrintMessage('P1: ' + str(P1) + '\n')
+            # FreeCAD.Console.PrintMessage('P2: ' + str(P2) + '\n')
+            # FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
+            # FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
+            if hasattr(FreeCADGui,"Snapper"):
+                if FreeCADGui.Snapper.grid:
+                    if FreeCADGui.Snapper.grid.Visible:
+                        FreeCADGui.Snapper.grid.off()
+                        FreeCADGui.Snapper.forceGridOff=True
 
         if idGDTaux == 1:
             indexDF+=1
@@ -238,7 +248,11 @@ class GDTGuiClass(QtGui.QWidget):
             # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
             Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
             PCenter = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-            P1=PCenter.projectToPlane(inventory[inventory[auxIndexInventory][2]][2],inventory[inventory[auxIndexInventory][2]][3]) # P1=PCenter.projectToPlane(P1AP,DirectionAP)
+            PCenterAP = inventory[inventory[auxIndexInventory][2]][2]
+            DirectionAP = inventory[inventory[auxIndexInventory][2]][3]
+            OffsetAP = inventory[inventory[auxIndexInventory][2]][4]
+            PointAP = PCenterAP + DirectionAP*OffsetAP
+            P1=PCenter.projectToPlane(PointAP,DirectionAP)
             # FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
             # FreeCAD.Console.PrintMessage('DirectionAP: ' + str(inventory[inventory[auxIndexInventory][2]][3]) + '\n')
             # FreeCAD.Console.PrintMessage('Perpendicular: ' + str(Perpendicular) + '\n')
@@ -276,6 +290,13 @@ class GDTGuiClass(QtGui.QWidget):
         else:
             pass
         indexInventory+=1
+
+        if hasattr(FreeCADGui,"Snapper") and idGDTaux != 1:
+            if FreeCADGui.Snapper.grid:
+                if FreeCADGui.Snapper.grid.Visible:
+                    FreeCADGui.Snapper.grid.off()
+                    FreeCADGui.Snapper.forceGridOff=True
+
         FreeCADGui.Control.closeDialog()
 
 def getDefaultUnit(dim):
@@ -592,98 +613,15 @@ class CheckBoxWidget:
         else:
             checkBoxState = False
 
-# class LabeledLine(Draft._DraftObject):
-#     def __init__(self, obj):
-#         Draft._DraftObject.__init__(self,obj,"LabeledLine")
-#         obj.addProperty("App::PropertyLinkList","Components","Draft",
-#                         "The line and text components of this labeled line")
-#
-#     def onChanged(self, fp, prop):
-#         if prop in ["Components"]:
-#             self.createGeometry(fp)
-#
-#     def execute(self, fp):
-#         self.createGeometry(fp)
-#
-#     def createGeometry(self,fp):
-#         plm = fp.Placement
-#         shps = []
-#         for c in fp.Components:
-#             shps.append(c.Shape)
-#         if shps:
-#             shape = Part.makeCompound(shps)
-#             fp.Shape = shape
-#         fp.Placement = plm
-
 class helpGDTCommand:
 
     def Activated(self):
-        # QtGui.QMessageBox.information(
-        #     QtGui.qApp.activeWindow(),
-        #     'Geometric Dimensioning & Tolerancing Help',
-        #     'Developing...' )
-        # set the parameters
+        QtGui.QMessageBox.information(
+            QtGui.qApp.activeWindow(),
+            'Geometric Dimensioning & Tolerancing Help',
+            'Developing...' )
         #obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
         #_Annotation(obj)
-        self.view = Draft.get3DView()
-
-        self.point = FreeCAD.Vector(0.0,0.0,0.0)
-        def click(event_cb):
-            event = event_cb.getEvent()
-            if event.getButton() == 1:
-                if event.getState() == coin.SoMouseButtonEvent.DOWN:
-                    #accept()
-                    p = FreeCADGui.ActiveDocument.ActiveView.getCursorPos()
-                    self.point = FreeCADGui.ActiveDocument.ActiveView.getPoint(p)
-                    print(self.point)
-                    self.view.removeEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),self.callbackClick)
-                    plotLines()
-
-        # adding callback functions
-        self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
-
-        def plotLines():
-            sizeOfLine = 5
-            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
-            P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
-            aux = FreeCAD.Vector(0.0,0.0,0.0)
-            P2 = FreeCAD.Vector(0.0,0.0,0.0)
-            for i in range(3):
-                aux[i] = Direction[i]*self.point[i]
-                if aux[i] == 0.0:
-                    P2[i] = P1[i]
-                else:
-                    P2[i] = aux[i]
-            P3 = FreeCAD.Vector(self.point[0],P2[1],P2[2])
-            LabelText = ["Some Text for My Line"]
-            FontName = 'Arial.ttf'
-            FontFile = FontPath+FontName
-            Size = 1.0
-            points = [P1,P2,P3]
-            myWire = Draft.makeWire(points,closed=False,face=True,support=None)
-            #myLine1 = Draft.makeLine(P1,P2)
-            #myLine2 = Draft.makeLine(P2,P3)
-            #myString = Draft.makeShapeString(LabelText,FontFile,Size)
-            #myString.Placement.move(P3)
-            myLable = Draft.makeText(LabelText,point=P3,screen=True)
-            # make the feature
-            #feat = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython","LabeledLine")
-            #LabeledLine(feat)
-            #feat.Components = [myWire,myLable]
-            #Draft._ViewProviderDraft(feat.ViewObject)
-
-    #     self.callbackMove = self.view.addEventCallbackPivy(coin.SoLocation2Event.getClassTypeId(),move)
-    #
-    # def move(event_cb):
-    #     event = event_cb.getEvent()
-    #     mousepos = event.getPosition()
-    #     ctrl = event.wasCtrlDown()
-    #     shift = event.wasShiftDown()
-    #     self.pt = FreeCADGui.Snapper.snap(mousepos,lastpoint=last,active=ctrl,constrain=shift)
-    #     if hasattr(FreeCAD,"DraftWorkingPlane"):
-    #         self.ui.displayPoint(self.pt,last,plane=FreeCAD.DraftWorkingPlane,mask=FreeCADGui.Snapper.affinity)
-    #     if movecallback:
-    #         movecallback(self.pt,self.snapInfo)
 
     def GetResources(self):
         return {
