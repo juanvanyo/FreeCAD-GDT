@@ -326,7 +326,7 @@ class fieldLabelButtonWidget_inv:
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.uiloader = FreeCADGui.UiLoader()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
-        self.auxText = self.FORMAT % (inventory[self.indexInv][4])
+        self.auxText = displayExternal(inventory[self.indexInv][4],self.DECIMALS,'Length',True)
         self.inputfield.setText(self.auxText)
         self.firstAttempt = True
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = self.auxText, aux = self.indexWidg: self.valueChanged(Double, aux))
@@ -571,7 +571,7 @@ class fieldLabeCombolWidget_inv:
         self.combo.activated.connect(self.updateDate)
         hbox = QtGui.QHBoxLayout(self.parent)
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
-        auxText = self.FORMAT % (inventory[self.indexInv][3])
+        auxText = displayExternal(inventory[self.indexInv][4],self.DECIMALS,'Length',True)
         self.inputfield.setText(auxText)
         global toleranceValueList
         toleranceValueList[self.indexWidg] = inventory[self.indexInv][3]

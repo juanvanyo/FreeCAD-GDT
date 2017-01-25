@@ -49,7 +49,7 @@ except ImportError:
     FreeCAD.Console.PrintMessage("Error: Python-pyside package must be installed on your system to use the Geometric Dimensioning & Tolerancing module.")
 
 #---------------------------------------------------------------------------
-# General functions
+# UNITS handling
 #---------------------------------------------------------------------------
 
 def getDefaultUnit(dim):
@@ -77,6 +77,31 @@ def makeFormatSpec(decimals=4,dim='Length'):
     else:
         fmtSpec = "%." + str(decimals) + "f " + "??"
     return fmtSpec
+
+def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
+    '''return an internal value (ie mm) Length or Angle converted for display according
+    to Units Schema in use.'''
+    from FreeCAD import Units
+
+    if dim == 'Length':
+        qty = FreeCAD.Units.Quantity(internValue,FreeCAD.Units.Length)
+        pref = qty.getUserPreferred()
+        conversion = pref[1]
+        uom = pref[2]
+    elif dim == 'Angle':
+        qty = FreeCAD.Units.Quantity(internValue,FreeCAD.Units.Angle)
+        pref=qty.getUserPreferred()
+        conversion = pref[1]
+        uom = pref[2]
+    else:
+        conversion = 1.0
+        uom = "??"
+    if not showUnit:
+        uom = ""
+    fmt = "{0:."+ str(decimals) + "f} "+ uom
+    displayExt = fmt.format(float(internValue) / float(conversion))
+    displayExt = displayExt.replace(".",QtCore.QLocale().decimalPoint())
+    return displayExt
 
 __dir__ = os.path.dirname(__file__)
 iconPath = os.path.join( __dir__, 'Gui','Resources', 'icons' )
