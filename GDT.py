@@ -21,6 +21,12 @@
 #*                                                                         *
 #***************************************************************************
 
+__title__="FreeCAD GDT Workbench"
+__author__ = "Juan Vanyo Cerda <juavacer@inf.upv.es>"
+__url__ = "http://www.freecadweb.org"
+
+# Description of tool
+
 import numpy
 import FreeCAD as App
 import FreeCAD, math, sys, os, DraftVecUtils, Draft_rc
@@ -41,6 +47,22 @@ try:
     from PySide import QtCore,QtGui,QtSvg
 except ImportError:
     FreeCAD.Console.PrintMessage("Error: Python-pyside package must be installed on your system to use the Geometric Dimensioning & Tolerancing module.")
+
+#---------------------------------------------------------------------------
+# General functions
+#---------------------------------------------------------------------------
+
+def stringencodecoin(ustr):
+    """stringencodecoin(str): Encodes a unicode object to be used as a string in coin"""
+    try:
+        from pivy import coin
+        coin4 = coin.COIN_MAJOR_VERSION >= 4
+    except (ImportError, AttributeError):
+        coin4 = False
+    if coin4:
+        return ustr.encode('utf-8')
+    else:
+        return ustr.encode('latin1')
 
 __dir__ = os.path.dirname(__file__)
 iconPath = os.path.join( __dir__, 'Gui','Resources', 'icons' )

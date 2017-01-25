@@ -598,8 +598,8 @@ class fieldLabeCombolWidget_inv:
         self.combo.activated.connect(self.updateDate)
         hbox = QtGui.QHBoxLayout(self.parent)
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
-        auxText = self.FORMAT % (inventory[self.indexInv][3])
-        auxText = auxText.replace('.',',')
+        valueToShow = stringencodecoin(inventory[self.indexInv][3])
+        auxText = self.FORMAT % (valueToShow)
         self.inputfield.setText(auxText)
         global toleranceValueList
         toleranceValueList[self.indexWidg] = inventory[self.indexInv][3]
