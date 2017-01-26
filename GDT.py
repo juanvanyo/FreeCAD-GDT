@@ -48,6 +48,121 @@ try:
 except ImportError:
     FreeCAD.Console.PrintMessage("Error: Python-pyside package must be installed on your system to use the Geometric Dimensioning & Tolerancing module.")
 
+__dir__ = os.path.dirname(__file__)
+iconPath = os.path.join( __dir__, 'Gui','Resources', 'icons' )
+FontPath = os.path.join( __dir__, 'Fonts/')
+path_dd_resources =  os.path.join( os.path.dirname(__file__), 'Gui', 'Resources', 'dd_resources.rcc')
+resourcesLoaded = QtCore.QResource.registerResource(path_dd_resources)
+assert resourcesLoaded
+
+indexGDT = 1
+indexDF = 1
+indexDS = 1
+indexGT = 1
+indexAP = 1
+idGDTaux = 0
+textName = ''
+textGDT = ''
+textDS = ['','','']
+listDF = [[None,'']]
+listDS = [[None,'']]
+listGT = []
+listAP = []
+
+inventory = []
+indexInventory = 0
+primary = None
+secondary = None
+tertiary = None
+characteristic = 0
+toleranceValue = 0.0
+featureControlFrame = 0
+datumSystem = 0
+annotationPlane = 0
+offsetValue = 0
+P1 = FreeCAD.Vector(0.0,0.0,0.0)
+Direction = FreeCAD.Vector(0.0,0.0,0.0)
+
+combo = ['','','','','','']
+checkBoxState = True
+auxDictionaryDS=[]
+for i in range(100):
+    auxDictionaryDS.append('DS'+str(i))
+
+#---------------------------------------------------------------------------
+# Param functions
+#---------------------------------------------------------------------------
+
+def getParamType(param):
+    if param in ["lineWidth","gridEvery","gridSize"]:
+        return "int"
+    elif param in ["textFamily"]:
+        return "string"
+    elif param in ["textSize","gridSpacing"]:
+        return "float"
+    elif param in ["alwaysShowGrid"]:
+        return "bool"
+    elif param in ["textColor","lineColor"]:
+        return "unsigned"
+    else:
+        return None
+
+def getParam(param,default=None):
+    "getParam(parameterName): returns a GDT parameter value from the current config"
+    p = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/GDT")
+    t = getParamType(param)
+    if t == "int":
+        if default == None:
+            default = 0
+        return p.GetInt(param,default)
+    elif t == "string":
+        if default == None:
+            default = ""
+        return p.GetString(param,default)
+    elif t == "float":
+        if default == None:
+            default = 1
+        return p.GetFloat(param,default)
+    elif t == "bool":
+        if default == None:
+            default = False
+        return p.GetBool(param,default)
+    elif t == "unsigned":
+        if default == None:
+            default = 0
+        return p.GetUnsigned(param,default)
+    else:
+        return None
+
+def setParam(param,value):
+    "setParam(parameterName,value): sets a GDT parameter with the given value"
+    p = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/GDT")
+    t = getParamType(param)
+    if t == "int": p.SetInt(param,value)
+    elif t == "string": p.SetString(param,value)
+    elif t == "float": p.SetFloat(param,value)
+    elif t == "bool": p.SetBool(param,value)
+    elif t == "unsigned": p.SetUnsigned(param,value)
+
+#---------------------------------------------------------------------------
+# General functions
+#---------------------------------------------------------------------------
+
+def getRealName(name):
+    "getRealName(string): strips the trailing numbers from a string name"
+    for i in range(1,len(name)):
+        if not name[-i] in '1234567890':
+            return name[:len(name)-(i-1)]
+    return name
+
+def getRGB(param):
+    color = QtGui.QColor(getParam(param,16753920)>>8)
+    r = float(color.red()/255.0)
+    g = float(color.green()/255.0)
+    b = float(color.blue()/255.0)
+    col = (r,g,b,0.0)
+    return col
+
 #---------------------------------------------------------------------------
 # UNITS handling
 #---------------------------------------------------------------------------
@@ -103,46 +218,9 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
     displayExt = displayExt.replace(".",QtCore.QLocale().decimalPoint())
     return displayExt
 
-__dir__ = os.path.dirname(__file__)
-iconPath = os.path.join( __dir__, 'Gui','Resources', 'icons' )
-FontPath = os.path.join( __dir__, 'Fonts/')
-path_dd_resources =  os.path.join( os.path.dirname(__file__), 'Gui', 'Resources', 'dd_resources.rcc')
-resourcesLoaded = QtCore.QResource.registerResource(path_dd_resources)
-assert resourcesLoaded
-
-indexGDT = 1
-indexDF = 1
-indexDS = 1
-indexGT = 1
-indexAP = 1
-idGDTaux = 0
-textName = ''
-textGDT = ''
-textDS = ['','','']
-listDF = [[None,'']]
-listDS = [[None,'']]
-listGT = []
-listAP = []
-
-inventory = []
-indexInventory = 0
-primary = None
-secondary = None
-tertiary = None
-characteristic = 0
-toleranceValue = 0.0
-featureControlFrame = 0
-datumSystem = 0
-annotationPlane = 0
-offsetValue = 0
-P1 = FreeCAD.Vector(0.0,0.0,0.0)
-Direction = FreeCAD.Vector(0.0,0.0,0.0)
-
-combo = ['','','','','','']
-checkBoxState = True
-auxDictionaryDS=[]
-for i in range(100):
-    auxDictionaryDS.append('DS'+str(i))
+#---------------------------------------------------------------------------
+# Customized widgets
+#---------------------------------------------------------------------------
 
 class GDTWidget:
     def __init__(self):
@@ -177,7 +255,7 @@ class GDTDialog:
         self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
 
     def reject(self): #close button
-        if hasattr(FreeCADGui,"Snapper"):
+        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
             if FreeCADGui.Snapper.grid:
                 if FreeCADGui.Snapper.grid.Visible:
                     FreeCADGui.Snapper.grid.off()
@@ -222,7 +300,7 @@ class GDTGuiClass(QtGui.QWidget):
         def cb(point):
             if point:
                 self.point = point
-                FreeCAD.Console.PrintMessage('Punto seleccionado: ' + str(self.point) + '\n')
+                # FreeCAD.Console.PrintMessage('Punto seleccionado: ' + str(self.point) + '\n')
                 plotLines()
 
         def plotLines():
@@ -279,16 +357,18 @@ class GDTGuiClass(QtGui.QWidget):
 
             PText = FreeCAD.Vector(P18[0]+sizeOfLine/5,P18[1]+sizeOfLine/5,P18[2])
             myWire = Draft.makeWire(points,closed=False,face=True,support=None)
-            myWire.ViewObject.LineColor = (1.0, 0.65, 0.0)
+            myWire.ViewObject.LineColor = getRGB("lineColor")
+            myWire.ViewObject.LineWidth = getParam("lineWidth",2)
             myLabel = Draft.makeText(self.textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
-            myLabel.ViewObject.TextColor = (1.0, 0.65, 0.0)
-            myLabel.ViewObject.FontSize = 2.2
+            myLabel.ViewObject.FontSize = getParam("textSize",2.2)
+            myLabel.ViewObject.FontName = getParam("textFamily","")
+            myLabel.ViewObject.TextColor = getRGB("textColor")
             # FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
             # FreeCAD.Console.PrintMessage('P1: ' + str(P1) + '\n')
             # FreeCAD.Console.PrintMessage('P2: ' + str(P2) + '\n')
             # FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
             # FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
-            if hasattr(FreeCADGui,"Snapper"):
+            if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
                 if FreeCADGui.Snapper.grid:
                     if FreeCADGui.Snapper.grid.Visible:
                         FreeCADGui.Snapper.grid.off()
@@ -352,7 +432,7 @@ class GDTGuiClass(QtGui.QWidget):
             pass
         indexInventory+=1
 
-        if hasattr(FreeCADGui,"Snapper") and idGDTaux != 1:
+        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False and idGDTaux != 1:
             if FreeCADGui.Snapper.grid:
                 if FreeCADGui.Snapper.grid.Visible:
                     FreeCADGui.Snapper.grid.off()

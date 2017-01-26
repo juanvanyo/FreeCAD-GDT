@@ -49,6 +49,9 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 
 		self.appendToolbar('GD&T Help', [ 'dd_helpGDT' ])
 
+		FreeCADGui.addIconPath(':/dd/icons')
+		FreeCADGui.addPreferencePage( ':/dd/ui/preferences-gdt.ui','GDT' )
+
 		Log ("Loading Geometric Dimensioning & Tolerancing... done\n")
 
 	def Activated(self):
