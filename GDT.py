@@ -155,6 +155,24 @@ def getRealName(name):
             return name[:len(name)-(i-1)]
     return name
 
+def getType(obj):
+    "getType(object): returns the GDT type of the given object"
+    if not obj:
+        return None
+    if "Proxy" in obj.PropertiesList:
+        if hasattr(obj.Proxy,"Type"):
+            return obj.Proxy.Type
+    return "Unknown"
+
+def getObjectsOfType(type):
+    "getObjectsOfType(string): returns a list of objects of the given type"
+    listObjectsOfType = []
+    objs = FreeCAD.ActiveDocument.Objects
+    for obj in objs:
+        if type == getType(obj):
+            listObjectsOfType.append(obj)
+    return listObjectsOfType
+
 def getRGB(param):
     color = QtGui.QColor(getParam(param,16753920)>>8)
     r = float(color.red()/255.0)
@@ -184,6 +202,7 @@ def hideGrid():
             if FreeCADGui.Snapper.grid.Visible:
                 FreeCADGui.Snapper.grid.off()
                 FreeCADGui.Snapper.forceGridOff=True
+
 def showGrid():
     if hasattr(FreeCADGui,"Snapper"):
         if FreeCADGui.Snapper.grid:
@@ -312,10 +331,7 @@ class _ViewProviderGDT:
         return None
 
     def attach(self,vobj):
-        self.texture = None
-        self.texcoords = None
         self.Object = vobj.Object
-        self.onChanged(vobj,"Pattern")
         return
 
     def updateData(self, obj, prop):
@@ -346,6 +362,7 @@ class _AnnotationPlane(_GDTObject):
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"AnnotationPlane")
         obj.addProperty("App::PropertyVectorDistance","Point","GDT","Center point of Grid")
+        obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
 
@@ -368,7 +385,7 @@ def makeAnnotationPlane(Name, P1, Direction, Offset):
     obj.Point = P1
     obj.Direction = Direction
     obj.Offset = Offset
-
+    obj.PointWithOffset = P1 + Direction*Offset
     FreeCAD.ActiveDocument.recompute()
     return obj
 

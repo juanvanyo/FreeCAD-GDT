@@ -58,8 +58,7 @@ class GeometricToleranceCommand:
             }
 
     def IsActive(self):
-        global listAP
-        if len(listAP) == 0:
+        if len(getObjectsOfType('AnnotationPlane')) == 0:
             return False
         if getSelection():
             if len(getSelectionEx()[0].SubObjects) == 0:
