@@ -163,6 +163,59 @@ def getRGB(param):
     col = (r,g,b,0.0)
     return col
 
+def getRGBText():
+    return getRGB("textColor")
+
+def getTextFamily():
+    return getParam("textFamily","")
+
+def getTextSize():
+    return getParam("textSize",2.2)
+
+def getLineWidth():
+    return getParam("lineWidth",2)
+
+def getRGBLine():
+    return getRGB("lineColor")
+
+def hideGrid():
+    if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
+        if FreeCADGui.Snapper.grid:
+            if FreeCADGui.Snapper.grid.Visible:
+                FreeCADGui.Snapper.grid.off()
+                FreeCADGui.Snapper.forceGridOff=True
+def showGrid():
+    if hasattr(FreeCADGui,"Snapper"):
+        if FreeCADGui.Snapper.grid:
+            if FreeCADGui.Snapper.grid.Visible == False:
+                FreeCADGui.Snapper.grid.reset()
+                FreeCADGui.Snapper.grid.on()
+                FreeCADGui.Snapper.forceGridOff=False
+        else:
+            FreeCADGui.Snapper.show()
+
+def getSelection():
+    "getSelection(): returns the current FreeCAD selection"
+    if gui:
+        return FreeCADGui.Selection.getSelection()
+    return None
+
+def getSelectionEx():
+    "getSelectionEx(): returns the current FreeCAD selection (with subobjects)"
+    if gui:
+        return FreeCADGui.Selection.getSelectionEx()
+    return None
+
+def select(objs=None):
+    "select(object): deselects everything and selects only the passed object or list"
+    if gui:
+        FreeCADGui.Selection.clearSelection()
+        if objs:
+            if not isinstance(objs,list):
+                objs = [objs]
+            for obj in objs:
+                FreeCADGui.Selection.addSelection(obj)
+
 #---------------------------------------------------------------------------
 # UNITS handling
 #---------------------------------------------------------------------------
@@ -219,6 +272,191 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
     return displayExt
 
 #---------------------------------------------------------------------------
+# Python Features definitions
+#---------------------------------------------------------------------------
+
+    #-----------------------------------------------------------------------
+    # Base class for GDT objects
+    #-----------------------------------------------------------------------
+
+class _GDTObject:
+    "The base class for GDT objects"
+    def __init__(self,obj,tp="Unknown"):
+        obj.Proxy = self
+        self.Type = tp
+
+    def __getstate__(self):
+        return self.Type
+
+    def __setstate__(self,state):
+        if state:
+            self.Type = state
+
+    def execute(self,obj):
+        pass
+
+    def onChanged(self, obj, prop):
+        pass
+
+class _ViewProviderGDT:
+    "The base class for GDT Viewproviders"
+
+    def __init__(self, vobj):
+        vobj.Proxy = self
+        self.Object = vobj.Object
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self, state):
+        return None
+
+    def attach(self,vobj):
+        self.texture = None
+        self.texcoords = None
+        self.Object = vobj.Object
+        self.onChanged(vobj,"Pattern")
+        return
+
+    def updateData(self, obj, prop):
+        return
+
+    def getDisplayModes(self, vobj):
+        modes=[]
+        return modes
+
+    def setDisplayMode(self, mode):
+        return mode
+
+    def onChanged(self, vobj, prop):
+        return
+
+    def execute(self,vobj):
+        return
+
+    def getIcon(self):
+        return(":/dd/icons/GDT.svg")
+
+    #-----------------------------------------------------------------------
+    # Annotation Plane
+    #-----------------------------------------------------------------------
+
+class _AnnotationPlane(_GDTObject):
+    "The GDT AnnotationPlane object"
+    def __init__(self, obj):
+        _GDTObject.__init__(self,obj,"AnnotationPlane")
+        obj.addProperty("App::PropertyVectorDistance","Point","GDT","Center point of Grid")
+        obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane")
+        obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
+
+class _ViewProviderAnnotationPlane(_ViewProviderGDT):
+    "A View Provider for the GDT AnnotationPlane object"
+    def __init__(self, obj):
+        _ViewProviderGDT.__init__(self,obj)
+
+    def getIcon(self):
+        return(":/dd/icons/annotationPlane.svg")
+
+def makeAnnotationPlane(Name, P1, Direction, Offset):
+    ''' Explanation
+    '''
+    obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","AnnotationPlane")
+    _AnnotationPlane(obj)
+    if gui:
+        _ViewProviderAnnotationPlane(obj.ViewObject)
+    obj.Label = Name
+    obj.Point = P1
+    obj.Direction = Direction
+    obj.Offset = Offset
+
+    FreeCAD.ActiveDocument.recompute()
+    return obj
+
+    #-----------------------------------------------------------------------
+    # Datum Feature
+    #-----------------------------------------------------------------------
+
+class _DatumFeature(_GDTObject):
+    "The GDT DatumFeature object"
+    def __init__(self, obj):
+        _GDTObject.__init__(self,obj,"DatumFeature")
+
+class _ViewProviderDatumFeature(_ViewProviderGDT):
+    "A View Provider for the GDT DatumFeature object"
+    def __init__(self, obj):
+        _ViewProviderGDT.__init__(self,obj)
+
+    def getIcon(self):
+        return(":/dd/icons/datumFeature.svg")
+
+def makeDatumFeature(Name, AnnotationPlane):
+    ''' Explanation
+    '''
+    obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumFeature")
+    _DatumFeature(obj)
+    if gui:
+        _ViewProviderDatumFeature(obj.ViewObject)
+
+    FreeCAD.ActiveDocument.recompute()
+    return obj
+
+    #-----------------------------------------------------------------------
+    # Datum System
+    #-----------------------------------------------------------------------
+
+class _DatumSystem(_GDTObject):
+    "The GDT DatumSystem object"
+    def __init__(self, obj):
+        _GDTObject.__init__(self,obj,"DatumSystem")
+
+class _ViewProviderDatumSystem(_ViewProviderGDT):
+    "A View Provider for the GDT DatumSystem object"
+    def __init__(self, obj):
+        _ViewProviderGDT.__init__(self,obj)
+
+    def getIcon(self):
+        return(":/dd/icons/datumSystem.svg")
+
+def makeDatumSystem(Name, Primary, Secondary, Tertiary):
+    ''' Explanation
+    '''
+    obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumSystem")
+    _DatumSystem(obj)
+    if gui:
+        _ViewProviderDatumSystem(obj.ViewObject)
+
+    FreeCAD.ActiveDocument.recompute()
+    return obj
+
+    #-----------------------------------------------------------------------
+    # Geometric Tolerance
+    #-----------------------------------------------------------------------
+
+class _GeometricTolerance(_GDTObject):
+    "The GDT GeometricTolerance object"
+    def __init__(self, obj):
+        _GDTObject.__init__(self,obj,"GeometricTolerance")
+
+class _ViewProviderGeometricTolerance(_ViewProviderGDT):
+    "A View Provider for the GDT GeometricTolerance object"
+    def __init__(self, obj):
+        _ViewProviderGDT.__init__(self,obj)
+
+    def getIcon(self):
+        return(":/dd/icons/geometricTolerance.svg")
+
+def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlFrame, DatumSystem, AnnotationPlane):
+    ''' Explanation
+    '''
+    obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","GeometricTolerance")
+    _GeometricTolerance(obj)
+    if gui:
+        _ViewProviderGeometricTolerance(obj.ViewObject)
+
+    FreeCAD.ActiveDocument.recompute()
+    return obj
+
+#---------------------------------------------------------------------------
 # Customized widgets
 #---------------------------------------------------------------------------
 
@@ -255,11 +493,7 @@ class GDTDialog:
         self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
 
     def reject(self): #close button
-        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible:
-                    FreeCADGui.Snapper.grid.off()
-                    FreeCADGui.Snapper.forceGridOff=True
+        hideGrid()
         FreeCADGui.Control.closeDialog()
 
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
@@ -357,22 +591,18 @@ class GDTGuiClass(QtGui.QWidget):
 
             PText = FreeCAD.Vector(P18[0]+sizeOfLine/5,P18[1]+sizeOfLine/5,P18[2])
             myWire = Draft.makeWire(points,closed=False,face=True,support=None)
-            myWire.ViewObject.LineColor = getRGB("lineColor")
-            myWire.ViewObject.LineWidth = getParam("lineWidth",2)
+            myWire.ViewObject.LineColor = getRGBLine()
+            myWire.ViewObject.LineWidth = getLineWidth()
             myLabel = Draft.makeText(self.textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
-            myLabel.ViewObject.FontSize = getParam("textSize",2.2)
-            myLabel.ViewObject.FontName = getParam("textFamily","")
-            myLabel.ViewObject.TextColor = getRGB("textColor")
+            myLabel.ViewObject.FontSize = getTextSize()
+            myLabel.ViewObject.FontName = getTextFamily()
+            myLabel.ViewObject.TextColor = getRGBText()
             # FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
             # FreeCAD.Console.PrintMessage('P1: ' + str(P1) + '\n')
             # FreeCAD.Console.PrintMessage('P2: ' + str(P2) + '\n')
             # FreeCAD.Console.PrintMessage('P3: ' + str(P3) + '\n')
             # FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
-            if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
-                if FreeCADGui.Snapper.grid:
-                    if FreeCADGui.Snapper.grid.Visible:
-                        FreeCADGui.Snapper.grid.off()
-                        FreeCADGui.Snapper.forceGridOff=True
+            hideGrid()
 
         if idGDTaux == 1:
             indexDF+=1
@@ -386,9 +616,9 @@ class GDTGuiClass(QtGui.QWidget):
                 indexDS+=1
             # adding callback functions
             myPlane = WorkingPlane.plane()
-            # Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
-            Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
-            PCenter = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+            # Direction = getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+            Direction = getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
+            PCenter = getSelectionEx()[0].SubObjects[0].CenterOfMass
             PCenterAP = inventory[inventory[auxIndexInventory][2]][2]
             DirectionAP = inventory[inventory[auxIndexInventory][2]][3]
             OffsetAP = inventory[inventory[auxIndexInventory][2]][4]
@@ -428,15 +658,13 @@ class GDTGuiClass(QtGui.QWidget):
             indexAP+=1
             listAP.append( [ indexInventory, self.textName ] )
             inventory.append( [ idGDTaux, self.textName, P1, Direction, offsetValue ] )
+            makeAnnotationPlane(self.textName, P1, Direction, offsetValue)
         else:
             pass
         indexInventory+=1
 
-        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False and idGDTaux != 1:
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible:
-                    FreeCADGui.Snapper.grid.off()
-                    FreeCADGui.Snapper.forceGridOff=True
+        if idGDTaux != 1:
+            hideGrid()
 
         FreeCADGui.Control.closeDialog()
 
@@ -515,8 +743,8 @@ class fieldLabelWidget:
 
     def generateWidget( self ):
         global offsetValue, Direction, P1
-        Direction = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
-        P1 = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].CenterOfMass
+        Direction = getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+        P1 = getSelectionEx()[0].SubObjects[0].CenterOfMass
         FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Direction, 0.0)
         FreeCADGui.Snapper.grid.set()
         self.FORMAT = makeFormatSpec(0,'Length')

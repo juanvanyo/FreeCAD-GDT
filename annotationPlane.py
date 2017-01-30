@@ -35,14 +35,7 @@ class AnnotationPlaneCommand:
         self.idGDT = 4
 
     def Activated(self):
-        if hasattr(FreeCADGui,"Snapper"):
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible == False:
-                    FreeCADGui.Snapper.grid.reset()
-                    FreeCADGui.Snapper.grid.on()
-                    FreeCADGui.Snapper.forceGridOff=False
-            else:
-                FreeCADGui.Snapper.show()
+        showGrid()
         gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
 
     def GetResources(self):
@@ -53,9 +46,11 @@ class AnnotationPlaneCommand:
             }
 
     def IsActive(self):
-        if FreeCADGui.Selection.getSelection():
-            for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
-                if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
+        if getSelection():
+            if len(getSelectionEx()[0].SubObjects) == 0:
+                return False
+            for i in range(len(getSelectionEx()[0].SubObjects)):
+                if getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
                     pass
                 else:
                     return False

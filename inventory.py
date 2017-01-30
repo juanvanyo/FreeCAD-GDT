@@ -232,11 +232,7 @@ class GDTGuiClass:
             listAP[pos] = [i, textNameList[k]]
             inventory[i] = [ self.widgetsGDT[k].gdtID, textNameList[k], P1List[k], DirectionList[k], offsetValueList[k] ]
         FreeCADGui.Control.closeDialog()
-        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible:
-                    FreeCADGui.Snapper.grid.off()
-                    FreeCADGui.Snapper.forceGridOff=True
+        hideGrid()
         Gui.Control.showDialog( GDTGuiClass() )
 
     def deleteFunc(self, i, k):
@@ -265,11 +261,7 @@ class GDTGuiClass:
             pos = self.getPos(i, listAP)
             listAP.pop(pos)
         FreeCADGui.Control.closeDialog()
-        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible:
-                    FreeCADGui.Snapper.grid.off()
-                    FreeCADGui.Snapper.forceGridOff=True
+        hideGrid()
         Gui.Control.showDialog( GDTGuiClass() )
 
     def getPos(self, actualValue, List):
@@ -278,11 +270,7 @@ class GDTGuiClass:
                 return i
 
     def reject(self): #close button
-        if hasattr(FreeCADGui,"Snapper") and getParam("alwaysShowGrid") == False:
-            if FreeCADGui.Snapper.grid:
-                if FreeCADGui.Snapper.grid.Visible:
-                    FreeCADGui.Snapper.grid.off()
-                    FreeCADGui.Snapper.forceGridOff=True
+        hideGrid()
         FreeCADGui.Control.closeDialog()
 
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
