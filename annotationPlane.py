@@ -30,7 +30,7 @@ class AnnotationPlaneCommand:
         self.iconPath = ':/dd/icons/annotationPlane.svg'
         self.toolTip = 'Add Annotation Plane'
         self.dictionary = []
-        for i in range(100):
+        for i in range(1,100):
             self.dictionary.append('AP'+str(i))
         self.idGDT = 4
 

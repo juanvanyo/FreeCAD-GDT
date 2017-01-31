@@ -40,7 +40,7 @@ if FreeCAD.GuiUp:
     import FreeCADGui, WorkingPlane
     gui = True
 else:
-    print("FreeCAD Gui not present. GDT module will have some features disabled.")
+    FreeCAD.Console.PrintMessage("FreeCAD Gui not present. GDT module will have some features disabled.")
     gui = False
 
 try:
@@ -55,28 +55,16 @@ path_dd_resources =  os.path.join( os.path.dirname(__file__), 'Gui', 'Resources'
 resourcesLoaded = QtCore.QResource.registerResource(path_dd_resources)
 assert resourcesLoaded
 
-indexGDT = 1
-indexDF = 1
-indexDS = 1
-indexGT = 1
-indexAP = 1
-idGDTaux = 0
 textName = ''
 textGDT = ''
 textDS = ['','','']
-listDF = [[None,'']]
-listDS = [[None,'']]
-listGT = []
-listAP = []
 
-inventory = []
-indexInventory = 0
 primary = None
 secondary = None
 tertiary = None
-characteristic = 0
+characteristic = ''
 toleranceValue = 0.0
-featureControlFrame = 0
+featureControlFrame = ''
 datumSystem = 0
 annotationPlane = 0
 offsetValue = 0
@@ -86,7 +74,7 @@ Direction = FreeCAD.Vector(0.0,0.0,0.0)
 combo = ['','','','','','']
 checkBoxState = True
 auxDictionaryDS=[]
-for i in range(100):
+for i in range(1,100):
     auxDictionaryDS.append('DS'+str(i))
 
 #---------------------------------------------------------------------------
@@ -500,7 +488,7 @@ class _GeometricTolerance(_GDTObject):
         _GDTObject.__init__(self,obj,"GeometricTolerance")
         obj.addProperty("App::PropertyString","Characteristic","GDT","Characteristic of the geometric tolerance")
         obj.addProperty("App::PropertyFloat","ToleranceValue","GDT","Tolerance value of the geometric tolerance")
-        obj.addProperty("App::PropertyFloat","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
+        obj.addProperty("App::PropertyString","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
         obj.addProperty("App::PropertyLink","DS","GDT","Datum system used")
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
 
@@ -510,7 +498,9 @@ class _ViewProviderGeometricTolerance(_ViewProviderGDT):
         _ViewProviderGDT.__init__(self,obj)
 
     def getIcon(self):
-        return(":/dd/icons/geometricTolerance.svg")
+        Characteristics = makeCharacteristics()
+        icon = Characteristics.Icon[Characteristics.Label.index(characteristic)]
+        return icon
 
 def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlFrame, DatumSystem, AnnotationPlane):
     ''' Explanation
@@ -528,6 +518,34 @@ def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlF
     FreeCAD.ActiveDocument.recompute()
     return obj
 
+    #-----------------------------------------------------------------------
+    # Other classes
+    #-----------------------------------------------------------------------
+
+class Characteristics(object):
+    def __init__(self, Label, Icon):
+        self.Label = Label
+        self.Icon = Icon
+
+def makeCharacteristics():
+    Label = ['Straightness', 'Flatness', 'Circularity', 'Cylindricity', 'Profile of a line', 'Profile of a surface', 'Perpendicularity', 'Angularity', 'Parallelism', 'Symmetry', 'Position', 'Concentricity','Circular run-out', 'Total run-out']
+    Icon = [':/dd/icons/Characteristic/straightness.svg', ':/dd/icons/Characteristic/flatness.svg', ':/dd/icons/Characteristic/circularity.svg', ':/dd/icons/Characteristic/cylindricity.svg', ':/dd/icons/Characteristic/profileOfALine.svg', ':/dd/icons/Characteristic/profileOfASurface.svg', ':/dd/icons/Characteristic/perpendicularity.svg', ':/dd/icons/Characteristic/angularity.svg', ':/dd/icons/Characteristic/parallelism.svg', ':/dd/icons/Characteristic/symmetry.svg', ':/dd/icons/Characteristic/position.svg', ':/dd/icons/Characteristic/concentricity.svg',':/dd/icons/Characteristic/circularRunOut.svg', ':/dd/icons/Characteristic/totalRunOut.svg']
+    characteristics = Characteristics(Label, Icon)
+    return characteristics
+
+class FeatureControlFrame(object):
+    def __init__(self, Label, Icon, toolTip):
+        self.Label = Label
+        self.Icon = Icon
+        self.toolTip = toolTip
+
+def makeFeatureControlFrame():
+    Label = ['','','','','','','','']
+    Icon = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
+    toolTip = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
+    featureControlFrame = FeatureControlFrame(Label, Icon, toolTip)
+    return featureControlFrame
+
 #---------------------------------------------------------------------------
 # Customized widgets
 #---------------------------------------------------------------------------
@@ -542,25 +560,24 @@ class GDTWidget:
         self.endFunction = endFunction
         self.dictionary = dictionary
         self.idGDT=idGDT
-        global idGDTaux, combo
-        idGDTaux = idGDT
+        global combo
         combo = ['','','','','','']
         extraWidgets = []
         if dictionary <> None:
             extraWidgets.append(textLabelWidget('Name:','NNNn', self.dictionary, Name = True)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
         else:
             extraWidgets.append(textLabelWidget('Name:','NNNn', Name = True))
-        self.taskDialog = GDTDialog( dialogTitle, dialogIconPath, extraWidgets + self.dialogWidgets)
+        self.taskDialog = GDTDialog( self.dialogTitle, self.dialogIconPath, self.idGDT, extraWidgets + self.dialogWidgets)
         FreeCADGui.Control.showDialog( self.taskDialog )
 
 class GDTDialog:
-    def __init__(self, title, iconPath, dialogWidgets):
-        self.initArgs = title, iconPath, dialogWidgets
+    def __init__(self, title, iconPath, idGDT, dialogWidgets):
+        self.initArgs = title, iconPath, idGDT, dialogWidgets
         self.createForm()
 
     def createForm(self):
-        title, iconPath, dialogWidgets = self.initArgs
-        self.form = GDTGuiClass( title, dialogWidgets )
+        title, iconPath, idGDT, dialogWidgets = self.initArgs
+        self.form = GDTGuiClass( title, idGDT, dialogWidgets )
         self.form.setWindowTitle( title )
         self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
 
@@ -573,16 +590,18 @@ class GDTDialog:
 
 class GDTGuiClass(QtGui.QWidget):
 
-    def __init__(self, title, dialogWidgets):
+    def __init__(self, title, idGDT, dialogWidgets):
         super(GDTGuiClass, self).__init__()
         self.dd_dialogWidgets = dialogWidgets
         self.title = title
-        self.initUI( self.title )
+        self.idGDT = idGDT
+        self.initUI( self.title , self.idGDT)
 
-    def initUI(self, title):
+    def initUI(self, title, idGDT):
+        self.idGDT = idGDT
         vbox = QtGui.QVBoxLayout()
         for widg in self.dd_dialogWidgets:
-            w = widg.generateWidget()
+            w = widg.generateWidget(self.idGDT)
             if isinstance(w, QtGui.QLayout):
                 vbox.addLayout( w )
             else:
@@ -598,7 +617,7 @@ class GDTGuiClass(QtGui.QWidget):
         self.setLayout(vbox)
 
     def createObject(self):
-        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS, P1, Direction, offsetValue
+        global textName, textGDT, textDS, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS, P1, Direction, offsetValue
         self.textName = textName.encode('utf-8')
         self.view = Draft.get3DView()
         self.point = FreeCAD.Vector(0.0,0.0,0.0)
@@ -676,67 +695,37 @@ class GDTGuiClass(QtGui.QWidget):
             # FreeCAD.Console.PrintMessage('P4: ' + str(P4) + '\n')
             hideGrid()
 
-        if idGDTaux == 1:
-            indexDF+=1
-            listDF.append( [ indexInventory, self.textName ] )
-            inventory.append( [ idGDTaux, self.textName, annotationPlane ] )
-            auxIndexInventory = indexInventory
+        if self.idGDT == 1:
+            obj = makeDatumFeature(self.textName, annotationPlane)
             if checkBoxState:
-                listDS.append( [ indexInventory+1, auxDictionaryDS[indexDS] + ': ' + self.textName ] )
-                inventory.append( [ 2, auxDictionaryDS[indexDS] + ': ' + self.textName, indexInventory ] )
-                indexInventory+=1
-                indexDS+=1
-            # adding callback functions
-            myPlane = WorkingPlane.plane()
-            # Direction = getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
+                makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
             Direction = getSelectionEx()[0].SubObjects[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
             PCenter = getSelectionEx()[0].SubObjects[0].CenterOfMass
-            PCenterAP = inventory[inventory[auxIndexInventory][2]][2]
-            DirectionAP = inventory[inventory[auxIndexInventory][2]][3]
-            OffsetAP = inventory[inventory[auxIndexInventory][2]][4]
-            PointAP = PCenterAP + DirectionAP*OffsetAP
-            P1=PCenter.projectToPlane(PointAP,DirectionAP)
-            # FreeCAD.Console.PrintMessage('Direction: ' + str(Direction) + '\n')
-            # FreeCAD.Console.PrintMessage('DirectionAP: ' + str(inventory[inventory[auxIndexInventory][2]][3]) + '\n')
-            # FreeCAD.Console.PrintMessage('Perpendicular: ' + str(Perpendicular) + '\n')
-            # FreeCAD.Console.PrintMessage('P1AP: ' + str(inventory[inventory[auxIndexInventory][2]][2]) + '\n')
-            # FreeCAD.Console.PrintMessage('PCenter: ' + str(PCenter) + '\n')
-            # self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
+            Direction = obj.AP.Direction
+            Point = obj.AP.PointWithOffset
+            P1=PCenter.projectToPlane(Point,Direction)
             FreeCADGui.Snapper.getPoint(callback=cb)
-            makeDatumFeature(self.textName,getAllAnnotationPlaneObjects()[0])
-
-
-        elif idGDTaux == 2:
+        elif self.idGDT == 2:
             separator = ' | '
-            indexDS+=1
             if textDS[0] <> '':
                 if textDS[1] <> '':
                     if textDS[2] <> '':
-                        listDS.append( [ indexInventory, self.textName + ': ' + separator.join(textDS) ] )
-                        inventory.append( [ idGDTaux, self.textName + ': ' + separator.join(textDS), primary, secondary, tertiary ] )
+                        self.textName = self.textName + ': ' + separator.join(textDS)
                     else:
-                        listDS.append( [ indexInventory, self.textName + ': ' + separator.join([textDS[0], textDS[1]]) ] )
-                        inventory.append( [ idGDTaux, self.textName + ': ' + separator.join([textDS[0], textDS[1]]), primary, secondary ] )
+                        self.textName = self.textName + ': ' + separator.join([textDS[0], textDS[1]])
                 else:
-                    listDS.append( [ indexInventory, self.textName + ': ' + textDS[0] ] )
-                    inventory.append( [ idGDTaux, self.textName + ': ' + textDS[0], primary ] )
+                    self.textName = self.textName + ': ' + textDS[0]
             else:
-                listDS.append( [ indexInventory, self.textName ] )
-                inventory.append( [ idGDTaux, self.textName ] )
-        if idGDTaux == 3:
-            indexGT+=1
-            listGT.append( [ indexInventory, self.textName ] )
-            inventory.append( [ idGDTaux, self.textName, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane ] )
-        elif idGDTaux == 4:
-            indexAP+=1
-            listAP.append( [ indexInventory, self.textName ] )
-            inventory.append( [ idGDTaux, self.textName, P1, Direction, offsetValue ] )
+                self.textName = self.textName
+            makeDatumSystem(self.textName, primary, secondary, tertiary)
+        elif self.idGDT == 3:
+            makeGeometricTolerance(self.textName, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane)
+        elif self.idGDT == 4:
             makeAnnotationPlane(self.textName, P1, Direction, offsetValue)
         else:
             pass
-        indexInventory+=1
 
-        if idGDTaux != 1:
+        if self.idGDT != 1:
             hideGrid()
 
         FreeCADGui.Control.closeDialog()
@@ -756,7 +745,8 @@ class textLabelWidget:
         self.Dictionary = Dictionary
         self.Name = Name
 
-    def generateWidget( self ):
+    def generateWidget( self, idGDT ):
+        self.idGDT = idGDT
         self.lineEdit = QtGui.QLineEdit()
         if self.Mask <> None:
             self.lineEdit.setInputMask(self.Mask)
@@ -764,16 +754,16 @@ class textLabelWidget:
             self.lineEdit.setText('text')
             self.text = 'text'
         else:
-            self.updateActiveWidget()
-            global textName, textGDT, indexGDT
-            if indexGDT > len(self.Dictionary)-1:
-                indexGDT = len(self.Dictionary)-1
-            self.lineEdit.setText(self.Dictionary[indexGDT])
-            self.text = self.Dictionary[indexGDT]
+            NumberOfObjects = self.getNumberOfObjects()
+            if NumberOfObjects > len(self.Dictionary)-1:
+                NumberOfObjects = len(self.Dictionary)-1
+            self.lineEdit.setText(self.Dictionary[NumberOfObjects])
+            self.text = self.Dictionary[NumberOfObjects]
         if self.Name == True:
             self.lineEdit.textChanged.connect(self.valueChanged1)
         else:
             self.lineEdit.textChanged.connect(self.valueChanged2)
+        global textName
         if self.Name == True:
                 textName = self.text.strip()
         else:
@@ -790,31 +780,32 @@ class textLabelWidget:
 
     def valueChanged2(self, argGDT):
         self.text = argGDT.strip()
-        global textName, textGDT, indexGDT
+        global textName, textGDT
         if self.Text == 'Datum feature:':
             textName = self.text
         else:
             textGDT = self.text
 
-    def updateActiveWidget(self):
-        global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux
-        if idGDTaux == 1:
-            indexGDT = indexDF
-        elif idGDTaux == 2:
-            indexGDT = indexDS
-        if idGDTaux == 3:
-            indexGDT = indexGT
-        elif idGDTaux == 4:
-            indexGDT = indexAP
+    def getNumberOfObjects(self):
+        "getNumberOfObjects(): returns the number of objects of the same type as the active widget"
+        if self.idGDT == 1:
+            NumberOfObjects = len(getAllDatumFeatureObjects())
+        elif self.idGDT == 2:
+            NumberOfObjects = len(getAllDatumSystemObjects())
+        elif self.idGDT == 3:
+            NumberOfObjects = len(getAllGeometricToleranceObjects())
+        elif self.idGDT == 4:
+            NumberOfObjects = len(getAllAnnotationPlaneObjects())
         else:
-            pass
-        return indexGDT
+            NumberOfObjects = 0
+        return NumberOfObjects
 
 class fieldLabelWidget:
     def __init__(self, Text='Label'):
         self.Text = Text
 
-    def generateWidget( self ):
+    def generateWidget( self, idGDT ):
+        self.idGDT = idGDT
         global offsetValue, Direction, P1
         Direction = getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
         P1 = getSelectionEx()[0].SubObjects[0].CenterOfMass
@@ -836,13 +827,14 @@ class fieldLabelWidget:
         FreeCADGui.Snapper.grid.set()
 
 class comboLabelWidget:
-    def __init__(self, Text='Label', List=[[None,'']], Icons=None, ToolTip = None):
+    def __init__(self, Text='Label', List=None, Icons=None, ToolTip = None):
         self.Text = Text
         self.List = List
         self.Icons = Icons
         self.ToolTip = ToolTip
 
-    def generateWidget( self ):
+    def generateWidget( self, idGDT ):
+        self.idGDT = idGDT
         global textDS, combo
         textDS = ['','','']
 
@@ -864,15 +856,12 @@ class comboLabelWidget:
         combo[self.k] = QtGui.QComboBox()
         for i in range(len(self.List)):
             if self.Icons <> None:
-                if isinstance(self.List[len(self.List)-1], list):
-                    combo[self.k].addItem( QtGui.QIcon(self.Icons[i]), self.List[i][1] )
-                else:
-                    combo[self.k].addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
+                combo[self.k].addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
-                if isinstance(self.List[len(self.List)-1], list):
-                    combo[self.k].addItem( self.List[i][1] )
+                if self.List[i] == None:
+                    combo[self.k].addItem( '' )
                 else:
-                    combo[self.k].addItem( self.List[i] )
+                    combo[self.k].addItem( self.List[i].Label )
         if self.Text == 'Secondary:' or self.Text == 'Tertiary:':
             combo[self.k].setEnabled(False)
         if self.ToolTip <> None:
@@ -880,17 +869,17 @@ class comboLabelWidget:
         self.comboIndex = combo[self.k].currentIndex()
         if self.k <> 0 and self.k <> 1:
             self.updateDate(self.comboIndex)
-        combo[self.k].activated.connect(lambda comboIndex = self.comboIndex: self.updateDate(self.comboIndex))
+        combo[self.k].activated.connect(lambda comboIndex = self.comboIndex: self.updateDate(comboIndex))
         return GDTDialog_hbox(self.Text,combo[self.k])
 
     def updateDate(self, comboIndex):
         global textDS, primary, secondary, tertiary, characteristic, datumSystem, combo, annotationPlane
         if self.ToolTip <> None:
-            combo[self.k].setToolTip( self.ToolTip[combo[self.k].currentIndex()] )
+            combo[self.k].setToolTip( self.ToolTip[comboIndex] )
         if self.Text == 'Primary:':
             textDS[0] = combo[self.k].currentText()
-            primary = self.List[combo[self.k].currentIndex()][0]
-            if combo[self.k].currentIndex() <> 0:
+            primary = self.List[comboIndex]
+            if comboIndex <> 0:
                 combo[1].setEnabled(True)
             else:
                 combo[1].setEnabled(False)
@@ -904,8 +893,8 @@ class comboLabelWidget:
             self.updateItemsEnabled(self.k)
         elif self.Text == 'Secondary:':
             textDS[1] = combo[self.k].currentText()
-            secondary = self.List[combo[self.k].currentIndex()][0]
-            if combo[self.k].currentIndex() <> 0:
+            secondary = self.List[comboIndex]
+            if comboIndex <> 0:
                 combo[2].setEnabled(True)
             else:
                 combo[2].setEnabled(False)
@@ -915,15 +904,17 @@ class comboLabelWidget:
             self.updateItemsEnabled(self.k)
         elif self.Text == 'Tertiary:':
             textDS[2] = combo[self.k].currentText()
-            tertiary = self.List[combo[self.k].currentIndex()][0]
+            tertiary = self.List[comboIndex]
             self.updateItemsEnabled(self.k)
         elif self.Text == 'Characteristic:':
-            characteristic = combo[self.k].currentIndex()
+            characteristic = self.List[comboIndex]
         elif self.Text == 'Datum system:':
-            datumSystem = self.List[combo[self.k].currentIndex()][0]
+            datumSystem = self.List[comboIndex]
         elif self.Text == 'Active annotation plane:':
-            annotationPlane = self.List[combo[self.k].currentIndex()][0]
-            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(inventory[annotationPlane][2], inventory[annotationPlane][3], inventory[annotationPlane][4])
+            annotationPlane = self.List[comboIndex]
+            Direction = self.List[comboIndex].Direction
+            PointWithOffset = self.List[comboIndex].PointWithOffset
+            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(PointWithOffset, Direction, 0.0)
             FreeCADGui.Snapper.grid.set()
 
     def updateItemsEnabled(self, comboIndex):
@@ -956,11 +947,12 @@ class groupBoxWidget:
         self.Text = Text
         self.List = List
 
-    def generateWidget( self ):
+    def generateWidget( self, idGDT ):
+        self.idGDT = idGDT
         self.group = QtGui.QGroupBox(self.Text)
         vbox = QtGui.QVBoxLayout()
         for l in self.List:
-            vbox.addLayout(l.generateWidget())
+            vbox.addLayout(l.generateWidget(self.idGDT))
         self.group.setLayout(vbox)
         return self.group
 
@@ -971,24 +963,25 @@ class fieldLabeCombolWidget:
         self.Icons = Icons
         self.ToolTip = ToolTip
 
-    def generateWidget( self ):
+    def generateWidget( self, idGDT ):
+        self.idGDT = idGDT
         self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
         self.uiloader = FreeCADGui.UiLoader()
         self.combo = QtGui.QComboBox()
+        global featureControlFrame, toleranceValue
         for i in range(len(self.List)):
             if self.Icons <> None:
                 self.combo.addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
                 self.combo.addItem( self.List[i] )
         if self.ToolTip <> None:
-           self.combo.setToolTip( self.ToolTip[0] )
+           self.updateDate()
         self.combo.activated.connect(self.updateDate)
         hbox = QtGui.QHBoxLayout()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
         self.inputfield.setText(self.FORMAT % 0)
-        global toleranceValue
         toleranceValue = 0
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),self.valueChanged)
         hbox.addLayout( GDTDialog_hbox(self.Text,self.inputfield) )
@@ -1001,7 +994,10 @@ class fieldLabeCombolWidget:
         if self.ToolTip <> None:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
-            featureControlFrame = self.combo.currentIndex()
+            if self.combo.currentIndex() <> 0:
+                featureControlFrame = self.ToolTip[self.combo.currentIndex()]
+            else:
+                featureControlFrame = ''
 
     def valueChanged(self,d):
         global toleranceValue
@@ -1011,7 +1007,8 @@ class CheckBoxWidget:
     def __init__(self, Text='Label'):
         self.Text = Text
 
-    def generateWidget( self ):
+    def generateWidget( self, idGDT ):
+        self.idGDT = idGDT
         self.checkBox = QtGui.QCheckBox(self.Text)
         self.checkBox.setChecked(True)
         global checkBoxState

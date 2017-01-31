@@ -24,30 +24,28 @@ from GDT import *
 import  DraftTools
 
 gdt = GDTWidget()
-
-listOfCharacteristics = ['Straightness', 'Flatness', 'Circularity', 'Cylindricity', 'Profile of a line', 'Profile of a surface', 'Perpendicularity', 'Angularity', 'Parallelism', 'Symmetry', 'Position', 'Concentricity','Circular run-out', 'Total run-out']
-listOfIconsOfCharacteristic = [':/dd/icons/Characteristic/straightness.svg', ':/dd/icons/Characteristic/flatness.svg', ':/dd/icons/Characteristic/circularity.svg', ':/dd/icons/Characteristic/cylindricity.svg', ':/dd/icons/Characteristic/profileOfALine.svg', ':/dd/icons/Characteristic/profileOfASurface.svg', ':/dd/icons/Characteristic/perpendicularity.svg', ':/dd/icons/Characteristic/angularity.svg', ':/dd/icons/Characteristic/parallelism.svg', ':/dd/icons/Characteristic/symmetry.svg', ':/dd/icons/Characteristic/position.svg', ':/dd/icons/Characteristic/concentricity.svg',':/dd/icons/Characteristic/circularRunOut.svg', ':/dd/icons/Characteristic/totalRunOut.svg']
-gdt.dialogWidgets.append( comboLabelWidget(Text='Characteristic:', List=listOfCharacteristics, Icons=listOfIconsOfCharacteristic) )
-
-listOfCharacteristics2 = ['','','','','','','','']
-listOfIconsOfFeatureControlFrame = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
-listOfToolTips = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
-gdt.dialogWidgets.append( fieldLabeCombolWidget(Text='Tolerance value:', List=listOfCharacteristics2, Icons=listOfIconsOfFeatureControlFrame, ToolTip=listOfToolTips) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
-
-gdt.dialogWidgets.append( comboLabelWidget(Text='Datum system:', List=listDS) )
-gdt.dialogWidgets.append( comboLabelWidget(Text='Active annotation plane:', List=listAP) )
+gdt.dialogWidgets.append( comboLabelWidget(Text='Characteristic:', List=[], Icons=[]) )
+gdt.dialogWidgets.append( fieldLabeCombolWidget(Text='Tolerance value:', List=[], Icons=[], ToolTip=[]) )
+gdt.dialogWidgets.append( comboLabelWidget(Text='Datum system:', List=[]) )
+gdt.dialogWidgets.append( comboLabelWidget(Text='Active annotation plane:', List=[]) )
 
 class GeometricToleranceCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/geometricTolerance.svg'
         self.toolTip = 'Add Geometric Tolerance'
         self.dictionary = []
-        for i in range(100):
+        for i in range(1,100):
             self.dictionary.append('GT'+str(i))
         self.idGDT = 3
+        self.Characteristics = makeCharacteristics()
+        self.FeatureControlFrame = makeFeatureControlFrame()
 
     def Activated(self):
         showGrid()
+        gdt.dialogWidgets[0] = comboLabelWidget(Text='Characteristic:', List=self.Characteristics.Label, Icons=self.Characteristics.Icon)
+        gdt.dialogWidgets[1] = fieldLabeCombolWidget(Text='Tolerance value:', List=self.FeatureControlFrame.Label, Icons=self.FeatureControlFrame.Icon, ToolTip=self.FeatureControlFrame.toolTip)
+        gdt.dialogWidgets[2] = comboLabelWidget(Text='Datum system:', List=[None]+getAllDatumSystemObjects())
+        gdt.dialogWidgets[3] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
         gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
 
     def GetResources(self):

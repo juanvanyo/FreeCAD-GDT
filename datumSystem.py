@@ -23,18 +23,20 @@
 from GDT import *
 
 gdt = GDTWidget()
-gdt.dialogWidgets.append( groupBoxWidget(Text='Constituents', List=[comboLabelWidget(Text='Primary:',List=listDF),comboLabelWidget(Text='Secondary:',List=listDF), comboLabelWidget(Text='Tertiary:',List=listDF)]) )
+gdt.dialogWidgets.append( groupBoxWidget(Text='Constituents', List=[comboLabelWidget(Text='Primary:',List=[]),comboLabelWidget(Text='Secondary:',List=[]), comboLabelWidget(Text='Tertiary:',List=[])]) )
 
 class DatumSystemCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/datumSystem.svg'
         self.toolTip = 'Add Datum System'
         self.dictionary = []
-        for i in range(100):
+        for i in range(1,100):
             self.dictionary.append('DS'+str(i))
         self.idGDT = 2
 
     def Activated(self):
+        listDF = [None] + getAllDatumFeatureObjects()
+        gdt.dialogWidgets[0] = ( groupBoxWidget(Text='Constituents', List=[comboLabelWidget(Text='Primary:',List=listDF),comboLabelWidget(Text='Secondary:',List=listDF), comboLabelWidget(Text='Tertiary:',List=listDF)]) )
         gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
 
     def GetResources(self):
@@ -46,11 +48,7 @@ class DatumSystemCommand:
 
     def IsActive(self):
         if FreeCADGui.ActiveDocument:
-            #if listDF[1] <> '':
-            if len(listDF) > 1:
-                return True
-            else:
-                return False
+            return len(getAllDatumFeatureObjects()) > 0
         else:
             return False
 
