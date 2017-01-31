@@ -164,14 +164,37 @@ def getType(obj):
             return obj.Proxy.Type
     return "Unknown"
 
-def getObjectsOfType(type):
+def getObjectsOfType(typeList):
     "getObjectsOfType(string): returns a list of objects of the given type"
     listObjectsOfType = []
     objs = FreeCAD.ActiveDocument.Objects
+    if not isinstance(typeList,list):
+        typeList = [typeList]
     for obj in objs:
-        if type == getType(obj):
-            listObjectsOfType.append(obj)
+        for typ in typeList:
+            if typ == getType(obj):
+                listObjectsOfType.append(obj)
     return listObjectsOfType
+
+def getAllAnnotationPlaneObjects():
+    "getAllAnnotationPlaneObjects(): returns a list of annotation plane objects"
+    return getObjectsOfType("AnnotationPlane")
+
+def getAllDatumFeatureObjects():
+    "getAllDatumFeatureObjects(): returns a list of datum feature objects"
+    return getObjectsOfType("DatumFeature")
+
+def getAllDatumSystemObjects():
+    "getAllDatumSystemObjects(): returns a list of datum system objects"
+    return getObjectsOfType("DatumSystem")
+
+def getAllGeometricToleranceObjects():
+    "getAllGeometricToleranceObjects(): returns a list of geometric tolerance objects"
+    return getObjectsOfType("GeometricTolerance")
+
+def getAllGDTObjects():
+    "getAllGDTObjects(): returns a list of GDT objects"
+    return getObjectsOfType(["AnnotationPlane","DatumFeature","DatumSystem","GeometricTolerance"])
 
 def getRGB(param):
     color = QtGui.QColor(getParam(param,16753920)>>8)
@@ -335,6 +358,7 @@ class _ViewProviderGDT:
         return
 
     def updateData(self, obj, prop):
+        "called when the base object is changed"
         return
 
     def getDisplayModes(self, vobj):
@@ -345,6 +369,7 @@ class _ViewProviderGDT:
         return mode
 
     def onChanged(self, vobj, prop):
+        "called when a view property has changed"
         return
 
     def execute(self,vobj):
@@ -366,10 +391,19 @@ class _AnnotationPlane(_GDTObject):
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
 
+    def onChanged(self,obj,prop):
+        if hasattr(obj,"PointWithOffset"):
+            obj.setEditorMode('PointWithOffset',1)
+
 class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     "A View Provider for the GDT AnnotationPlane object"
     def __init__(self, obj):
         _ViewProviderGDT.__init__(self,obj)
+
+    def updateData(self, obj, prop):
+        "called when the base object is changed"
+        if prop in ["Point","Direction","Offset"]:
+            obj.PointWithOffset = obj.Point + obj.Direction*obj.Offset
 
     def getIcon(self):
         return(":/dd/icons/annotationPlane.svg")
@@ -397,11 +431,15 @@ class _DatumFeature(_GDTObject):
     "The GDT DatumFeature object"
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"DatumFeature")
+        obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
 
 class _ViewProviderDatumFeature(_ViewProviderGDT):
     "A View Provider for the GDT DatumFeature object"
     def __init__(self, obj):
         _ViewProviderGDT.__init__(self,obj)
+
+    def showAnnotationPlane(self):
+        pass
 
     def getIcon(self):
         return(":/dd/icons/datumFeature.svg")
@@ -413,7 +451,8 @@ def makeDatumFeature(Name, AnnotationPlane):
     _DatumFeature(obj)
     if gui:
         _ViewProviderDatumFeature(obj.ViewObject)
-
+    obj.Label = Name
+    obj.AP = AnnotationPlane
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -425,6 +464,9 @@ class _DatumSystem(_GDTObject):
     "The GDT DatumSystem object"
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"DatumSystem")
+        obj.addProperty("App::PropertyLink","Primary","GDT","Primary datum feature used")
+        obj.addProperty("App::PropertyLink","Secondary","GDT","Secondary datum feature used")
+        obj.addProperty("App::PropertyLink","Tertiary","GDT","Tertiary datum feature used")
 
 class _ViewProviderDatumSystem(_ViewProviderGDT):
     "A View Provider for the GDT DatumSystem object"
@@ -434,14 +476,17 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
     def getIcon(self):
         return(":/dd/icons/datumSystem.svg")
 
-def makeDatumSystem(Name, Primary, Secondary, Tertiary):
+def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumSystem")
     _DatumSystem(obj)
     if gui:
         _ViewProviderDatumSystem(obj.ViewObject)
-
+    obj.Label = Name
+    obj.Primary = Primary
+    obj.Secondary = Secondary
+    obj.Tertiary = Tertiary
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -453,6 +498,11 @@ class _GeometricTolerance(_GDTObject):
     "The GDT GeometricTolerance object"
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"GeometricTolerance")
+        obj.addProperty("App::PropertyString","Characteristic","GDT","Characteristic of the geometric tolerance")
+        obj.addProperty("App::PropertyFloat","ToleranceValue","GDT","Tolerance value of the geometric tolerance")
+        obj.addProperty("App::PropertyFloat","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
+        obj.addProperty("App::PropertyLink","DS","GDT","Datum system used")
+        obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
 
 class _ViewProviderGeometricTolerance(_ViewProviderGDT):
     "A View Provider for the GDT GeometricTolerance object"
@@ -469,7 +519,12 @@ def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlF
     _GeometricTolerance(obj)
     if gui:
         _ViewProviderGeometricTolerance(obj.ViewObject)
-
+    obj.Label = Name
+    obj.Characteristic = Characteristic
+    obj.ToleranceValue = ToleranceValue
+    obj.FeatureControlFrame = FeatureControlFrame
+    obj.DS = DatumSystem
+    obj.AP = AnnotationPlane
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -535,14 +590,14 @@ class GDTGuiClass(QtGui.QWidget):
         hbox = QtGui.QHBoxLayout()
         buttonCreate = QtGui.QPushButton(title)
         buttonCreate.setDefault(True)
-        buttonCreate.clicked.connect(self.updateIndex)
+        buttonCreate.clicked.connect(self.createObject)
         hbox.addStretch(1)
         hbox.addWidget( buttonCreate )
         hbox.addStretch(1)
         vbox.addLayout( hbox )
         self.setLayout(vbox)
 
-    def updateIndex(self):
+    def createObject(self):
         global indexGDT, indexDF, indexDS, indexGT, indexAP, idGDTaux, textName, textGDT, listDF, listDS, listGT, listAP, textDS, inventory, indexInventory, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS, P1, Direction, offsetValue
         self.textName = textName.encode('utf-8')
         self.view = Draft.get3DView()
@@ -648,6 +703,7 @@ class GDTGuiClass(QtGui.QWidget):
             # FreeCAD.Console.PrintMessage('PCenter: ' + str(PCenter) + '\n')
             # self.callbackClick = self.view.addEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(),click)
             FreeCADGui.Snapper.getPoint(callback=cb)
+            makeDatumFeature(self.textName,getAllAnnotationPlaneObjects()[0])
 
 
         elif idGDTaux == 2:
