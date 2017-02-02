@@ -47,15 +47,8 @@ class AnnotationPlaneCommand:
 
     def IsActive(self):
         if getSelection():
-            if len(getSelectionEx()[0].SubObjects) == 0:
-                return False
-            for i in range(len(getSelectionEx()[0].SubObjects)):
-                if getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
-                    pass
-                else:
-                    return False
+            return (getSelectionEx()[0].SubObjects[0].ShapeType == 'Face' and len(getSelectionEx()[0].SubObjects) == 1)
         else:
             return False
-        return True
 
 FreeCADGui.addCommand('dd_annotationPlane', AnnotationPlaneCommand())
