@@ -287,12 +287,12 @@ def createAnnotation(obj):
             doc.recompute()
 
     def plotLines(point):
-        P1=PCenter.projectToPlane(PointWithOffset,DirectionAP)
-        P2 = P1 + Direction*point[1]
+        p1=PCenter.projectToPlane(PointWithOffset,DirectionAP)
+        P2 = p1 + Direction*point[1]
         P3 = P2 + DirectionAP*abs(point[0]) # Revisar este punto
         P4 = FreeCAD.Vector(P3[0],P3[1]-sizeOfLine,P3[2])
         P5 = FreeCAD.Vector(P3[0],P3[1]+sizeOfLine,P3[2])
-        points = [P1,P2,P3,P4,P5]
+        points = [p1,P2,P3,P4,P5]
         if DF:
             points += createDF(P5)
         else:
@@ -301,10 +301,9 @@ def createAnnotation(obj):
         myWire = Draft.makeWire(points,closed=False,face=True,support=None)
         myWire.ViewObject.LineColor = getRGBLine()
         myWire.ViewObject.LineWidth = getLineWidth()
-        if DF:
-            PText = FreeCAD.Vector(points[17][0]+sizeOfLine/2,points[17][1]+sizeOfLine/2,points[17][2])
-        else:
-            PText = FreeCAD.Vector(points[-2][0]+sizeOfLine/2,points[-2][1]+sizeOfLine/2,points[-2][2])
+        obj.WireConstruction = myWire
+        PText = FreeCAD.Vector(points[-2][0]+sizeOfLine/2,points[-2][1]+sizeOfLine/2,points[-2][2])
+        if not DF:
             PTextCharacteristic = FreeCAD.Vector(points[3][0]+sizeOfLine/2,points[3][1]+sizeOfLine/2,points[3][2])
             myLabel = Draft.makeText(obj.GT.Characteristic,point=PTextCharacteristic,screen=False)
             myLabel.ViewObject.FontSize = getTextSize()
@@ -333,7 +332,6 @@ def createAnnotation(obj):
         myLabel.ViewObject.FontSize = getTextSize()
         myLabel.ViewObject.FontName = getTextFamily()
         myLabel.ViewObject.TextColor = getRGBText()
-
         # grp = doc.addObject("Part::Compound","Annotation")
         # grp.Label='Annotation: '
         # grp.Links = [obj,myWire,myLabel,]
@@ -379,7 +377,78 @@ def createAnnotation(obj):
 
     FreeCADGui.Snapper.getPoint(callback=getPoint)
 
+def updateAnnotation(obj, objAnnotation):
+    doc = FreeCAD.ActiveDocument
+    sizeOfLine = 1.0
+    posToInsert = 3
+    DF = False
+    if getType(obj) == "DatumFeature":
+        DF = True
+    if DF:
+        objAnnotation.DF = obj
+        textName = obj.Label
+    else:
+        objAnnotation.GT = obj
+        DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        textName = displayExternal(obj.ToleranceValue,DECIMALS,'Length',True)
+        DS = 0
+        posToInsert = len(objAnnotation.Points)-1
+        if obj.DS <> None:
+            if obj.DS.Primary <> None:
+                DS+=1
+            if obj.DS.Secondary <> None:
+                DS+=1
+            if obj.DS.Tertiary <> None:
+                DS+=1
+
+    def updateDF(posToInsert):
+        List = objAnnotation.Points
+        p1 = objAnnotation.Points[posToInsert]
+        P2 = FreeCAD.Vector(p1[0]+sizeOfLine,p1[1],p1[2])
+        h=math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
+        P3 = FreeCAD.Vector(P2[0]+sizeOfLine/2,P2[1]-h,P2[2])
+        P4 = FreeCAD.Vector(p1[0]+sizeOfLine*2,p1[1],p1[2])
+        P5 = P3
+        P6 = FreeCAD.Vector(P5[0],P5[1]-sizeOfLine*3,P5[2])
+        P7 = FreeCAD.Vector(P6[0]+sizeOfLine,P6[1],P6[2])
+        P8 = FreeCAD.Vector(P7[0],P7[1]-sizeOfLine*2,P7[2])
+        P9 = FreeCAD.Vector(P8[0]-sizeOfLine*2,P8[1],P8[2])
+        P10 = FreeCAD.Vector(P9[0],P9[1]+sizeOfLine*2,P9[2])
+        P11 = P6
+        P12 = P5
+        P13 = P2
+        P14 = p1
+        pts = [p1,P2,P3,P4,P5,P6,P7,P8,P9,P10,P11,P12,P13,P14]
+        for i in range(len(pts)):
+            List.insert(posToInsert,pts[i])
+            posToInsert+=1
+        objAnnotation.Points = List
+        doc.removeObject(objAnnotation.WireConstruction.Name)
+
+
+    def updateGT(posToInsert):
+        p1 = objAnnotation.Points[posToInsert]
+
+    if DF:
+        updateDF(posToInsert)
+        points = objAnnotation.Points
+        PText = FreeCAD.Vector(points[11][0]+sizeOfLine/2,points[11][1]+sizeOfLine/2,points[11][2])
+    else:
+        updateGT(posToInsert)
+        points = objAnnotation.Points
+
+    myWire = Draft.makeWire(objAnnotation.Points,closed=False,face=False,support=None)
+    myWire.ViewObject.LineColor = getRGBLine()
+    myWire.ViewObject.LineWidth = getLineWidth()
+    objAnnotation.WireConstruction = myWire
+    myLabel = Draft.makeText(textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
+    myLabel.ViewObject.FontSize = getTextSize()
+    myLabel.ViewObject.FontName = getTextFamily()
+    myLabel.ViewObject.TextColor = getRGBText()
+
 def eqPlane(obj, target):
+    if target == None:
+        return False
     if len(obj) <> len(target):
         return False
     else:
@@ -394,26 +463,32 @@ def existPlane(obj):
     for l in List:
         if eqPlane(obj,l.CurrentFaceSelected):
             count+=1
-    if count > 1:
-        return True
-    else:
-        return False
+            if count > 1:
+                return getAnnotation(l)
+    return None
 
 def existPlaneInDF(obj):
     List = getObjectsOfType(["DatumFeature"])
     count = 0
     for l in List:
         if eqPlane(obj,l.CurrentFaceSelected):
-            return True
-    return False
+            return getAnnotation(l)
+    return None
 
 def existPlaneInGT(obj):
     List = getObjectsOfType(["GeometricTolerance"])
     count = 0
     for l in List:
         if eqPlane(obj,l.CurrentFaceSelected):
-            return True
-    return False
+            return getAnnotation(l)
+    return None
+
+def getAnnotation(obj):
+    List = getAllAnnotationObjects()
+    for l in List:
+        if l.DF == obj or l.GT == obj:
+            return l
+    return None
 
 #---------------------------------------------------------------------------
 # UNITS handling
@@ -576,7 +651,7 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     def getIcon(self):
         return(":/dd/icons/annotationPlane.svg")
 
-def makeAnnotationPlane(Name, P1, Direction, Offset):
+def makeAnnotationPlane(Name, p1, Direction, Offset):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","AnnotationPlane")
@@ -584,7 +659,7 @@ def makeAnnotationPlane(Name, P1, Direction, Offset):
     if gui:
         _ViewProviderAnnotationPlane(obj.ViewObject)
     obj.Label = Name
-    obj.Point = P1
+    obj.Point = p1
     obj.Direction = Direction
     obj.Offset = Offset
     FreeCAD.ActiveDocument.recompute()
@@ -601,7 +676,7 @@ class _DatumFeature(_GDTObject):
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
         obj.addProperty("App::PropertyVector","Direction","GDT","the axis direction of the face selected")
         obj.addProperty("App::PropertyVectorDistance","PCenter","GDT","mass center of the selected face")
-        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","GDT","list of faces to aply this characteristic")
+        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","", 2)
 
     def onChanged(self,obj,prop):
         if hasattr(obj,"Direction"):
@@ -642,8 +717,9 @@ def makeDatumFeature(Name, AnnotationPlane, Direction, PCenter, CurrentFaceSelec
     obj.Direction = Direction
     obj.PCenter = PCenter
     obj.CurrentFaceSelected = CurrentFaceSelected
-    if existPlaneInGT(obj.CurrentFaceSelected):
-        print "modifyAnnotation"
+    objAnnotation = existPlaneInGT(obj.CurrentFaceSelected)
+    if objAnnotation <> None:
+        updateAnnotation(obj, objAnnotation)
     else:
         makeAnnotation(Name="Annotation", DF=obj, CurrentFaceSelected=obj.CurrentFaceSelected)
     FreeCAD.ActiveDocument.recompute()
@@ -698,7 +774,7 @@ class _GeometricTolerance(_GDTObject):
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
         obj.addProperty("App::PropertyVector","Direction","GDT","the axis direction of the face selected")
         obj.addProperty("App::PropertyVectorDistance","PCenter","GDT","mass center of the selected face")
-        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","GDT","list of faces to aply this characteristic")
+        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
 
     def onChanged(self, fp, prop):
         "Do something when a property has changed"
@@ -730,8 +806,9 @@ def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlF
     obj.Direction = Direction
     obj.PCenter = PCenter
     obj.CurrentFaceSelected = CurrentFaceSelected
-    if existPlaneInDF(obj.CurrentFaceSelected):
-        print "modifyAnnotation"
+    objAnnotation = existPlaneInDF(obj.CurrentFaceSelected)
+    if objAnnotation <> None:
+        updateAnnotation(obj, objAnnotation)
     else:
         makeAnnotation(Name="Annotation", GT=obj, CurrentFaceSelected=obj.CurrentFaceSelected)
     FreeCAD.ActiveDocument.recompute()
@@ -748,7 +825,8 @@ class _Annotation(_GDTObject):
         obj.addProperty("App::PropertyVectorList","Points","GDT","Points to make a wire")
         obj.addProperty("App::PropertyLink","DF","GDT","Text").DF=None
         obj.addProperty("App::PropertyLink","GT","GDT","Text").GT=None
-        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","GDT","list of faces to aply this characteristic")
+        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
+        obj.addProperty("App::PropertyLink","WireConstruction","","",2)
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
