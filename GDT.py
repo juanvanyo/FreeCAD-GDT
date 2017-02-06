@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 #***************************************************************************
 #*                                                                         *
@@ -60,7 +61,7 @@ textDS = ['','','']
 primary = None
 secondary = None
 tertiary = None
-characteristic = ''
+characteristic = None
 toleranceValue = 0.0
 featureControlFrame = ''
 datumSystem = 0
@@ -289,7 +290,7 @@ def createAnnotation(obj):
     def plotLines(point):
         p1=PCenter.projectToPlane(PointWithOffset,DirectionAP)
         P2 = p1 + Direction*point[1]
-        P3 = P2 + DirectionAP*abs(point[0]) # Revisar este punto
+        P3 = point
         P4 = FreeCAD.Vector(P3[0],P3[1]-sizeOfLine,P3[2])
         P5 = FreeCAD.Vector(P3[0],P3[1]+sizeOfLine,P3[2])
         points = [p1,P2,P3,P4,P5]
@@ -305,7 +306,7 @@ def createAnnotation(obj):
         PText = FreeCAD.Vector(points[-2][0]+sizeOfLine/2,points[-2][1]+sizeOfLine/2,points[-2][2])
         if not DF:
             PTextCharacteristic = FreeCAD.Vector(points[3][0]+sizeOfLine/2,points[3][1]+sizeOfLine/2,points[3][2])
-            myLabel = Draft.makeText(obj.GT.Characteristic,point=PTextCharacteristic,screen=False)
+            myLabel = Draft.makeText(obj.GT.CharacteristicIconText,point=PTextCharacteristic,screen=False)
             myLabel.ViewObject.FontSize = getTextSize()
             myLabel.ViewObject.FontName = getTextFamily()
             myLabel.ViewObject.TextColor = getRGBText()
@@ -436,6 +437,7 @@ def updateAnnotation(obj, objAnnotation):
     else:
         updateGT(posToInsert)
         points = objAnnotation.Points
+
 
     myWire = Draft.makeWire(objAnnotation.Points,closed=False,face=False,support=None)
     myWire.ViewObject.LineColor = getRGBLine()
@@ -768,6 +770,8 @@ class _GeometricTolerance(_GDTObject):
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"GeometricTolerance")
         obj.addProperty("App::PropertyString","Characteristic","GDT","Characteristic of the geometric tolerance")
+        obj.addProperty("App::PropertyString","CharacteristicIcon","GDT","Characteristic of the geometric tolerance")
+        obj.addProperty("App::PropertyString","CharacteristicIconText","GDT","Characteristic of the geometric tolerance")
         obj.addProperty("App::PropertyFloat","ToleranceValue","GDT","Tolerance value of the geometric tolerance")
         obj.addProperty("App::PropertyString","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
         obj.addProperty("App::PropertyLink","DS","GDT","Datum system used")
@@ -776,9 +780,12 @@ class _GeometricTolerance(_GDTObject):
         obj.addProperty("App::PropertyVectorDistance","PCenter","GDT","mass center of the selected face")
         obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
 
-    def onChanged(self, fp, prop):
+    def onChanged(self,obj,prop):
         "Do something when a property has changed"
-        pass
+        if hasattr(obj,"CharacteristicIcon"):
+            obj.setEditorMode('CharacteristicIcon',2)
+        if hasattr(obj,"CharacteristicIconText"):
+            obj.setEditorMode('CharacteristicIconText',2)
 
 class _ViewProviderGeometricTolerance(_ViewProviderGDT):
     "A View Provider for the GDT GeometricTolerance object"
@@ -786,11 +793,10 @@ class _ViewProviderGeometricTolerance(_ViewProviderGDT):
         _ViewProviderGDT.__init__(self,obj)
 
     def getIcon(self):
-        Characteristics = makeCharacteristics()
-        icon = Characteristics.Icon[Characteristics.Label.index(characteristic)]
+        icon = self.Object.CharacteristicIcon
         return icon
 
-def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlFrame, DatumSystem, AnnotationPlane, Direction, PCenter, CurrentFaceSelected):
+def makeGeometricTolerance(Name, Characteristic, CharacteristicIcon, CharacteristicIconText, ToleranceValue, FeatureControlFrame, DatumSystem, AnnotationPlane, Direction, PCenter, CurrentFaceSelected):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","GeometricTolerance")
@@ -799,6 +805,8 @@ def makeGeometricTolerance(Name, Characteristic, ToleranceValue, FeatureControlF
         _ViewProviderGeometricTolerance(obj.ViewObject)
     obj.Label = Name
     obj.Characteristic = Characteristic
+    obj.CharacteristicIcon = CharacteristicIcon
+    obj.CharacteristicIconText = CharacteristicIconText
     obj.ToleranceValue = ToleranceValue
     obj.FeatureControlFrame = FeatureControlFrame
     obj.DS = DatumSystem
@@ -857,15 +865,20 @@ def makeAnnotation(Name, Points=[], DF=None, GT=None, CurrentFaceSelected=[]):
     #-----------------------------------------------------------------------
 
 class Characteristics(object):
-    def __init__(self, Label, Icon):
+    def __init__(self, Label, Icon, IconText):
         self.Label = Label
         self.Icon = Icon
+        self.IconText = IconText
         self.Proxy = self
 
-def makeCharacteristics():
+def makeCharacteristics(label):
     Label = ['Straightness', 'Flatness', 'Circularity', 'Cylindricity', 'Profile of a line', 'Profile of a surface', 'Perpendicularity', 'Angularity', 'Parallelism', 'Symmetry', 'Position', 'Concentricity','Circular run-out', 'Total run-out']
     Icon = [':/dd/icons/Characteristic/straightness.svg', ':/dd/icons/Characteristic/flatness.svg', ':/dd/icons/Characteristic/circularity.svg', ':/dd/icons/Characteristic/cylindricity.svg', ':/dd/icons/Characteristic/profileOfALine.svg', ':/dd/icons/Characteristic/profileOfASurface.svg', ':/dd/icons/Characteristic/perpendicularity.svg', ':/dd/icons/Characteristic/angularity.svg', ':/dd/icons/Characteristic/parallelism.svg', ':/dd/icons/Characteristic/symmetry.svg', ':/dd/icons/Characteristic/position.svg', ':/dd/icons/Characteristic/concentricity.svg',':/dd/icons/Characteristic/circularRunOut.svg', ':/dd/icons/Characteristic/totalRunOut.svg']
-    characteristics = Characteristics(Label, Icon)
+    textIcon = [('⏤').decode('utf-8'),('⏥').decode('utf-8'),('○').decode('utf-8'),('⌭').decode('utf-8'),('⌒').decode('utf-8'),('⌓').decode('utf-8'),('⟂').decode('utf-8'),('∠').decode('utf-8'),('∥').decode('utf-8'),('⌯').decode('utf-8'),('⌖').decode('utf-8'),('◎').decode('utf-8'),('↗').decode('utf-8'),('⌰').decode('utf-8')]
+    index = Label.index(label)
+    icon = Icon[index]
+    iconText = textIcon[index]
+    characteristics = Characteristics(label, icon, iconText)
     return characteristics
 
 class FeatureControlFrame(object):
@@ -984,7 +997,7 @@ class GDTGuiClass(QtGui.QWidget):
         elif self.idGDT == 3:
             Direction = self.CurrentFaceSelected[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
             PCenter = self.CurrentFaceSelected[0].CenterOfMass
-            makeGeometricTolerance(self.textName, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, Direction, PCenter, self.CurrentFaceSelected)
+            makeGeometricTolerance(self.textName, characteristic.Label, characteristic.Icon, characteristic.IconText, toleranceValue, featureControlFrame, datumSystem, annotationPlane, Direction, PCenter, self.CurrentFaceSelected)
         elif self.idGDT == 4:
             makeAnnotationPlane(self.textName, P1, Direction, offsetValue)
         else:
@@ -1154,7 +1167,7 @@ class comboLabelWidget:
             tertiary = self.List[comboIndex]
             self.updateItemsEnabled(self.k)
         elif self.Text == 'Characteristic:':
-            characteristic = self.List[comboIndex]
+            characteristic = makeCharacteristics(self.List[comboIndex])
         elif self.Text == 'Datum system:':
             datumSystem = self.List[comboIndex]
         elif self.Text == 'Active annotation plane:':
