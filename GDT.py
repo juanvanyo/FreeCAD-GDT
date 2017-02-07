@@ -37,8 +37,8 @@ import traceback
 import Draft
 import Part
 from pivy import coin
+import FreeCADGui, WorkingPlane
 if FreeCAD.GuiUp:
-    import FreeCADGui, WorkingPlane
     gui = True
 else:
     FreeCAD.Console.PrintMessage("FreeCAD Gui not present. GDT module will have some features disabled.")
@@ -248,11 +248,80 @@ def getSelectionEx():
 
 def saveCurrentFaceSelected():
     "saveCurrentFaceSelected(): returns a list of the last selected faces"
-    Tuple = getSelectionEx()[0].SubObjects
+    Figures = []
+    Faces = []
     List = []
-    for t in Tuple:
-        List.append(t)
+    for i in range(len(getSelectionEx())):
+        Figures.append(getSelectionEx()[i].ObjectName)
+        Tuple = getSelectionEx()[i].SubElementNames
+        ListAux = []
+        for t in Tuple:
+            ListAux.append(t)
+        separator = '|'
+        string = separator.join(ListAux)
+        Faces.append(string)
+    List = generateFaceObjects(Figures, Faces)
+    currentFaceSelected = CurrentFaceSelected(Figures, Faces, List)
+    currentFaceSelected.List = List
+    return currentFaceSelected
+
+def generateFaceObjects(Figures, Faces):
+    List = []
+    ListFaces = []
+    for i in range(len(Faces)):
+        ListFaces.append(Faces[i].split("|"))
+    for i in range(len(Figures)):
+        for j in range(len(ListFaces[i])):
+            List.append(FreeCADGui.ActiveDocument.getObject(Figures[i]).Object.Shape.getElement(ListFaces[i][j]))
     return List
+
+def eqPlane(obj, target):
+    if len(obj) <> len(target):
+        return False
+    else:
+        for i in range(len(obj)):
+            if not obj[i].isEqual(target[i]):
+                return False
+    return True
+
+def existPlane(obj):
+    List = getObjectsOfType(["DatumFeature","GeometricTolerance"])
+    if len(List) > 0 and List[0].CurrentFaceSelected == None:
+        for l in List:
+            l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
+    for l in List:
+        if eqPlane(obj,l.CurrentFaceSelected):
+            return getAnnotation(l)
+    return None
+
+def existAnnotationWithDF(obj):
+    List = getObjectsOfType(["DatumFeature"])
+    if len(List) > 0 and List[0].CurrentFaceSelected == None:
+        ListAux = getObjectsOfType(["DatumFeature","GeometricTolerance"])
+        for l in ListAux:
+            l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
+    for l in List:
+        if eqPlane(obj,l.CurrentFaceSelected):
+            return getAnnotation(l)
+    return None
+
+def existAnnotationWithGT(obj):
+    List = getObjectsOfType(["GeometricTolerance"])
+    if len(List) > 0 and List[0].CurrentFaceSelected == None:
+        ListAux = getObjectsOfType(["DatumFeature","GeometricTolerance"])
+        for l in ListAux:
+            l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
+    for l in List:
+        if eqPlane(obj,l.CurrentFaceSelected):
+            return getAnnotation(l)
+    return None
+
+def getAnnotation(obj):
+    List = getAllAnnotationObjects()
+    for l in List:
+        if l.DF == obj or l.GT == obj:
+            return l
+    return None
 
 def createAnnotation(obj):
     doc = FreeCAD.ActiveDocument
@@ -290,7 +359,6 @@ def createAnnotation(obj):
             else:
                 doc.removeObject(obj.GT.Name)
             doc.removeObject(obj.Name)
-                #doc.removeObject(self.DS.Name)
             doc.recompute()
 
     def plotLines(point):
@@ -304,6 +372,7 @@ def createAnnotation(obj):
         v1 = pAux - P5
         v2 = P3 - P5
         Direction2 = v1.cross(v2)
+        FreeCAD.Console.PrintMessage('Direction2: '+str(Direction2)+'\n')
         points = [p1,P2,P3,P4,P5]
         if DF:
             points += createDF(P5,Direction2)
@@ -402,7 +471,7 @@ def createAnnotation(obj):
 
     FreeCADGui.Snapper.getPoint(callback=getPoint)
 
-def updateAnnotation(obj, objAnnotation):
+def updateAnnotation(obj, objAnnotation, countGT=1):
     doc = FreeCAD.ActiveDocument
     posToInsert = 3
     DF = False
@@ -420,7 +489,25 @@ def updateAnnotation(obj, objAnnotation):
         DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
         textName = displayExternal(obj.ToleranceValue,DECIMALS,'Length',True)
         DS = 0
-        posToInsert = len(objAnnotation.Points)-1
+        if countGT == 1:
+            pointToRemove1 = objAnnotation.Points[3]
+            pointToRemove2 = objAnnotation.Points[5]
+            pointToRemove3 = objAnnotation.Points[6]
+            pointToRemove4 = objAnnotation.Points[7]
+            pointToRemove5 = objAnnotation.Points[8]
+            pointToRemove6 = objAnnotation.Points[9]
+            pointToRemove7 = objAnnotation.Points[10]
+            objAnnotation.Points.remove(pointToRemove1)
+            objAnnotation.Points.remove(pointToRemove2)
+            objAnnotation.Points.remove(pointToRemove3)
+            objAnnotation.Points.remove(pointToRemove4)
+            objAnnotation.Points.remove(pointToRemove5)
+            objAnnotation.Points.remove(pointToRemove6)
+            objAnnotation.Points.remove(pointToRemove7)
+            posToInsert = 3
+        else:
+            if objAnnotation.DF <> None:
+                updatePosOfDF()
         if obj.DS <> None:
             if obj.DS.Primary <> None:
                 DS+=1
@@ -436,6 +523,7 @@ def updateAnnotation(obj, objAnnotation):
     v1 = pAux - p5
     v2 = p3 - p5
     Direction2 = v1.cross(v2)
+    PText = p3
 
     def updateDF(posToInsert, Direction, Direction2):
         List = objAnnotation.Points
@@ -465,6 +553,9 @@ def updateAnnotation(obj, objAnnotation):
     def updateGT(posToInsert, Direction, Direction2):
         p1 = objAnnotation.Points[posToInsert]
 
+    def updatePosOfDF():
+        pass
+
     if DF:
         updateDF(posToInsert, Direction, Direction2)
         points = objAnnotation.Points
@@ -483,50 +574,6 @@ def updateAnnotation(obj, objAnnotation):
     myLabel.ViewObject.FontName = getTextFamily()
     myLabel.ViewObject.TextColor = getRGBText()
     hideGrid()
-
-def eqPlane(obj, target):
-    if target == None:
-        return False
-    if len(obj) <> len(target):
-        return False
-    else:
-        for i in range(len(obj)):
-            if not obj[i].isEqual(target[i]):
-                return False
-    return True
-
-def existPlane(obj):
-    List = getObjectsOfType(["DatumFeature","GeometricTolerance"])
-    count = 0
-    for l in List:
-        if eqPlane(obj,l.CurrentFaceSelected):
-            count+=1
-            if count > 1:
-                return getAnnotation(l)
-    return None
-
-def existPlaneInDF(obj):
-    List = getObjectsOfType(["DatumFeature"])
-    count = 0
-    for l in List:
-        if eqPlane(obj,l.CurrentFaceSelected):
-            return getAnnotation(l)
-    return None
-
-def existPlaneInGT(obj):
-    List = getObjectsOfType(["GeometricTolerance"])
-    count = 0
-    for l in List:
-        if eqPlane(obj,l.CurrentFaceSelected):
-            return getAnnotation(l)
-    return None
-
-def getAnnotation(obj):
-    List = getAllAnnotationObjects()
-    for l in List:
-        if l.DF == obj or l.GT == obj:
-            return l
-    return None
 
 #---------------------------------------------------------------------------
 # UNITS handling
@@ -714,13 +761,19 @@ class _DatumFeature(_GDTObject):
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
         obj.addProperty("App::PropertyVector","Direction","GDT","the axis direction of the face selected")
         obj.addProperty("App::PropertyVectorDistance","PCenter","GDT","mass center of the selected face")
-        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","", 2)
+        obj.addProperty("App::PropertyStringList","FiguresName","","")
+        obj.addProperty("App::PropertyStringList","FacesName","","")
+        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
 
     def onChanged(self,obj,prop):
         if hasattr(obj,"Direction"):
             obj.setEditorMode('Direction',2)
         if hasattr(obj,"PCenter"):
             obj.setEditorMode('PCenter',2)
+        if hasattr(obj,"FiguresName"):
+            obj.setEditorMode('FiguresName',2)
+        if hasattr(obj,"FacesName"):
+            obj.setEditorMode('FacesName',2)
 
     def execute(self,obj):
         '''Do something when doing a recomputation, this method is mandatory'''
@@ -743,7 +796,7 @@ class _ViewProviderDatumFeature(_ViewProviderGDT):
     def getIcon(self):
         return(":/dd/icons/datumFeature.svg")
 
-def makeDatumFeature(Name, AnnotationPlane, Direction, PCenter, CurrentFaceSelected):
+def makeDatumFeature(Name, AnnotationPlane, Direction, PCenter, FiguresName, FacesName, CurrentFaceSelected):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumFeature")
@@ -754,12 +807,24 @@ def makeDatumFeature(Name, AnnotationPlane, Direction, PCenter, CurrentFaceSelec
     obj.AP = AnnotationPlane
     obj.Direction = Direction
     obj.PCenter = PCenter
+    obj.FiguresName = FiguresName
+    obj.FacesName = FacesName
     obj.CurrentFaceSelected = CurrentFaceSelected
-    objAnnotation = existPlaneInGT(obj.CurrentFaceSelected)
+    objAnnotation = existAnnotationWithGT(obj.CurrentFaceSelected)
     if objAnnotation <> None:
-        updateAnnotation(obj, objAnnotation)
+        if objAnnotation.DF == None:
+            updateAnnotation(obj, objAnnotation)
+        else:
+            doc = FreeCAD.ActiveDocument
+            FreeCAD.Console.PrintMessage("Datum feature already exist in this face")
+            if checkBoxState:
+                doc.removeObject(getAllDatumSystemObjects()[-1].Name)
+            doc.removeObject(obj.Name)
     else:
-        makeAnnotation(Name="Annotation", DF=obj, CurrentFaceSelected=obj.CurrentFaceSelected)
+        if existPlane(obj.CurrentFaceSelected) <> None:
+            FreeCAD.Console.PrintMessage("Datum feature already exist in this face")
+        else:
+            makeAnnotation(Name="Annotation", DF=obj, CurrentFaceSelected=obj.CurrentFaceSelected)
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -814,7 +879,10 @@ class _GeometricTolerance(_GDTObject):
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
         obj.addProperty("App::PropertyVector","Direction","GDT","the axis direction of the face selected")
         obj.addProperty("App::PropertyVectorDistance","PCenter","GDT","mass center of the selected face")
+        obj.addProperty("App::PropertyStringList","FiguresName","","")
+        obj.addProperty("App::PropertyStringList","FacesName","","")
         obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
+        obj.addProperty("App::PropertyLink","WireConstruction","","")
 
     def onChanged(self,obj,prop):
         "Do something when a property has changed"
@@ -822,6 +890,10 @@ class _GeometricTolerance(_GDTObject):
             obj.setEditorMode('CharacteristicIcon',2)
         if hasattr(obj,"CharacteristicIconText"):
             obj.setEditorMode('CharacteristicIconText',2)
+        if hasattr(obj,"FiguresName"):
+            obj.setEditorMode('FiguresName',2)
+        if hasattr(obj,"FacesName"):
+            obj.setEditorMode('FacesName',2)
 
 class _ViewProviderGeometricTolerance(_ViewProviderGDT):
     "A View Provider for the GDT GeometricTolerance object"
@@ -832,7 +904,7 @@ class _ViewProviderGeometricTolerance(_ViewProviderGDT):
         icon = self.Object.CharacteristicIcon
         return icon
 
-def makeGeometricTolerance(Name, Characteristic, CharacteristicIcon, CharacteristicIconText, ToleranceValue, FeatureControlFrame, DatumSystem, AnnotationPlane, Direction, PCenter, CurrentFaceSelected):
+def makeGeometricTolerance(Name, Characteristic, CharacteristicIcon, CharacteristicIconText, ToleranceValue, FeatureControlFrame, DatumSystem, AnnotationPlane, Direction, PCenter, FiguresName, FacesName, CurrentFaceSelected):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","GeometricTolerance")
@@ -849,10 +921,16 @@ def makeGeometricTolerance(Name, Characteristic, CharacteristicIcon, Characteris
     obj.AP = AnnotationPlane
     obj.Direction = Direction
     obj.PCenter = PCenter
+    obj.FiguresName = FiguresName
+    obj.FacesName = FacesName
     obj.CurrentFaceSelected = CurrentFaceSelected
-    objAnnotation = existPlaneInDF(obj.CurrentFaceSelected)
+    objAnnotation = existAnnotationWithDF(obj.CurrentFaceSelected)
     if objAnnotation <> None:
-        updateAnnotation(obj, objAnnotation)
+        if objAnnotation.GT == None:
+            updateAnnotation(obj, objAnnotation)
+        else:
+            countGT = len(objAnnotation.GT)+1
+            updateAnnotation(obj, objAnnotation, countGT)
     else:
         makeAnnotation(Name="Annotation", GT=obj, CurrentFaceSelected=obj.CurrentFaceSelected)
     FreeCAD.ActiveDocument.recompute()
@@ -870,7 +948,7 @@ class _Annotation(_GDTObject):
         obj.addProperty("App::PropertyLink","DF","GDT","Text").DF=None
         obj.addProperty("App::PropertyLink","GT","GDT","Text").GT=None
         obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
-        obj.addProperty("App::PropertyLink","WireConstruction","","",2)
+        obj.addProperty("App::PropertyLink","WireConstruction","","")
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
@@ -931,6 +1009,13 @@ def makeFeatureControlFrame():
     featureControlFrame = FeatureControlFrame(Label, Icon, toolTip)
     return featureControlFrame
 
+class CurrentFaceSelected(object):
+    def __init__(self, Figures, Faces, List):
+        self.Figures = Figures
+        self.Faces = Faces
+        self.List = List
+        self.Proxy = self
+
 #---------------------------------------------------------------------------
 # Customized widgets
 #---------------------------------------------------------------------------
@@ -938,7 +1023,7 @@ def makeFeatureControlFrame():
 class GDTWidget:
     def __init__(self):
         self.dialogWidgets = []
-        self.CurrentFaceSelected = []
+        self.CurrentFaceSelected = None
 
     def activate( self, idGDT=0, dialogTitle='GD&T Widget', dialogIconPath=':/dd/icons/GDT.svg', endFunction=None, dictionary=None):
         self.dialogTitle=dialogTitle
@@ -946,7 +1031,7 @@ class GDTWidget:
         self.endFunction = endFunction
         self.dictionary = dictionary
         self.idGDT=idGDT
-        if self.idGDT in [1,3,4]:
+        if self.idGDT in [1,3]: # DF & GT
             self.CurrentFaceSelected = saveCurrentFaceSelected()
         global combo
         combo = ['','','','','','']
@@ -1011,9 +1096,9 @@ class GDTGuiClass(QtGui.QWidget):
         global textName, textDS, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS, P1, Direction, offsetValue
         self.textName = textName.encode('utf-8')
         if self.idGDT == 1:
-            Direction = self.CurrentFaceSelected[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
-            PCenter = self.CurrentFaceSelected[0].CenterOfMass
-            obj = makeDatumFeature(self.textName, annotationPlane, Direction, PCenter, self.CurrentFaceSelected)
+            Direction = self.CurrentFaceSelected.List[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
+            PCenter = self.CurrentFaceSelected.List[0].CenterOfMass
+            obj = makeDatumFeature(self.textName, annotationPlane, Direction, PCenter, self.CurrentFaceSelected.Figures, self.CurrentFaceSelected.Faces, self.CurrentFaceSelected.List)
             if checkBoxState:
                 self.DS = makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
             # createGDT(self,obj)
@@ -1031,9 +1116,9 @@ class GDTGuiClass(QtGui.QWidget):
                 self.textName = self.textName
             makeDatumSystem(self.textName, primary, secondary, tertiary)
         elif self.idGDT == 3:
-            Direction = self.CurrentFaceSelected[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
-            PCenter = self.CurrentFaceSelected[0].CenterOfMass
-            makeGeometricTolerance(self.textName, characteristic.Label, characteristic.Icon, characteristic.IconText, toleranceValue, featureControlFrame, datumSystem, annotationPlane, Direction, PCenter, self.CurrentFaceSelected)
+            Direction = self.CurrentFaceSelected.List[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
+            PCenter = self.CurrentFaceSelected.List[0].CenterOfMass
+            makeGeometricTolerance(self.textName, characteristic.Label, characteristic.Icon, characteristic.IconText, toleranceValue, featureControlFrame, datumSystem, annotationPlane, Direction, PCenter, self.CurrentFaceSelected.Figures, self.CurrentFaceSelected.Faces, self.CurrentFaceSelected.List)
         elif self.idGDT == 4:
             makeAnnotationPlane(self.textName, P1, Direction, offsetValue)
         else:
@@ -1329,8 +1414,6 @@ class helpGDTCommand:
             QtGui.qApp.activeWindow(),
             'Geometric Dimensioning & Tolerancing Help',
             'Developing...' )
-        #obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
-        #_Annotation(obj)
 
     def GetResources(self):
         return {

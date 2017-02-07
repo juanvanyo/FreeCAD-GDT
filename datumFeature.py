@@ -55,13 +55,14 @@ class DatumFeatureCommand:
         if len(getObjectsOfType('AnnotationPlane')) == 0:
             return False
         if getSelection():
-            if len(getSelectionEx()[0].SubObjects) == 0:
-                return False
-            for i in range(len(getSelectionEx()[0].SubObjects)):
-                if getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
-                    pass
-                else:
+            for i in range(len(getSelectionEx())):
+                if len(getSelectionEx()[i].SubObjects) == 0:
                     return False
+                for j in range(len(getSelectionEx()[i].SubObjects)):
+                    if getSelectionEx()[i].SubObjects[j].ShapeType == 'Face':
+                        pass
+                    else:
+                        return False
         else:
             return False
         return True

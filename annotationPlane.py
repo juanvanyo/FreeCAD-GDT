@@ -46,8 +46,8 @@ class AnnotationPlaneCommand:
             }
 
     def IsActive(self):
-        if getSelection():
-            return (getSelectionEx()[0].SubObjects[0].ShapeType == 'Face' and len(getSelectionEx()[0].SubObjects) == 1)
+        if len(getSelection()) == 1:
+            return (getSelectionEx()[0].SubObjects[0].ShapeType == 'Face')
         else:
             return False
 
