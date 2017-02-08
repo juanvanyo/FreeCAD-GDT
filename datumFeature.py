@@ -63,6 +63,11 @@ class DatumFeatureCommand:
                         pass
                     else:
                         return False
+            Faces = saveCurrentFaceSelected()
+            if existAnnotationWithDF(Faces.List) == None:
+                pass
+            else:
+                return False
         else:
             return False
         return True
