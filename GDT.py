@@ -66,9 +66,6 @@ toleranceValue = 0.0
 featureControlFrame = ''
 datumSystem = 0
 annotationPlane = 0
-offsetValue = 0
-P1 = FreeCAD.Vector(0.0,0.0,0.0)
-Direction = FreeCAD.Vector(0.0,0.0,0.0)
 sizeOfLine = 1.0
 
 combo = ['','','','','','']
@@ -260,9 +257,7 @@ def saveCurrentFaceSelected():
         separator = '|'
         string = separator.join(ListAux)
         Faces.append(string)
-    List = generateFaceObjects(Figures, Faces)
-    currentFaceSelected = CurrentFaceSelected(Figures, Faces, List)
-    currentFaceSelected.List = List
+    currentFaceSelected = CurrentFaceSelected(Figures, Faces)
     return currentFaceSelected
 
 def generateFaceObjects(Figures, Faces):
@@ -286,9 +281,6 @@ def eqPlane(obj, target):
 
 def existPlane(obj):
     List = getObjectsOfType(["DatumFeature","GeometricTolerance"])
-    if len(List) > 0 and List[0].CurrentFaceSelected == None:
-        for l in List:
-            l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
     for l in List:
         if eqPlane(obj,l.CurrentFaceSelected):
             return getAnnotation(l)
@@ -296,10 +288,6 @@ def existPlane(obj):
 
 def existAnnotationWithDF(obj):
     List = getObjectsOfType(["DatumFeature"])
-    if len(List) > 0 and List[0].CurrentFaceSelected == None:
-        ListAux = getObjectsOfType(["DatumFeature","GeometricTolerance"])
-        for l in ListAux:
-            l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
     for l in List:
         if eqPlane(obj,l.CurrentFaceSelected):
             return getAnnotation(l)
@@ -307,10 +295,6 @@ def existAnnotationWithDF(obj):
 
 def existAnnotationWithGT(obj):
     List = getObjectsOfType(["GeometricTolerance"])
-    if len(List) > 0 and List[0].CurrentFaceSelected == None:
-        ListAux = getObjectsOfType(["DatumFeature","GeometricTolerance"])
-        for l in ListAux:
-            l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
     for l in List:
         if eqPlane(obj,l.CurrentFaceSelected):
             return getAnnotation(l)
@@ -718,10 +702,17 @@ class _AnnotationPlane(_GDTObject):
         obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
+        obj.addProperty("App::PropertyStringList","FiguresName","","")
+        obj.addProperty("App::PropertyStringList","FacesName","","")
+        obj.addProperty("App::PropertyPythonObject","CurrentFaceSelected","","",2)
 
     def onChanged(self,obj,prop):
         if hasattr(obj,"PointWithOffset"):
             obj.setEditorMode('PointWithOffset',1)
+        if hasattr(obj,"FiguresName"):
+            obj.setEditorMode('FiguresName',2)
+        if hasattr(obj,"FacesName"):
+            obj.setEditorMode('FacesName',2)
 
 class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     "A View Provider for the GDT AnnotationPlane object"
@@ -732,11 +723,17 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
         "called when the base object is changed"
         if prop in ["Point","Direction","Offset"]:
             obj.PointWithOffset = obj.Point + obj.Direction*obj.Offset
+        if prop in ["CurrentFaceSelected"]:
+            List = getObjectsOfType(["AnnotationPlane","DatumFeature","GeometricTolerance"])
+            if List[0].CurrentFaceSelected == None:
+                for l in List:
+                    l.CurrentFaceSelected = generateFaceObjects(l.FiguresName, l.FacesName)
+            # obj.Point = obj.CurrentFaceSelected[0].CenterOfMass
 
     def getIcon(self):
         return(":/dd/icons/annotationPlane.svg")
 
-def makeAnnotationPlane(Name, p1, Direction, Offset):
+def makeAnnotationPlane(Name, FiguresName, FacesName, CurrentFaceSelected, Offset):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","AnnotationPlane")
@@ -744,8 +741,11 @@ def makeAnnotationPlane(Name, p1, Direction, Offset):
     if gui:
         _ViewProviderAnnotationPlane(obj.ViewObject)
     obj.Label = Name
-    obj.Point = p1
-    obj.Direction = Direction
+    obj.FiguresName = FiguresName
+    obj.FacesName = FacesName
+    obj.CurrentFaceSelected = CurrentFaceSelected
+    obj.Point = CurrentFaceSelected[0].CenterOfMass
+    obj.Direction = CurrentFaceSelected[0].normalAt(0,0)
     obj.Offset = Offset
     FreeCAD.ActiveDocument.recompute()
     return obj
@@ -1010,10 +1010,14 @@ def makeFeatureControlFrame():
     return featureControlFrame
 
 class CurrentFaceSelected(object):
-    def __init__(self, Figures, Faces, List):
+    def __init__(self, Figures, Faces):
         self.Figures = Figures
         self.Faces = Faces
-        self.List = List
+        self.List = generateFaceObjects(Figures, Faces)
+        self.P1 = self.List[0].CenterOfMass
+        self.Direction = self.List[0].normalAt(0,0)
+        self.DirectionAxis = self.List[0].Surface.Axis
+        self.OffsetValue = 0
         self.Proxy = self
 
 #---------------------------------------------------------------------------
@@ -1031,7 +1035,7 @@ class GDTWidget:
         self.endFunction = endFunction
         self.dictionary = dictionary
         self.idGDT=idGDT
-        if self.idGDT in [1,3]: # DF & GT
+        if self.idGDT in [1,3,4]: # DF, GT and AP
             self.CurrentFaceSelected = saveCurrentFaceSelected()
         global combo
         combo = ['','','','','','']
@@ -1077,7 +1081,7 @@ class GDTGuiClass(QtGui.QWidget):
         self.CurrentFaceSelected = CurrentFaceSelected
         vbox = QtGui.QVBoxLayout()
         for widg in self.dd_dialogWidgets:
-            w = widg.generateWidget(self.idGDT)
+            w = widg.generateWidget(self.idGDT,self.CurrentFaceSelected)
             if isinstance(w, QtGui.QLayout):
                 vbox.addLayout( w )
             else:
@@ -1093,11 +1097,11 @@ class GDTGuiClass(QtGui.QWidget):
         self.setLayout(vbox)
 
     def createObject(self):
-        global textName, textDS, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS, P1, Direction, offsetValue
+        global textName, textDS, primary, secondary, tertiary, characteristic, toleranceValue, featureControlFrame, datumSystem, annotationPlane, auxDictionaryDS
         self.textName = textName.encode('utf-8')
         if self.idGDT == 1:
-            Direction = self.CurrentFaceSelected.List[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
-            PCenter = self.CurrentFaceSelected.List[0].CenterOfMass
+            Direction = self.CurrentFaceSelected.DirectionAxis
+            PCenter = self.CurrentFaceSelected.P1
             obj = makeDatumFeature(self.textName, annotationPlane, Direction, PCenter, self.CurrentFaceSelected.Figures, self.CurrentFaceSelected.Faces, self.CurrentFaceSelected.List)
             if checkBoxState:
                 self.DS = makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
@@ -1116,11 +1120,11 @@ class GDTGuiClass(QtGui.QWidget):
                 self.textName = self.textName
             makeDatumSystem(self.textName, primary, secondary, tertiary)
         elif self.idGDT == 3:
-            Direction = self.CurrentFaceSelected.List[0].Surface.Axis # to Axis    .normalAt(0,0) # normalAt
-            PCenter = self.CurrentFaceSelected.List[0].CenterOfMass
+            Direction = self.CurrentFaceSelected.DirectionAxis
+            PCenter = self.CurrentFaceSelected.P1
             makeGeometricTolerance(self.textName, characteristic.Label, characteristic.Icon, characteristic.IconText, toleranceValue, featureControlFrame, datumSystem, annotationPlane, Direction, PCenter, self.CurrentFaceSelected.Figures, self.CurrentFaceSelected.Faces, self.CurrentFaceSelected.List)
         elif self.idGDT == 4:
-            makeAnnotationPlane(self.textName, P1, Direction, offsetValue)
+            makeAnnotationPlane(self.textName, self.CurrentFaceSelected.Figures, self.CurrentFaceSelected.Faces, self.CurrentFaceSelected.List, self.CurrentFaceSelected.OffsetValue)
         else:
             pass
 
@@ -1143,8 +1147,9 @@ class textLabelWidget:
         self.Mask = Mask
         self.Dictionary = Dictionary
 
-    def generateWidget( self, idGDT ):
+    def generateWidget( self, idGDT, CurrentFaceSelected ):
         self.idGDT = idGDT
+        self.CurrentFaceSelected = CurrentFaceSelected
         self.lineEdit = QtGui.QLineEdit()
         if self.Mask <> None:
             self.lineEdit.setInputMask(self.Mask)
@@ -1185,26 +1190,23 @@ class fieldLabelWidget:
     def __init__(self, Text='Label'):
         self.Text = Text
 
-    def generateWidget( self, idGDT ):
+    def generateWidget( self, idGDT, CurrentFaceSelected ):
         self.idGDT = idGDT
-        global offsetValue, Direction, P1
-        Direction = getSelectionEx()[0].SubObjects[0].normalAt(0,0) # normalAt
-        P1 = getSelectionEx()[0].SubObjects[0].CenterOfMass
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Direction, 0.0)
+        self.CurrentFaceSelected = CurrentFaceSelected
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.CurrentFaceSelected.P1, self.CurrentFaceSelected.Direction, 0.0)
         FreeCADGui.Snapper.grid.set()
         self.FORMAT = makeFormatSpec(0,'Length')
         self.uiloader = FreeCADGui.UiLoader()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
         self.inputfield.setText(self.FORMAT % 0)
-        offsetValue = 0
+        self.CurrentFaceSelected.OffsetValue = 0
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),self.valueChanged)
 
         return GDTDialog_hbox(self.Text,self.inputfield)
 
     def valueChanged(self, d):
-        global offsetValue, Direction, P1
-        offsetValue = d
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(P1, Direction, offsetValue)
+        self.CurrentFaceSelected.OffsetValue = d
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.CurrentFaceSelected.P1, self.CurrentFaceSelected.Direction, self.CurrentFaceSelected.OffsetValue)
         FreeCADGui.Snapper.grid.set()
 
 class comboLabelWidget:
@@ -1214,8 +1216,9 @@ class comboLabelWidget:
         self.Icons = Icons
         self.ToolTip = ToolTip
 
-    def generateWidget( self, idGDT ):
+    def generateWidget( self, idGDT, CurrentFaceSelected ):
         self.idGDT = idGDT
+        self.CurrentFaceSelected = CurrentFaceSelected
         global textDS, combo
         textDS = ['','','']
 
@@ -1328,12 +1331,13 @@ class groupBoxWidget:
         self.Text = Text
         self.List = List
 
-    def generateWidget( self, idGDT ):
+    def generateWidget( self, idGDT, CurrentFaceSelected ):
         self.idGDT = idGDT
+        self.CurrentFaceSelected = CurrentFaceSelected
         self.group = QtGui.QGroupBox(self.Text)
         vbox = QtGui.QVBoxLayout()
         for l in self.List:
-            vbox.addLayout(l.generateWidget(self.idGDT))
+            vbox.addLayout(l.generateWidget(self.idGDT, self.CurrentFaceSelected))
         self.group.setLayout(vbox)
         return self.group
 
@@ -1344,8 +1348,9 @@ class fieldLabeCombolWidget:
         self.Icons = Icons
         self.ToolTip = ToolTip
 
-    def generateWidget( self, idGDT ):
+    def generateWidget( self, idGDT, CurrentFaceSelected ):
         self.idGDT = idGDT
+        self.CurrentFaceSelected = CurrentFaceSelected
         self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
@@ -1388,8 +1393,9 @@ class CheckBoxWidget:
     def __init__(self, Text='Label'):
         self.Text = Text
 
-    def generateWidget( self, idGDT ):
+    def generateWidget( self, idGDT, CurrentFaceSelected ):
         self.idGDT = idGDT
+        self.CurrentFaceSelected = CurrentFaceSelected
         self.checkBox = QtGui.QCheckBox(self.Text)
         self.checkBox.setChecked(True)
         global checkBoxState
