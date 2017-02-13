@@ -57,6 +57,8 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 	def Activated(self):
                 # do something here if needed...
 		#if FreeCAD.Console.GetStatus("Console","Wrn")==0 and FreeCAD.Console.GetStatus("Console","Err")==0:
+		import eventMonitor
+		self.monitor = eventMonitor.EventMonitor()
 		Msg ("Geometric Dimensioning & Tolerancing workbench activated\n")
 
  	def Deactivated(self):
