@@ -230,32 +230,26 @@ def getSelectionEx():
         return FreeCADGui.Selection.getSelectionEx()
     return None
 
+def select(obj):
+    "select(object): deselects everything and selects only the working faces of the passed object"
+    if gui:
+        FreeCADGui.Selection.clearSelection()
+        for i in range(len(obj.faces)):
+            FreeCADGui.Selection.addSelection(obj.faces[i][0],obj.faces[i][1])
+
 def makeContainerOfData():
     ""
-    link = [f.Object for f in FreeCADGui.Selection.getSelectionEx()]
-    subObjects = [f.SubObjects for f in FreeCADGui.Selection.getSelectionEx()] # tuple of faces selected
-    subObjectsList = []
-    face_hash = []
-    faceId = []
-    for i in range(len(subObjects)):
-        for j in range(len(subObjects[i])):
-            subObjectsList.append(subObjects[i][j])
-            face_hash.append(subObjects[i][j].hashCode())
-    index = 0
-    for i in range(len(subObjects)):
-        for j in range(len(subObjects[i])):
-            try:
-                faceId.append([ f.hashCode() for f in link[i].Shape.Faces].index(face_hash[index]))
-            except:
-                pass
-            index+=1
-    container = ContainerOfData(link, face_hash, faceId)
+    faces = []
+    for i in range(len(getSelectionEx())):
+        for j in range(len(getSelectionEx()[i].SubElementNames)):
+            faces.append((getSelectionEx()[i].Object, getSelectionEx()[i].SubElementNames[j]))
+    container = ContainerOfData(faces)
     return container
 
 def getAnnotationObj(obj):
     List = getAllAnnotationObjects()
     for l in List:
-        if l.link == obj.link and l.faceId == obj.faceId:
+        if l.faces == obj.faces:
             return l
     return None
 
@@ -646,11 +640,9 @@ class _AnnotationPlane(_GDTObject):
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"AnnotationPlane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
-        obj.addProperty("App::PropertyLink","link","Link","Linked object").link = FreeCADGui.Selection.getSelectionEx()[0].Object #.SubObjects[0]
-        face_hash = FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].hashCode()
-        obj.addProperty("App::PropertyInteger","faceId","Link","Linked element of the object").faceId = [ f.hashCode() for f in obj.link.Shape.Faces].index(face_hash)
-        obj.addProperty("App::PropertyVectorDistance","p1","GDT","Center point of Grid").p1 = obj.link.Shape.Faces[obj.faceId].CenterOfMass
-        obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane").Direction = obj.link.Shape.Faces[obj.faceId].normalAt(0,0)
+        obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (getSelectionEx()[0].Object, getSelectionEx()[0].SubElementNames[0])
+        obj.addProperty("App::PropertyVectorDistance","p1","GDT","Center point of Grid").p1 = obj.faces[0].Shape.getElement(obj.faces[1][0]).CenterOfMass
+        obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane").Direction = obj.faces[0].Shape.getElement(obj.faces[1][0]).normalAt(0,0)
         obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
 
     def onChanged(self,obj,prop):
@@ -660,8 +652,8 @@ class _AnnotationPlane(_GDTObject):
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         FreeCAD.Console.PrintMessage('Executed\n')
-        fp.p1 = fp.link.Shape.Faces[fp.faceId].CenterOfMass
-        fp.Direction = fp.link.Shape.Faces[fp.faceId].normalAt(0,0)
+        fp.p1 = fp.faces[0].Shape.getElement(fp.faces[1][0]).CenterOfMass
+        fp.Direction = fp.faces[0].Shape.getElement(fp.faces[1][0]).normalAt(0,0)
 
 class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     "A View Provider for the GDT AnnotationPlane object"
@@ -671,7 +663,13 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     def updateData(self, obj, prop):
         "called when the base object is changed"
         if prop in ["Point","Direction","Offset"]:
-            obj.PointWithOffset = obj.p1 + obj.Direction*obj.Offset
+            obj.PointWithOffset = obj.p1 + obj.Direction * obj.Offset
+
+    def doubleClicked(self,obj):
+        showGrid()
+        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.Object.PointWithOffset, self.Object.Direction, 0)
+        FreeCADGui.Snapper.grid.set()
+        FreeCAD.ActiveDocument.recompute()
 
     def getIcon(self):
         return(":/dd/icons/annotationPlane.svg")
@@ -686,7 +684,7 @@ def makeAnnotationPlane(Name, Offset):
     obj.Label = Name
     obj.Offset = Offset
     FreeCAD.ActiveDocument.recompute()
-    FreeCADGui.getWorkbench("GeometricDimensioningAndTolerancingWorkbench").monitor.append(obj.link.Name, obj.Name, FreeCAD.ActiveDocument.removeObject, obj.Name)
+    hideGrid()
     return obj
 
     #-----------------------------------------------------------------------
@@ -721,9 +719,9 @@ def makeDatumFeature(Name, ContainerOfData):
 
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
-        makeAnnotation(ContainerOfData.link, ContainerOfData.faceId, ContainerOfData.annotationPlane, DF=obj, GT=[])
+        makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=obj, GT=[])
     else:
-        makeAnnotation(AnnotationObj.link, AnnotationObj.faceId, AnnotationObj.AP, DF=obj, GT=AnnotationObj.GT)
+        makeAnnotation(AnnotationObj.faces, AnnotationObj.AP, DF=obj, GT=AnnotationObj.GT)
         FreeCAD.ActiveDocument.removeObject(AnnotationObj.Name)
 
     FreeCAD.ActiveDocument.recompute()
@@ -811,13 +809,13 @@ def makeGeometricTolerance(Name, ContainerOfData):
 
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
-        makeAnnotation(ContainerOfData.link, ContainerOfData.faceId, ContainerOfData.annotationPlane, DF=None, GT=obj)
+        makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=None, GT=obj)
     else:
         gt=[]
         for i in range(len(AnnotationObj.GT)):
             gt.append(AnnotationObj.GT[i])
         gt.append(obj)
-        makeAnnotation(AnnotationObj.link, AnnotationObj.faceId, AnnotationObj.AP, DF=AnnotationObj.DF, GT=gt)
+        makeAnnotation(AnnotationObj.faces, AnnotationObj.AP, DF=AnnotationObj.DF, GT=gt)
         FreeCAD.ActiveDocument.removeObject(AnnotationObj.Name)
 
     FreeCAD.ActiveDocument.recompute()
@@ -831,8 +829,7 @@ class _Annotation(_GDTObject):
     "The GDT Annotation object"
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"Annotation")
-        obj.addProperty("App::PropertyLinkList","link","Link","Linked object")
-        obj.addProperty("App::PropertyIntegerList","faceId","Link","Linked element of the object")
+        obj.addProperty("App::PropertyLinkSubList","faces","GDT","Linked faces of the object")
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
         obj.addProperty("App::PropertyLink","DF","GDT","Text").DF=None
         obj.addProperty("App::PropertyLinkList","GT","GDT","Text").GT=[]
@@ -842,8 +839,8 @@ class _Annotation(_GDTObject):
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         FreeCAD.Console.PrintMessage('Executed\n')
-        fp.p1 = (fp.link[0].Shape.Faces[fp.faceId[0]].CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
-        fp.Direction = fp.link[0].Shape.Faces[fp.faceId[0]].normalAt(0,0)
+        fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
+        fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
         print "plot"
         #createAnnotation(fp)
 
@@ -852,24 +849,25 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def __init__(self, obj):
         _ViewProviderGDT.__init__(self,obj)
 
+    def doubleClicked(self,obj):
+        select(self.Object)
+
     def getIcon(self):
         return(":/dd/icons/annotation.svg")
 
-def makeAnnotation(link, faceId, AP, DF=None, GT=[]):
+def makeAnnotation(faces, AP, DF=None, GT=[]):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
     _Annotation(obj)
     if gui:
         _ViewProviderAnnotation(obj.ViewObject)
-    obj.link = link
-    obj.faceId = faceId
+    obj.faces = faces
     obj.AP = AP
     obj.DF = DF
     obj.GT = GT
     FreeCAD.ActiveDocument.recompute()
-    for i in range(len(link)):
-        FreeCADGui.getWorkbench("GeometricDimensioningAndTolerancingWorkbench").monitor.append(obj.link[i].Name, obj.Name, FreeCAD.ActiveDocument.removeObject, obj.Name)
+    select(obj)
     return obj
 
     #-----------------------------------------------------------------------
@@ -908,13 +906,12 @@ def makeFeatureControlFrame():
     return featureControlFrame
 
 class ContainerOfData(object):
-    def __init__(self, link, face_hash, faceId):
-        self.link = link
-        self.face_hash = face_hash
-        self.faceId = faceId
-        self.Direction = self.link[0].Shape.Faces[faceId[0]].normalAt(0,0)
-        self.DirectionAxis = self.link[0].Shape.Faces[faceId[0]].Surface.Axis
-        self.p1 = self.link[0].Shape.Faces[self.faceId[0]].CenterOfMass
+    def __init__(self, faces):
+        self.faces = faces
+        if self.faces <> []:
+            self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
+            self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1]).Surface.Axis
+            self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1]).CenterOfMass
         self.OffsetValue = 0
         self.textName = ''
         self.textDS = ['','','']
@@ -944,8 +941,7 @@ class GDTWidget:
         self.endFunction = endFunction
         self.dictionary = dictionary
         self.idGDT=idGDT
-        if self.idGDT in [1,3,4]: # DF, GT and AP
-            self.ContainerOfData = makeContainerOfData()
+        self.ContainerOfData = makeContainerOfData()
         extraWidgets = []
         if dictionary <> None:
             extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn', Dictionary=self.dictionary)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
