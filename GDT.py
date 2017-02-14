@@ -262,7 +262,8 @@ def createAnnotation(obj):
     DF = obj.DF
     textNameDF = obj.DF.Label
     DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
-    textNameGT = displayExternal(obj.GT.ToleranceValue,DECIMALS,'Length',True)
+
+    # textNameGT = displayExternal(obj.GT.ToleranceValue,DECIMALS,'Length',True)
     if obj.GT <> []:
         DS = 0
         if obj.GT.DS <> None:
@@ -287,10 +288,19 @@ def createAnnotation(obj):
             doc.recompute()
 
     def plotLines(point):
-        d = point.distanceToPlane(PCenter,Direction)*3/4
-        P1 = PCenter.projectToPlane(PointWithOffset,DirectionAP)
+        obj.removeObjectsFromDocument()
+        d = point.distanceToPlane(P1,Direction)*3/4
         P2 = P1 + Direction * d
         P3 = point
+        # obj.selectedPoint = P3
+        points = [P1, P2, P3]
+        myWire = Draft.makeWire(points,closed=False,face=True,support=None)
+        myWire.ViewObject.LineColor = getRGBLine()
+        myWire.ViewObject.LineWidth = getLineWidth()
+        obj.addObject(myWire)
+        hideGrid()
+        return obj
+
         P4 = P3 + Direction * (-sizeOfLine)
         P5 = P3 + Direction * (sizeOfLine)
         pAux = P5 + DirectionAP * sizeOfLine
@@ -393,8 +403,10 @@ def createAnnotation(obj):
         #P11 = FreeCAD.Vector(P10[0]-sizeOfLine*3,P10[1],P10[2])
         listPoints += [P8,P9,P10,P11]
         return listPoints
-
-    FreeCADGui.Snapper.getPoint(callback=getPoint)
+    if obj.selectedPoint == FreeCAD.Vector(0.0,0.0,0.0):
+        FreeCADGui.Snapper.getPoint(callback=getPoint)
+    else:
+        plotLines(obj.selectedPoint)
 
 def updateAnnotation(obj, objAnnotation, countGT=1):
     doc = FreeCAD.ActiveDocument
@@ -677,12 +689,20 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
 def makeAnnotationPlane(Name, Offset):
     ''' Explanation
     '''
+    if len(getAllAnnotationPlaneObjects()) == 0:
+        group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "GDT")
+        _GDTObject(group)
+        _ViewProviderGDT(group.ViewObject)
+    else:
+        group = FreeCAD.ActiveDocument.getObjectsByLabel("GDT")[0]
+
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","AnnotationPlane")
     _AnnotationPlane(obj)
     if gui:
         _ViewProviderAnnotationPlane(obj.ViewObject)
     obj.Label = Name
     obj.Offset = Offset
+    group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
     hideGrid()
     return obj
@@ -721,9 +741,14 @@ def makeDatumFeature(Name, ContainerOfData):
     if AnnotationObj == None:
         makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=obj, GT=[])
     else:
-        makeAnnotation(AnnotationObj.faces, AnnotationObj.AP, DF=obj, GT=AnnotationObj.GT)
+        faces = AnnotationObj.faces
+        AP = AnnotationObj.AP
+        GT = AnnotationObj.GT
         FreeCAD.ActiveDocument.removeObject(AnnotationObj.Name)
+        makeAnnotation(faces, AP, DF=obj, GT=GT)
 
+    group = FreeCAD.ActiveDocument.getObjectsByLabel("GDT")[0]
+    group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -744,6 +769,19 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
     def __init__(self, obj):
         _ViewProviderGDT.__init__(self,obj)
 
+    def updateData(self, obj, prop):
+        "called when the base object is changed"
+        if prop in ["Primary","Secondary","Tertiary"]:
+            separator1 = ' | '
+            textName = obj.Label.split(":")[0]
+            if obj.Primary <> None:
+                textName+=': '+obj.Primary.Label
+                if obj.Secondary <> None:
+                    textName+=' | '+obj.Secondary.Label
+                    if obj.Tertiary <> None:
+                        textName+=' | '+obj.Tertiary.Label
+            obj.Label = textName
+
     def getIcon(self):
         return(":/dd/icons/datumSystem.svg")
 
@@ -758,6 +796,8 @@ def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     obj.Primary = Primary
     obj.Secondary = Secondary
     obj.Tertiary = Tertiary
+    group = FreeCAD.ActiveDocument.getObjectsByLabel("GDT")[0]
+    group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -815,9 +855,13 @@ def makeGeometricTolerance(Name, ContainerOfData):
         for i in range(len(AnnotationObj.GT)):
             gt.append(AnnotationObj.GT[i])
         gt.append(obj)
-        makeAnnotation(AnnotationObj.faces, AnnotationObj.AP, DF=AnnotationObj.DF, GT=gt)
+        faces = AnnotationObj.faces
+        AP = AnnotationObj.AP
+        DF = AnnotationObj.DF
         FreeCAD.ActiveDocument.removeObject(AnnotationObj.Name)
-
+        makeAnnotation(faces, AP, DF=DF, GT=gt)
+    group = FreeCAD.ActiveDocument.getObjectsByLabel("GDT")[0]
+    group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -835,6 +879,7 @@ class _Annotation(_GDTObject):
         obj.addProperty("App::PropertyLinkList","GT","GDT","Text").GT=[]
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Start point")
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of your annotation plane")
+        obj.addProperty("App::PropertyVectorDistance","selectedPoint","GDT","Selected point to plot the annotation").selectedPoint = FreeCAD.Vector(0.0,0.0,0.0)
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
@@ -842,7 +887,7 @@ class _Annotation(_GDTObject):
         fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
         fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
         print "plot"
-        #createAnnotation(fp)
+        createAnnotation(fp)
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
@@ -858,7 +903,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
 def makeAnnotation(faces, AP, DF=None, GT=[]):
     ''' Explanation
     '''
-    obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
+    obj = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython","Annotation")
     _Annotation(obj)
     if gui:
         _ViewProviderAnnotation(obj.ViewObject)
@@ -866,6 +911,8 @@ def makeAnnotation(faces, AP, DF=None, GT=[]):
     obj.AP = AP
     obj.DF = DF
     obj.GT = GT
+    group = FreeCAD.ActiveDocument.getObjectsByLabel("GDT")[0]
+    group.addObject(obj)
     FreeCAD.ActiveDocument.recompute()
     select(obj)
     return obj
