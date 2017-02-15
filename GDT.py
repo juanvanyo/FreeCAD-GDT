@@ -740,37 +740,91 @@ class _Annotation(_GDTObject):
         fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
         diff = fp.p1-auxP1
         fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
-        import Draft
         if fp.selectedPoint <> []:
             fp.selectedPoint = [fp.selectedPoint[0] + diff]
-            points = getPointsToPlot(fp)
-            print str(points)
-            # fp.removeObjectsFromDocument()
-            # myWire = Draft.makeWire(points) #explota aqui
-            # obj.addObject(myWire)
-            from pivy import coin
-            sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-            sg.removeChild(1)
-            co = coin.SoCoordinate3()
-            pts = [[points[0].x,points[0].y,points[0].z],[points[1].x,points[1].y,points[1].z],[points[2].x,points[2].y,points[2].z]]
-            co.point.setValues(0,len(pts),pts)
-            ma = coin.SoBaseColor()
-            ma.rgb = (1,0,0)
-            lines = coin.SoIndexedLineSet()
-            lines.coordIndex.setValues(0,3,[0,1,2]) # https://forum.freecadweb.org/viewtopic.php?t=11809
-            no = coin.SoSeparator()
-            no.addChild(co)
-            no.addChild(ma)
-            no.addChild(lines)
-            sg.insertChild(no,1)
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
     def __init__(self, obj):
+        obj.addProperty("App::PropertyFloat","LineWidth","GDT","Line width").LineWidth = getLineWidth()
+        obj.addProperty("App::PropertyColor","LineColor","GDT","Line color").LineColor = getRGBLine()
         _ViewProviderGDT.__init__(self,obj)
+
+    def attach(self, obj):
+        "called on object creation"
+        from pivy import coin
+        self.node = coin.SoGroup()
+        self.node3d = coin.SoGroup()
+        self.color = coin.SoBaseColor()
+
+        self.data = coin.SoCoordinate3()
+        self.lines = coin.SoIndexedLineSet()
+
+        selectionNode = coin.SoType.fromName("SoFCSelection").createInstance()
+        selectionNode.documentName.setValue(FreeCAD.ActiveDocument.Name)
+        selectionNode.objectName.setValue(obj.Object.Name) # here obj is the ViewObject, we need its associated App Object
+        selectionNode.subElementName.setValue("Lines")
+        selectionNode.addChild(self.lines)
+
+        self.drawstyle = coin.SoDrawStyle()
+        self.drawstyle.style = coin.SoDrawStyle.LINES
+
+        self.node.addChild(self.drawstyle)
+        self.node.addChild(self.color)
+        self.node.addChild(self.data)
+        self.node.addChild(self.lines)
+        self.node.addChild(selectionNode)
+        obj.addDisplayMode(self.node,"2D")
+
+        self.node3d.addChild(self.color)
+        self.node3d.addChild(self.data)
+        self.node3d.addChild(self.lines)
+        self.node3d.addChild(selectionNode)
+        obj.addDisplayMode(self.node3d,"3D")
+        self.onChanged(obj,"LineColor")
+        self.onChanged(obj,"LineWidth")
+
+    def updateData(self, fp, prop):
+        "If a property of the handled feature has changed we have the chance to handle this here"
+        # fp is the handled feature, prop is the name of the property that has changed
+        if prop == "selectedPoint":
+            if fp.selectedPoint <> []:
+                points = getPointsToPlot(fp)
+                # print str(points)
+                self.data.point.setNum(len(points))
+                cnt=0
+                for p in points:
+                    self.data.point.set1Value(cnt,p.x,p.y,p.z)
+                    cnt=cnt+1
+                self.lines.coordIndex.set1Value(0,0)
+                self.lines.coordIndex.set1Value(1,1)
+                self.lines.coordIndex.set1Value(2,2)
 
     def doubleClicked(self,obj):
         select(self.Object)
+
+    def getDisplayModes(self,obj):
+        "Return a list of display modes."
+        modes=[]
+        modes.append("2D")
+        modes.append("3D")
+        return modes
+
+    def getDefaultDisplayMode(self):
+        "Return the name of the default display mode. It must be defined in getDisplayModes."
+        return "2D"
+
+    def setDisplayMode(self,mode):
+        return mode
+
+    def onChanged(self, vp, prop):
+        "Here we can do something when a single property got changed"
+        if prop == "LineColor":
+            c = vp.getPropertyByName("LineColor")
+            self.color.rgb.setValue(c[0],c[1],c[2])
+        elif prop == "LineWidth":
+            w = vp.getPropertyByName("LineWidth")
+            self.drawstyle.lineWidth = w
 
     def getIcon(self):
         return(":/dd/icons/annotation.svg")
@@ -796,6 +850,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[]):
             no = coin.SoSeparator()
             sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
             sg.insertChild(no,1)
+            hideGrid()
             doc.recompute()
             return obj
         else:
