@@ -750,10 +750,7 @@ class _Annotation(_GDTObject):
             # obj.addObject(myWire)
             from pivy import coin
             sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-            try:
-                sg.removeChild(no)
-            except:
-                pass
+            sg.removeChild(1)
             co = coin.SoCoordinate3()
             pts = [[points[0].x,points[0].y,points[0].z],[points[1].x,points[1].y,points[1].z],[points[2].x,points[2].y,points[2].z]]
             co.point.setValues(0,len(pts),pts)
@@ -765,8 +762,7 @@ class _Annotation(_GDTObject):
             no.addChild(co)
             no.addChild(ma)
             no.addChild(lines)
-            sg.addChild(no)
-
+            sg.insertChild(no,1)
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
@@ -797,6 +793,9 @@ def makeAnnotation(faces, AP, DF=None, GT=[]):
         doc = FreeCAD.ActiveDocument
         if point:
             obj.selectedPoint = point
+            no = coin.SoSeparator()
+            sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
+            sg.insertChild(no,1)
             doc.recompute()
             return obj
         else:
