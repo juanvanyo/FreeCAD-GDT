@@ -745,9 +745,28 @@ class _Annotation(_GDTObject):
             fp.selectedPoint = [fp.selectedPoint[0] + diff]
             points = getPointsToPlot(fp)
             print str(points)
-            fp.removeObjectsFromDocument()
+            # fp.removeObjectsFromDocument()
             # myWire = Draft.makeWire(points) #explota aqui
             # obj.addObject(myWire)
+            from pivy import coin
+            sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
+            try:
+                sg.removeChild(no)
+            except:
+                pass
+            co = coin.SoCoordinate3()
+            pts = [[points[0].x,points[0].y,points[0].z],[points[1].x,points[1].y,points[1].z],[points[2].x,points[2].y,points[2].z]]
+            co.point.setValues(0,len(pts),pts)
+            ma = coin.SoBaseColor()
+            ma.rgb = (1,0,0)
+            lines = coin.SoIndexedLineSet()
+            lines.coordIndex.setValues(0,3,[0,1,2]) # https://forum.freecadweb.org/viewtopic.php?t=11809
+            no = coin.SoSeparator()
+            no.addChild(co)
+            no.addChild(ma)
+            no.addChild(lines)
+            sg.addChild(no)
+
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
