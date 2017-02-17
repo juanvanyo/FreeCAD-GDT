@@ -42,7 +42,7 @@ if FreeCAD.GuiUp:
     gui = True
 else:
     FreeCAD.Console.PrintMessage("FreeCAD Gui not present. GDT module will have some features disabled.")
-    gui = False
+    gui = True
 
 try:
     from PySide import QtCore,QtGui,QtSvg
@@ -254,120 +254,117 @@ def getAnnotationObj(obj):
     return None
 
 def getPointsToPlot(obj):
+    X = FreeCAD.Vector(1.0,0.0,0.0)
+    Y = FreeCAD.Vector(0.0,1.0,0.0)
+    Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
+    Vertical = obj.AP.Direction.cross(Direction).normalize()
+    Horizontal = Vertical.cross(obj.AP.Direction).normalize()
     point = obj.selectedPoint[0]
     d = point.distanceToPlane(obj.p1, obj.Direction)*3/4
     P2 = obj.p1 + obj.Direction * d
     P3 = point
     points = [obj.p1, P2, P3]
-    return points
-    # myWire = Draft.makeWire(points,closed=False,face=True,support=None) #explota aqui
-    # myWire.ViewObject.LineColor = getRGBLine()
-    # myWire.ViewObject.LineWidth = getLineWidth()
-    # obj.addObject(myWire)
-    # hideGrid()
-    # pass
+    segments = [0,1,2]
+    existGT = True
+    if obj.GT <> []:
+        points, segments = getPointsToPlotGT(obj, points, segments, Vertical, Horizontal)
+    else:
+        existGT = False
+    if obj.DF <> None:
+        points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
+    return points, segments
 
-#     P4 = P3 + Direction * (-sizeOfLine)
-#     P5 = P3 + Direction * (sizeOfLine)
-#     pAux = P5 + DirectionAP * sizeOfLine
-#     v1 = pAux - P5
-#     v2 = P3 - P5
-#     Direction2 = v1.cross(v2)
-#     FreeCAD.Console.PrintMessage('Direction2: '+str(Direction2)+'\n')
-#     points = [P1,P2,P3,P4,P5]
-#     if DF:
-#         points += createDF(P5,Direction2)
-#     else:
-#         points += createGT(P5,Direction2)
-#     obj.Points = points
-#     myWire = Draft.makeWire(points,closed=False,face=True,support=None)
-#     myWire.ViewObject.LineColor = getRGBLine()
-#     myWire.ViewObject.LineWidth = getLineWidth()
-#     obj.WireConstruction = myWire
-#     if not DF:
-#         PText = points[-2] + Direction * (sizeOfLine/2)
-#         PText = PText + Direction2 * (sizeOfLine/2)
-#         PTextCharacteristic = points[3] + Direction * (sizeOfLine/2)
-#         PTextCharacteristic = PTextCharacteristic + Direction2 * (sizeOfLine)
-#         myLabel = Draft.makeText(obj.GT.CharacteristicIconText,point=PTextCharacteristic,screen=False)
-#         myLabel.ViewObject.FontSize = getTextSize()
-#         myLabel.ViewObject.FontName = getTextFamily()
-#         myLabel.ViewObject.TextColor = getRGBText()
-#         for i in range(DS):
-#             if i == 0:
-#                 PTextPrimary = points[-5] + Direction * (sizeOfLine/2)
-#                 PTextPrimary = PTextPrimary + Direction2 * (sizeOfLine/2)
-#                 myLabel = Draft.makeText(obj.GT.DS.Primary.Label,point=PTextPrimary,screen=False)
-#                 myLabel.ViewObject.FontSize = getTextSize()
-#                 myLabel.ViewObject.FontName = getTextFamily()
-#                 myLabel.ViewObject.TextColor = getRGBText()
-#             elif i == 1:
-#                 PTextSecondary = points[-8] + Direction * (sizeOfLine/2)
-#                 PTextSecondary = PTextSecondary + Direction2 * (sizeOfLine/2)
-#                 myLabel = Draft.makeText(obj.GT.DS.Secondary.Label,point=PTextSecondary,screen=False)
-#                 myLabel.ViewObject.FontSize = getTextSize()
-#                 myLabel.ViewObject.FontName = getTextFamily()
-#                 myLabel.ViewObject.TextColor = getRGBText()
-#             else:
-#                 PTextTertiary = points[-11] + Direction * (sizeOfLine/2)
-#                 PTextTertiary = PTextTertiary + Direction2 * (sizeOfLine/2)
-#                 myLabel = Draft.makeText(obj.GT.DS.Tertiary.Label,point=PTextTertiary,screen=False)
-#                 myLabel.ViewObject.FontSize = getTextSize()
-#                 myLabel.ViewObject.FontName = getTextFamily()
-#                 myLabel.ViewObject.TextColor = getRGBText()
-#     else:
-#         PText = points[-3] + Direction * (sizeOfLine/2)
-#         PText = PText + Direction2 * (sizeOfLine/2)
-#     myLabel = Draft.makeText(textName,point=PText,screen=False) # If screen is True, the text always faces the view direction.
-#     myLabel.ViewObject.FontSize = getTextSize()
-#     myLabel.ViewObject.FontName = getTextFamily()
-#     myLabel.ViewObject.TextColor = getRGBText()
-#     # grp = doc.addObject("Part::Compound","Annotation")
-#     # grp.Label='Annotation: '
-#     # grp.Links = [obj,myWire,myLabel,]
-#     hideGrid()
-#     return obj
-#
-# def createDF(P5,Direction2):
-#     P6 = P5 + Direction2 * (sizeOfLine*3)
-#     P7 = P6 + Direction * (-sizeOfLine*2)
-#     P8 = P7 + Direction2 * (-sizeOfLine)
-#     P9 = P8 + Direction2 * (-sizeOfLine)
-#     P10 = P9 + Direction2 * (-sizeOfLine)
-#     P11=P9
-#     h=math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
-#     P12 = P11 + Direction2 * (sizeOfLine/2)
-#     P12 = P12 + Direction * (-h)
-#     P13=P8
-#     P14=P12
-#
-#     P15 = P11 + Direction2 * (sizeOfLine/2)
-#     P15 = P15 + Direction * (-sizeOfLine*3)
-#     P16 = P15 + Direction2 * (sizeOfLine)
-#     P17 = P16 + Direction * (-sizeOfLine*2)
-#     P18 = P17 + Direction2 * (-sizeOfLine*2)
-#     P19 = P18 + Direction * (sizeOfLine*2)
-#     P20=P15
-#     return [P6,P7,P8,P9,P10,P11,P12,P13,P14,P15,P16,P17,P18,P19,P20]
-#
-# def createGT(P5,Direction2):
-#     listPoints=[]
-#     P6 = P5 + Direction2 * (sizeOfLine*11+sizeOfLine*DS*2)
-#     P7 = P6 + Direction * (-sizeOfLine*2)
-#     listPoints += [P6,P7]
-#     for i in range(DS):
-#         P8 = P7 + Direction2 * (-sizeOfLine*2)
-#         P9 = P8 + Direction * (sizeOfLine*2)
-#         P10 = P8
-#         P7 = P10
-#         listPoints += [P8,P9,P10]
-#     P8 = P7 + Direction2 * (-sizeOfLine*8)
-#     P9 = P8 + Direction * (sizeOfLine*2)
-#     P10 = P8
-#     P11 = P10 + Direction2 * (-sizeOfLine*3)
-#     #P11 = FreeCAD.Vector(P10[0]-sizeOfLine*3,P10[1],P10[2])
-#     listPoints += [P8,P9,P10,P11]
-#     return listPoints
+def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
+    newPoints = points
+    listInv = points
+    newSegments = segments
+    for i in range(len(obj.GT)):
+        d = len(newPoints)
+        if points[2].x < points[0].x:
+            if i == 0:
+                P0 = newPoints[-1] + Vertical * (sizeOfLine)
+            else:
+                P0 = newPoints[-2]
+        else:
+            P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else newPoints[-1]
+        P1 = P0 + Vertical * (-sizeOfLine*2)
+        P2 = P0 + Horizontal * (sizeOfLine*2)
+        P3 = P1 + Horizontal * (sizeOfLine*2)
+        P4 = P2 + Horizontal * (sizeOfLine*6)
+        P5 = P3 + Horizontal * (sizeOfLine*6)
+        if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
+            newPoints += [P0, P2, P3, P4, P5, P1]
+            newSegments += [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
+            if points[2].x < points[0].x:
+                displacement = newPoints[-3].x - newPoints[-6].x
+                for i in range(len(newPoints)-6, len(newPoints)):
+                    listInv.append(newPoints[i])
+                    listInv[i].x-=displacement
+        else:
+            P6 = P4 + Horizontal * (sizeOfLine*2)
+            P7 = P5 + Horizontal * (sizeOfLine*2)
+            if obj.GT[i].DS.Secondary <> None:
+                P8 = P6 + Horizontal * (sizeOfLine*2)
+                P9 = P7 + Horizontal * (sizeOfLine*2)
+                if obj.GT[i].DS.Tertiary <> None:
+                    P10 = P8 + Horizontal * (sizeOfLine*2)
+                    P11 = P9 + Horizontal * (sizeOfLine*2)
+                    newPoints += [P0, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P1]
+                    newSegments += [-1, 0+d, 9+d, 10+d, 11+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d, -1, 7+d, 8+d]
+                    if points[2].x < points[0].x:
+                        displacement = newPoints[-3].x - newPoints[-12].x
+                        for i in range(len(newPoints)-12, len(newPoints)):
+                            listInv.append(newPoints[i])
+                            listInv[i].x-=displacement
+                else:
+                    newPoints += [P0, P2, P3, P4, P5, P6, P7, P8, P9, P1]
+                    newSegments += [-1, 0+d, 7+d, 8+d, 9+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d]
+                    if points[2].x < points[0].x:
+                        displacement = newPoints[-3].x - newPoints[-10].x
+                        for i in range(len(newPoints)-10, len(newPoints)):
+                            listInv.append(newPoints[i])
+                            listInv[i].x-=displacement
+            else:
+                newPoints += [P0, P2, P3, P4, P5, P6, P7, P1]
+                newSegments += [-1, 0+d, 5+d, 6+d, 7+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d]
+                if points[2].x < points[0].x:
+                    displacement = newPoints[-3].x - newPoints[-8].x
+                    for i in range(len(newPoints)-8, len(newPoints)):
+                        listInv.append(newPoints[i])
+                        listInv[i].x-=displacement
+    if points[2].x < points[0].x:
+        newPoints = listInv
+    return newPoints, newSegments
+
+def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
+    d = len(points)
+    newPoints = points
+    newSegments = segments
+    if not existGT:
+        P0 = points[-1] + Vertical * (sizeOfLine)
+        P1 = P0 + Horizontal * (sizeOfLine*2)
+        P2 = P1 + Vertical * (-sizeOfLine*2)
+        P3 = P2 + Horizontal * (-sizeOfLine*2)
+        newPoints += [P0, P1, P2, P3]
+        newSegments += [-1, 0+d, 1+d, 2+d, 3+d, 0+d]
+        if points[2].x < points[0].x:
+            displacement = newPoints[-2].x - newPoints[-1].x
+            for i in range(len(newPoints)-4, len(newPoints)):
+                newPoints[i].x-=displacement
+    d=len(newPoints)
+    P0 = newPoints[-1] + Horizontal * (sizeOfLine/2)
+    P1 = P0 + Horizontal * (sizeOfLine)
+    h = math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
+    PAux = newPoints[-1] + Horizontal * (sizeOfLine)
+    P2 = PAux + Vertical * (-h)
+    P3 = PAux + Vertical * (-sizeOfLine*3)
+    P4 = P3 + Horizontal * (sizeOfLine)
+    P5 = P4 + Vertical * (-sizeOfLine*2)
+    P6 = P5 + Horizontal * (-sizeOfLine*2)
+    P7 = P6 + Vertical * (sizeOfLine*2)
+    newPoints += [P0,P1, P2, P3, P4, P5, P6, P7]
+    newSegments += [-1, 0+d, 2+d, -1, 1+d, 2+d, 3+d, 4+d, 5+d, 6+d, 7+d, 3+d]
+    return newPoints, newSegments
 
 #---------------------------------------------------------------------------
 # UNITS handling
@@ -520,7 +517,6 @@ class _AnnotationPlane(_GDTObject):
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
-        FreeCAD.Console.PrintMessage('Executed\n')
         fp.p1 = fp.faces[0].Shape.getElement(fp.faces[1][0]).CenterOfMass
         fp.Direction = fp.faces[0].Shape.getElement(fp.faces[1][0]).normalAt(0,0)
 
@@ -602,8 +598,7 @@ def makeDatumFeature(Name, ContainerOfData):
         faces = AnnotationObj.faces
         AP = AnnotationObj.AP
         GT = AnnotationObj.GT
-        FreeCAD.ActiveDocument.removeObject(AnnotationObj.Name)
-        makeAnnotation(faces, AP, DF=obj, GT=GT)
+        makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj)
     return obj
 
     #-----------------------------------------------------------------------
@@ -706,15 +701,12 @@ def makeGeometricTolerance(Name, ContainerOfData):
     if AnnotationObj == None:
         makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=None, GT=obj)
     else:
-        gt=[]
-        for i in range(len(AnnotationObj.GT)):
-            gt.append(AnnotationObj.GT[i])
+        gt=AnnotationObj.GT
         gt.append(obj)
         faces = AnnotationObj.faces
         AP = AnnotationObj.AP
         DF = AnnotationObj.DF
-        FreeCAD.ActiveDocument.removeObject(AnnotationObj.Name)
-        makeAnnotation(faces, AP, DF=DF, GT=gt)
+        makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj)
     return obj
 
     #-----------------------------------------------------------------------
@@ -789,16 +781,15 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         # fp is the handled feature, prop is the name of the property that has changed
         if prop == "selectedPoint":
             if fp.selectedPoint <> []:
-                points = getPointsToPlot(fp)
+                points, segments = getPointsToPlot(fp)
                 # print str(points)
+                # print str(segments)
                 self.data.point.setNum(len(points))
                 cnt=0
                 for p in points:
                     self.data.point.set1Value(cnt,p.x,p.y,p.z)
                     cnt=cnt+1
-                self.lines.coordIndex.set1Value(0,0)
-                self.lines.coordIndex.set1Value(1,1)
-                self.lines.coordIndex.set1Value(2,2)
+                self.lines.coordIndex.setValues(0,len(segments),segments)
 
     def doubleClicked(self,obj):
         select(self.Object)
@@ -829,27 +820,28 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def getIcon(self):
         return(":/dd/icons/annotation.svg")
 
-def makeAnnotation(faces, AP, DF=None, GT=[]):
+def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
     ''' Explanation
     '''
-    obj = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython","Annotation")
-    _Annotation(obj)
-    if gui:
-        _ViewProviderAnnotation(obj.ViewObject)
+    doc = FreeCAD.ActiveDocument
+    if not modify:
+        obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
+        _Annotation(obj)
+        if gui:
+            _ViewProviderAnnotation(obj.ViewObject)
+        group = FreeCAD.ActiveDocument.getObject("GDT")
+        group.addObject(obj)
+    else:
+        obj = Object
     obj.faces = faces
     obj.AP = AP
+    obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
     obj.DF = DF
     obj.GT = GT
-    group = FreeCAD.ActiveDocument.getObject("GDT")
-    group.addObject(obj)
     select(obj)
     def getPoint(point):
-        doc = FreeCAD.ActiveDocument
         if point:
             obj.selectedPoint = point
-            no = coin.SoSeparator()
-            sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-            sg.insertChild(no,1)
             hideGrid()
             doc.recompute()
             return obj
@@ -859,15 +851,17 @@ def makeAnnotation(faces, AP, DF=None, GT=[]):
                 if checkBoxState:
                     doc.removeObject(getAllDatumSystemObjects()[-1].Name)
             else:
-                doc.removeObject(obj.GT.Name)
-            obj.removeObjectsFromDocument()
+                doc.removeObject(obj.GT[-1].Name)
             doc.removeObject(obj.Name)
+            hideGrid()
             doc.recompute()
             return None
     if obj.selectedPoint == []:
         return FreeCADGui.Snapper.getPoint(callback=getPoint)
     else:
+        hideGrid()
         doc.recompute()
+        return None
 
     #-----------------------------------------------------------------------
     # Other classes
