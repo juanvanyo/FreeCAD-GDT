@@ -64,7 +64,7 @@ class DatumFeatureCommand:
                     else:
                         return False
             ContainerOfData = makeContainerOfData()
-            if getAnnotationObj(ContainerOfData) == None:
+            if getAnnotationObj(ContainerOfData) == None or getAnnotationObj(ContainerOfData).DF == None:
                 pass
             else:
                 return False
