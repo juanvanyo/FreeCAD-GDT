@@ -276,15 +276,11 @@ def getPointsToPlot(obj):
 
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     newPoints = points
-    listInv = points
     newSegments = segments
     for i in range(len(obj.GT)):
         d = len(newPoints)
         if points[2].x < points[0].x:
-            if i == 0:
-                P0 = newPoints[-1] + Vertical * (sizeOfLine)
-            else:
-                P0 = newPoints[-2]
+            P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else newPoints[-2] + FreeCAD.Vector(0.0,0.0,0.0)
         else:
             P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else newPoints[-1]
         P1 = P0 + Vertical * (-sizeOfLine*2)
@@ -293,13 +289,12 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P4 = P2 + Horizontal * (sizeOfLine*6)
         P5 = P3 + Horizontal * (sizeOfLine*6)
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
-            newPoints += [P0, P2, P3, P4, P5, P1]
-            newSegments += [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
+            newPoints = newPoints + [P0, P2, P3, P4, P5, P1]
+            newSegments = newSegments + [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
             if points[2].x < points[0].x:
                 displacement = newPoints[-3].x - newPoints[-6].x
                 for i in range(len(newPoints)-6, len(newPoints)):
-                    listInv.append(newPoints[i])
-                    listInv[i].x-=displacement
+                    newPoints[i].x-=displacement
         else:
             P6 = P4 + Horizontal * (sizeOfLine*2)
             P7 = P5 + Horizontal * (sizeOfLine*2)
@@ -309,31 +304,26 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
                 if obj.GT[i].DS.Tertiary <> None:
                     P10 = P8 + Horizontal * (sizeOfLine*2)
                     P11 = P9 + Horizontal * (sizeOfLine*2)
-                    newPoints += [P0, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P1]
-                    newSegments += [-1, 0+d, 9+d, 10+d, 11+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d, -1, 7+d, 8+d]
+                    newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P1]
+                    newSegments = newSegments + [-1, 0+d, 9+d, 10+d, 11+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d, -1, 7+d, 8+d]
                     if points[2].x < points[0].x:
                         displacement = newPoints[-3].x - newPoints[-12].x
                         for i in range(len(newPoints)-12, len(newPoints)):
-                            listInv.append(newPoints[i])
-                            listInv[i].x-=displacement
+                            newPoints[i].x-=displacement
                 else:
-                    newPoints += [P0, P2, P3, P4, P5, P6, P7, P8, P9, P1]
-                    newSegments += [-1, 0+d, 7+d, 8+d, 9+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d]
+                    newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P8, P9, P1]
+                    newSegments = newSegments + [-1, 0+d, 7+d, 8+d, 9+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d]
                     if points[2].x < points[0].x:
                         displacement = newPoints[-3].x - newPoints[-10].x
                         for i in range(len(newPoints)-10, len(newPoints)):
-                            listInv.append(newPoints[i])
-                            listInv[i].x-=displacement
+                            newPoints[i].x-=displacement
             else:
-                newPoints += [P0, P2, P3, P4, P5, P6, P7, P1]
-                newSegments += [-1, 0+d, 5+d, 6+d, 7+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d]
+                newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P1]
+                newSegments = newSegments + [-1, 0+d, 5+d, 6+d, 7+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d]
                 if points[2].x < points[0].x:
                     displacement = newPoints[-3].x - newPoints[-8].x
                     for i in range(len(newPoints)-8, len(newPoints)):
-                        listInv.append(newPoints[i])
-                        listInv[i].x-=displacement
-    if points[2].x < points[0].x:
-        newPoints = listInv
+                        newPoints[i].x-=displacement
     return newPoints, newSegments
 
 def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
@@ -345,8 +335,8 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
         P1 = P0 + Horizontal * (sizeOfLine*2)
         P2 = P1 + Vertical * (-sizeOfLine*2)
         P3 = P2 + Horizontal * (-sizeOfLine*2)
-        newPoints += [P0, P1, P2, P3]
-        newSegments += [-1, 0+d, 1+d, 2+d, 3+d, 0+d]
+        newPoints = newPoints + [P0, P1, P2, P3]
+        newSegments = newSegments + [-1, 0+d, 1+d, 2+d, 3+d, 0+d]
         if points[2].x < points[0].x:
             displacement = newPoints[-2].x - newPoints[-1].x
             for i in range(len(newPoints)-4, len(newPoints)):
@@ -362,8 +352,8 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     P5 = P4 + Vertical * (-sizeOfLine*2)
     P6 = P5 + Horizontal * (-sizeOfLine*2)
     P7 = P6 + Vertical * (sizeOfLine*2)
-    newPoints += [P0,P1, P2, P3, P4, P5, P6, P7]
-    newSegments += [-1, 0+d, 2+d, -1, 1+d, 2+d, 3+d, 4+d, 5+d, 6+d, 7+d, 3+d]
+    newPoints = newPoints + [P0, P1, P2, P3, P4, P5, P6, P7]
+    newSegments = newSegments + [-1, 0+d, 2+d, -1, 1+d, 2+d, 3+d, 4+d, 5+d, 6+d, 7+d, 3+d]
     return newPoints, newSegments
 
 #---------------------------------------------------------------------------
