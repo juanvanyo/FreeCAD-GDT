@@ -437,7 +437,7 @@ class _GDTObject:
         '''Do something when doing a recomputation, this method is mandatory'''
         pass
 
-    def onChanged(self, obj, prop):
+    def onChanged(self, vobj, prop):
         '''Do something when a property has changed'''
         pass
 
@@ -501,9 +501,9 @@ class _AnnotationPlane(_GDTObject):
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane").Direction = obj.faces[0].Shape.getElement(obj.faces[1][0]).normalAt(0,0)
         obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
 
-    def onChanged(self,obj,prop):
-        if hasattr(obj,"PointWithOffset"):
-            obj.setEditorMode('PointWithOffset',1)
+    def onChanged(self,vobj,prop):
+        if hasattr(vobj,"PointWithOffset"):
+            vobj.setEditorMode('PointWithOffset',1)
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
@@ -655,12 +655,12 @@ class _GeometricTolerance(_GDTObject):
         obj.addProperty("App::PropertyString","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
         obj.addProperty("App::PropertyLink","DS","GDT","Datum system used")
 
-    def onChanged(self,obj,prop):
+    def onChanged(self,vobj,prop):
         "Do something when a property has changed"
-        if hasattr(obj,"CharacteristicIcon"):
-            obj.setEditorMode('CharacteristicIcon',2)
-        if hasattr(obj,"CharacteristicIconText"):
-            obj.setEditorMode('CharacteristicIconText',2)
+        if hasattr(vobj,"CharacteristicIcon"):
+            vobj.setEditorMode('CharacteristicIcon',2)
+        if hasattr(vobj,"CharacteristicIconText"):
+            vobj.setEditorMode('CharacteristicIconText',2)
 
 class _ViewProviderGeometricTolerance(_ViewProviderGDT):
     "A View Provider for the GDT GeometricTolerance object"
@@ -730,6 +730,10 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def __init__(self, obj):
         obj.addProperty("App::PropertyFloat","LineWidth","GDT","Line width").LineWidth = getLineWidth()
         obj.addProperty("App::PropertyColor","LineColor","GDT","Line color").LineColor = getRGBLine()
+        obj.addProperty("App::PropertyLength","FontSize","GDT","Line width").FontSize = getTextSize()
+        obj.addProperty("App::PropertyString","FontName","GDT","Font name").FontName = getTextFamily()
+        obj.addProperty("App::PropertyVectorDistance","TextPosition","GDT","Text position").TextPosition = (0.0,0.0,0.0)
+        obj.addProperty("App::PropertyColor","FontColor","GDT","Font color").FontColor = getRGBText()
         _ViewProviderGDT.__init__(self,obj)
 
     def attach(self, obj):
@@ -738,6 +742,12 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.node = coin.SoGroup()
         self.node3d = coin.SoGroup()
         self.color = coin.SoBaseColor()
+        self.image = coin.SoSeparator()
+        self.svg = coin.SoImage()
+        self.svgPos = coin.SoTransform()
+
+        self.image.addChild(self.svg)
+        self.image.addChild(self.svgPos)
 
         self.data = coin.SoCoordinate3()
         self.lines = coin.SoIndexedLineSet()
@@ -748,16 +758,38 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         selectionNode.subElementName.setValue("Lines")
         selectionNode.addChild(self.lines)
 
+        self.font = coin.SoFont()
+        self.font3d = coin.SoFont()
+        self.textDF = coin.SoAsciiText()
+        self.textDF3d = coin.SoText2()
+        self.textDF.string = "d" # some versions of coin crash if string is not set
+        self.textDF3d.string = "d"
+        self.textDFpos = coin.SoTransform()
+        self.textDF.justification = self.textDF3d.justification = coin.SoAsciiText.CENTER
+        label = coin.SoSeparator()
+        label.addChild(self.textDFpos)
+        label.addChild(self.color)
+        label.addChild(self.font)
+        label.addChild(self.textDF)
+        label3d = coin.SoSeparator()
+        label3d.addChild(self.textDFpos)
+        label3d.addChild(self.color)
+        label3d.addChild(self.font3d)
+        label3d.addChild(self.textDF3d)
+
         self.drawstyle = coin.SoDrawStyle()
         self.drawstyle.style = coin.SoDrawStyle.LINES
 
+        self.node.addChild(label)
         self.node.addChild(self.drawstyle)
         self.node.addChild(self.color)
+        self.node.addChild(self.image)
         self.node.addChild(self.data)
         self.node.addChild(self.lines)
         self.node.addChild(selectionNode)
         obj.addDisplayMode(self.node,"2D")
 
+        self.node3d.addChild(label3d)
         self.node3d.addChild(self.color)
         self.node3d.addChild(self.data)
         self.node3d.addChild(self.lines)
@@ -765,11 +797,15 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         obj.addDisplayMode(self.node3d,"3D")
         self.onChanged(obj,"LineColor")
         self.onChanged(obj,"LineWidth")
+        self.onChanged(obj,"FontSize")
+        self.onChanged(obj,"FontName")
+        self.onChanged(obj,"FontColor")
 
     def updateData(self, fp, prop):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
-        if prop == "selectedPoint":
+        import DraftGeomUtils
+        if prop in "selectedPoint":
             if fp.selectedPoint <> []:
                 points, segments = getPointsToPlot(fp)
                 # print str(points)
@@ -780,7 +816,30 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
                     self.data.point.set1Value(cnt,p.x,p.y,p.z)
                     cnt=cnt+1
                 self.lines.coordIndex.setValues(0,len(segments),segments)
-
+                if fp.GT <> []:
+                    filename = fp.GT[0].CharacteristicIcon
+                    filename = filename.replace(':/dd/icons', iconPath)
+                    self.svg.filename = str(filename)
+                    self.svgPos.translation.setValue([points[3].x, points[3].y, points[3].z])
+                if fp.DF <> None:
+                    self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
+                    X = FreeCAD.Vector(1.0,0.0,0.0)
+                    Y = FreeCAD.Vector(0.0,1.0,0.0)
+                    Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
+                    Vertical = fp.AP.Direction.cross(Direction).normalize()
+                    Horizontal = Vertical.cross(fp.AP.Direction).normalize()
+                    centerPoint = points[-2] + Horizontal * (sizeOfLine)
+                    centerPoint = centerPoint + Vertical * (sizeOfLine/2)
+                    self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
+                    try:
+                        DirectionAux = fp.AP.Direction
+                        DirectionAux.x = abs(DirectionAux.x)
+                        DirectionAux.y = abs(DirectionAux.y)
+                        DirectionAux.z = abs(DirectionAux.z)
+                        rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
+                        self.textDFpos.rotation.setValue(rotation)
+                    except:
+                        pass
     def doubleClicked(self,obj):
         select(self.Object)
 
@@ -798,14 +857,30 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def setDisplayMode(self,mode):
         return mode
 
-    def onChanged(self, vp, prop):
+    def onChanged(self, vobj, prop):
         "Here we can do something when a single property got changed"
-        if prop == "LineColor":
-            c = vp.getPropertyByName("LineColor")
-            self.color.rgb.setValue(c[0],c[1],c[2])
-        elif prop == "LineWidth":
-            w = vp.getPropertyByName("LineWidth")
-            self.drawstyle.lineWidth = w
+        if (prop == "LineColor") and hasattr(vobj,"LineColor"):
+            if hasattr(self,"color"):
+                c = vobj.getPropertyByName("LineColor")
+                self.color.rgb.setValue(c[0],c[1],c[2])
+        elif (prop == "LineWidth") and hasattr(vobj,"LineWidth"):
+            if hasattr(self,"drawstyle"):
+                w = vobj.getPropertyByName("LineWidth")
+                self.drawstyle.lineWidth = w
+        elif (prop == "FontColor") and hasattr(vobj,"FontColor"):
+            if hasattr(self,"color"):
+                c = vobj.getPropertyByName("FontColor")
+                self.color.rgb.setValue(c[0],c[1],c[2])
+        elif (prop == "FontSize") and hasattr(vobj,"FontSize"):
+            if hasattr(self,"font"):
+                self.font.size = vobj.FontSize.Value
+            if hasattr(self,"font3d"):
+                self.font3d.size = vobj.FontSize.Value*100
+            vobj.Object.touch()
+        elif (prop == "FontName") and hasattr(vobj,"FontName"):
+            if hasattr(self,"font") and hasattr(self,"font3d"):
+                self.font.name = self.font3d.name = str(vobj.FontName)
+                vobj.Object.touch()
 
     def getIcon(self):
         return(":/dd/icons/annotation.svg")
