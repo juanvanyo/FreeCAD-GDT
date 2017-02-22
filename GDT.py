@@ -55,7 +55,6 @@ path_dd_resources =  os.path.join( os.path.dirname(__file__), 'Gui', 'Resources'
 resourcesLoaded = QtCore.QResource.registerResource(path_dd_resources)
 assert resourcesLoaded
 
-sizeOfLine = 1.0
 checkBoxState = True
 auxDictionaryDS=[]
 for i in range(1,100):
@@ -70,7 +69,7 @@ def getParamType(param):
         return "int"
     elif param in ["textFamily"]:
         return "string"
-    elif param in ["textSize","gridSpacing"]:
+    elif param in ["textSize","gridSpacing","lineScale"]:
         return "float"
     elif param in ["alwaysShowGrid","showUnit"]:
         return "bool"
@@ -119,6 +118,18 @@ def setParam(param,value):
 #---------------------------------------------------------------------------
 # General functions
 #---------------------------------------------------------------------------
+
+def stringencodecoin(ustr):
+    """stringencodecoin(str): Encodes a unicode object to be used as a string in coin"""
+    try:
+        from pivy import coin
+        coin4 = coin.COIN_MAJOR_VERSION >= 4
+    except (ImportError, AttributeError):
+        coin4 = False
+    if coin4:
+        return ustr.encode('utf-8')
+    else:
+        return ustr.encode('latin1')
 
 def getRealName(name):
     "getRealName(string): strips the trailing numbers from a string name"
@@ -277,6 +288,7 @@ def getPointsToPlot(obj):
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     newPoints = points
     newSegments = segments
+    sizeOfLine = obj.ViewObject.LineScale
     for i in range(len(obj.GT)):
         d = len(newPoints)
         if points[2].x < points[0].x:
@@ -286,8 +298,9 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P1 = P0 + Vertical * (-sizeOfLine*2)
         P2 = P0 + Horizontal * (sizeOfLine*2)
         P3 = P1 + Horizontal * (sizeOfLine*2)
-        P4 = P2 + Horizontal * (sizeOfLine*6)
-        P5 = P3 + Horizontal * (sizeOfLine*6)
+        lengthToleranceValue = len(stringencodecoin(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
+        P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
+        P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
             newPoints = newPoints + [P0, P2, P3, P4, P5, P1]
             newSegments = newSegments + [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
@@ -330,6 +343,7 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     d = len(points)
     newPoints = points
     newSegments = segments
+    sizeOfLine = obj.ViewObject.LineScale
     if not existGT:
         P0 = points[-1] + Vertical * (sizeOfLine)
         P1 = P0 + Horizontal * (sizeOfLine*2)
@@ -358,6 +372,7 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
 
 def plotStrings(self, fp, points):
     import DraftGeomUtils
+    sizeOfLine = fp.ViewObject.LineScale
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
@@ -369,19 +384,27 @@ def plotStrings(self, fp, points):
         index = -1
         displacement = 0
         for i in range(len(fp.GT)):
-            centerPoint = points[5+displacement] + Horizontal * (sizeOfLine*3)
+            distance = 0
+            v = (points[7+displacement] - points[5+displacement])
+            if v.x <> 0:
+                distance = (v.x)/2
+            elif v.y <> 0:
+                distance = (v.y)/2
+            else:
+                distance = (v.z)/2
+            centerPoint = points[5+displacement] + Horizontal * (distance)
             posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
             label.append(coin.SoSeparator())
             label3d.append(coin.SoSeparator())
             index+=1
-            self.textGT[index].string = self.textGT3d[index].string = str(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+            self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
             displacement+=6
             if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
                 label.append(coin.SoSeparator())
                 label3d.append(coin.SoSeparator())
                 index+=1
-                posPrimary = posToleranceValue + Horizontal * (sizeOfLine*4)
+                posPrimary = posToleranceValue + Horizontal * (distance+sizeOfLine)
                 self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Primary.Label)
                 self.textGTpos[index].translation.setValue([posPrimary.x, posPrimary.y, posPrimary.z])
                 displacement+=2
@@ -417,7 +440,15 @@ def plotStrings(self, fp, points):
         self.svgPos.translation.setValue([points[3].x, points[3].y, points[3].z])
     if fp.DF <> None:
         self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
-        centerPoint = points[-2] + Horizontal * (sizeOfLine)
+        distance = 0
+        v = (points[-3] - points[-2])
+        if v.x <> 0:
+            distance = (v.x)/2
+        elif v.y <> 0:
+            distance = (v.y)/2
+        else:
+            distance = (v.z)/2
+        centerPoint = points[-2] + Horizontal * (distance)
         centerPoint = centerPoint + Vertical * (sizeOfLine/2)
         self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
         try:
@@ -804,12 +835,12 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def __init__(self, obj):
         obj.addProperty("App::PropertyFloat","LineWidth","GDT","Line width").LineWidth = getLineWidth()
         obj.addProperty("App::PropertyColor","LineColor","GDT","Line color").LineColor = getRGBLine()
-        obj.addProperty("App::PropertyLength","FontSize","GDT","Line width").FontSize = getTextSize()
+        obj.addProperty("App::PropertyFloat","LineScale","GDT","Line scale").LineScale = getParam("lineScale",1.0)
+        obj.addProperty("App::PropertyLength","FontSize","GDT","Font size").FontSize = getTextSize()
         obj.addProperty("App::PropertyString","FontName","GDT","Font name").FontName = getTextFamily()
+        obj.addProperty("App::PropertyColor","FontColor","GDT","Font color").FontColor = getRGBText()
         obj.addProperty("App::PropertyInteger","Decimals","GDT","The number of decimals to show").Decimals = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
         obj.addProperty("App::PropertyBool","ShowUnit","GDT","Show the unit suffix").ShowUnit = getParam("showUnit",True)
-        obj.addProperty("App::PropertyVectorDistance","TextPosition","GDT","Text position").TextPosition = (0.0,0.0,0.0)
-        obj.addProperty("App::PropertyColor","FontColor","GDT","Font color").FontColor = getRGBText()
         _ViewProviderGDT.__init__(self,obj)
 
     def attach(self, obj):
@@ -904,7 +935,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def updateData(self, fp, prop):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
-        if prop in "selectedPoint":
+        if prop in "selectedPoint" and hasattr(fp.ViewObject,"Decimals") and hasattr(fp.ViewObject,"ShowUnit"):
+            print str(fp.selectedPoint)
             if fp.selectedPoint <> []:
                 points, segments = getPointsToPlot(fp)
                 # print str(points)
