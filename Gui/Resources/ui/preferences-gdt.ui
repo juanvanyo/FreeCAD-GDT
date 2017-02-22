@@ -135,6 +135,22 @@
         </item>
        </layout>
       </item>
+      <item>
+       <widget class="Gui::PrefCheckBox" name="checkBox">
+        <property name="text">
+         <string>Show the unit suffix in dimensions</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="prefEntry" stdset="0">
+         <cstring>showUnit</cstring>
+        </property>
+        <property name="prefPath" stdset="0">
+         <cstring>Mod/GDT</cstring>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -433,23 +449,18 @@
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
  <customwidgets>
   <customwidget>
-   <class>Gui::ColorButton</class>
-   <extends>QPushButton</extends>
-   <header>Gui/Widgets.h</header>
+   <class>Gui::PrefCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>Gui/PrefWidgets.h</header>
   </customwidget>
   <customwidget>
    <class>Gui::PrefSpinBox</class>
    <extends>QSpinBox</extends>
-   <header>Gui/PrefWidgets.h</header>
-  </customwidget>
-  <customwidget>
-   <class>Gui::PrefColorButton</class>
-   <extends>Gui::ColorButton</extends>
-   <header>Gui/PrefWidgets.h</header>
-  </customwidget>
-  <customwidget>
-   <class>Gui::PrefCheckBox</class>
-   <extends>QCheckBox</extends>
    <header>Gui/PrefWidgets.h</header>
   </customwidget>
   <customwidget>
@@ -458,8 +469,13 @@
    <header>Gui/PrefWidgets.h</header>
   </customwidget>
   <customwidget>
-   <class>Gui::PrefDoubleSpinBox</class>
-   <extends>QDoubleSpinBox</extends>
+   <class>Gui::ColorButton</class>
+   <extends>QPushButton</extends>
+   <header>Gui/Widgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefColorButton</class>
+   <extends>Gui::ColorButton</extends>
    <header>Gui/PrefWidgets.h</header>
   </customwidget>
  </customwidgets>

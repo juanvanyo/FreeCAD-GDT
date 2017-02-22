@@ -72,7 +72,7 @@ def getParamType(param):
         return "string"
     elif param in ["textSize","gridSpacing"]:
         return "float"
-    elif param in ["alwaysShowGrid"]:
+    elif param in ["alwaysShowGrid","showUnit"]:
         return "bool"
     elif param in ["textColor","lineColor"]:
         return "unsigned"
@@ -374,7 +374,7 @@ def plotStrings(self, fp, points):
             label.append(coin.SoSeparator())
             label3d.append(coin.SoSeparator())
             index+=1
-            self.textGT[index].string = self.textGT3d[index].string = str(displayExternal(fp.GT[i].ToleranceValue))
+            self.textGT[index].string = self.textGT3d[index].string = str(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
             displacement+=6
             if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
@@ -806,6 +806,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         obj.addProperty("App::PropertyColor","LineColor","GDT","Line color").LineColor = getRGBLine()
         obj.addProperty("App::PropertyLength","FontSize","GDT","Line width").FontSize = getTextSize()
         obj.addProperty("App::PropertyString","FontName","GDT","Font name").FontName = getTextFamily()
+        obj.addProperty("App::PropertyInteger","Decimals","GDT","The number of decimals to show").Decimals = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        obj.addProperty("App::PropertyBool","ShowUnit","GDT","Show the unit suffix").ShowUnit = getParam("showUnit",True)
         obj.addProperty("App::PropertyVectorDistance","TextPosition","GDT","Text position").TextPosition = (0.0,0.0,0.0)
         obj.addProperty("App::PropertyColor","FontColor","GDT","Font color").FontColor = getRGBText()
         _ViewProviderGDT.__init__(self,obj)
@@ -956,6 +958,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             if hasattr(self,"font") and hasattr(self,"font3d"):
                 self.font.name = self.font3d.name = str(vobj.FontName)
                 vobj.Object.touch()
+        else:
+            self.updateData(vobj.Object, "selectedPoint")
 
     def getIcon(self):
         return(":/dd/icons/annotation.svg")
