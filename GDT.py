@@ -356,6 +356,80 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     newSegments = newSegments + [-1, 0+d, 2+d, -1, 1+d, 2+d, 3+d, 4+d, 5+d, 6+d, 7+d, 3+d]
     return newPoints, newSegments
 
+def plotStrings(self, fp, points):
+    import DraftGeomUtils
+    X = FreeCAD.Vector(1.0,0.0,0.0)
+    Y = FreeCAD.Vector(0.0,1.0,0.0)
+    Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
+    Vertical = fp.AP.Direction.cross(Direction).normalize()
+    Horizontal = Vertical.cross(fp.AP.Direction).normalize()
+    if fp.GT <> []:
+        label = []
+        label3d = []
+        index = -1
+        displacement = 0
+        for i in range(len(fp.GT)):
+            centerPoint = points[5+displacement] + Horizontal * (sizeOfLine*3)
+            posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
+            label.append(coin.SoSeparator())
+            label3d.append(coin.SoSeparator())
+            index+=1
+            self.textGT[index].string = self.textGT3d[index].string = str(displayExternal(fp.GT[i].ToleranceValue))
+            self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
+            displacement+=6
+            if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
+                label.append(coin.SoSeparator())
+                label3d.append(coin.SoSeparator())
+                index+=1
+                posPrimary = posToleranceValue + Horizontal * (sizeOfLine*4)
+                self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Primary.Label)
+                self.textGTpos[index].translation.setValue([posPrimary.x, posPrimary.y, posPrimary.z])
+                displacement+=2
+                if fp.GT[i].DS.Secondary <> None:
+                    label.append(coin.SoSeparator())
+                    label3d.append(coin.SoSeparator())
+                    index+=1
+                    posSecondary = posPrimary + Horizontal * (sizeOfLine*2)
+                    self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Secondary.Label)
+                    self.textGTpos[index].translation.setValue([posSecondary.x, posSecondary.y, posSecondary.z])
+                    displacement+=2
+                    if fp.GT[i].DS.Tertiary <> None:
+                        label.append(coin.SoSeparator())
+                        label3d.append(coin.SoSeparator())
+                        index+=1
+                        posTertiary = posSecondary + Horizontal * (sizeOfLine*2)
+                        self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Tertiary.Label)
+                        self.textGTpos[index].translation.setValue([posTertiary.x, posTertiary.y, posTertiary.z])
+                        displacement+=2
+        for i in range(index+1):
+            try:
+                DirectionAux = fp.AP.Direction
+                DirectionAux.x = abs(DirectionAux.x)
+                DirectionAux.y = abs(DirectionAux.y)
+                DirectionAux.z = abs(DirectionAux.z)
+                rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
+                self.textGTpos[i].rotation.setValue(rotation)
+            except:
+                pass
+        filename = fp.GT[0].CharacteristicIcon
+        filename = filename.replace(':/dd/icons', iconPath)
+        self.svg.filename = str(filename)
+        self.svgPos.translation.setValue([points[3].x, points[3].y, points[3].z])
+    if fp.DF <> None:
+        self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
+        centerPoint = points[-2] + Horizontal * (sizeOfLine)
+        centerPoint = centerPoint + Vertical * (sizeOfLine/2)
+        self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
+        try:
+            DirectionAux = fp.AP.Direction
+            DirectionAux.x = abs(DirectionAux.x)
+            DirectionAux.y = abs(DirectionAux.y)
+            DirectionAux.z = abs(DirectionAux.z)
+            rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
+            self.textDFpos.rotation.setValue(rotation)
+        except:
+            pass
+
 #---------------------------------------------------------------------------
 # UNITS handling
 #---------------------------------------------------------------------------
@@ -717,7 +791,7 @@ class _Annotation(_GDTObject):
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
-        FreeCAD.Console.PrintMessage('Executed\n')
+        # FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
         fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
         diff = fp.p1-auxP1
@@ -762,25 +836,49 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.font3d = coin.SoFont()
         self.textDF = coin.SoAsciiText()
         self.textDF3d = coin.SoText2()
-        self.textDF.string = "d" # some versions of coin crash if string is not set
-        self.textDF3d.string = "d"
+        self.textDF.string = "" # some versions of coin crash if string is not set
+        self.textDF3d.string = ""
         self.textDFpos = coin.SoTransform()
         self.textDF.justification = self.textDF3d.justification = coin.SoAsciiText.CENTER
-        label = coin.SoSeparator()
-        label.addChild(self.textDFpos)
-        label.addChild(self.color)
-        label.addChild(self.font)
-        label.addChild(self.textDF)
-        label3d = coin.SoSeparator()
-        label3d.addChild(self.textDFpos)
-        label3d.addChild(self.color)
-        label3d.addChild(self.font3d)
-        label3d.addChild(self.textDF3d)
+        labelDF = coin.SoSeparator()
+        labelDF.addChild(self.textDFpos)
+        labelDF.addChild(self.color)
+        labelDF.addChild(self.font)
+        labelDF.addChild(self.textDF)
+        labelDF3d = coin.SoSeparator()
+        labelDF3d.addChild(self.textDFpos)
+        labelDF3d.addChild(self.color)
+        labelDF3d.addChild(self.font3d)
+        labelDF3d.addChild(self.textDF3d)
+
+        self.textGT = []
+        self.textGT3d = []
+        self.textGTpos = []
+        for i in range(20):
+            self.textGT.append(coin.SoAsciiText())
+            self.textGT3d.append(coin.SoText2())
+            self.textGT[i].string = ""
+            self.textGT3d[i].string = ""
+            self.textGTpos.append(coin.SoTransform())
+            self.textGT[i].justification = self.textGT3d[i].justification = coin.SoAsciiText.CENTER
+            labelGT = coin.SoSeparator()
+            labelGT.addChild(self.textGTpos[i])
+            labelGT.addChild(self.color)
+            labelGT.addChild(self.font)
+            labelGT.addChild(self.textGT[i])
+            labelGT3d = coin.SoSeparator()
+            labelGT3d.addChild(self.textGTpos[i])
+            labelGT3d.addChild(self.color)
+            labelGT3d.addChild(self.font3d)
+            labelGT3d.addChild(self.textGT3d[i])
+            self.node.addChild(labelGT)
+            self.node3d.addChild(labelGT3d)
+
 
         self.drawstyle = coin.SoDrawStyle()
         self.drawstyle.style = coin.SoDrawStyle.LINES
 
-        self.node.addChild(label)
+        self.node.addChild(labelDF)
         self.node.addChild(self.drawstyle)
         self.node.addChild(self.color)
         self.node.addChild(self.image)
@@ -789,7 +887,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.node.addChild(selectionNode)
         obj.addDisplayMode(self.node,"2D")
 
-        self.node3d.addChild(label3d)
+        self.node3d.addChild(labelDF3d)
         self.node3d.addChild(self.color)
         self.node3d.addChild(self.data)
         self.node3d.addChild(self.lines)
@@ -804,7 +902,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def updateData(self, fp, prop):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
-        import DraftGeomUtils
         if prop in "selectedPoint":
             if fp.selectedPoint <> []:
                 points, segments = getPointsToPlot(fp)
@@ -816,30 +913,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
                     self.data.point.set1Value(cnt,p.x,p.y,p.z)
                     cnt=cnt+1
                 self.lines.coordIndex.setValues(0,len(segments),segments)
-                if fp.GT <> []:
-                    filename = fp.GT[0].CharacteristicIcon
-                    filename = filename.replace(':/dd/icons', iconPath)
-                    self.svg.filename = str(filename)
-                    self.svgPos.translation.setValue([points[3].x, points[3].y, points[3].z])
-                if fp.DF <> None:
-                    self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
-                    X = FreeCAD.Vector(1.0,0.0,0.0)
-                    Y = FreeCAD.Vector(0.0,1.0,0.0)
-                    Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
-                    Vertical = fp.AP.Direction.cross(Direction).normalize()
-                    Horizontal = Vertical.cross(fp.AP.Direction).normalize()
-                    centerPoint = points[-2] + Horizontal * (sizeOfLine)
-                    centerPoint = centerPoint + Vertical * (sizeOfLine/2)
-                    self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
-                    try:
-                        DirectionAux = fp.AP.Direction
-                        DirectionAux.x = abs(DirectionAux.x)
-                        DirectionAux.y = abs(DirectionAux.y)
-                        DirectionAux.z = abs(DirectionAux.z)
-                        rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
-                        self.textDFpos.rotation.setValue(rotation)
-                    except:
-                        pass
+                plotStrings(self, fp, points)
+
     def doubleClicked(self,obj):
         select(self.Object)
 
