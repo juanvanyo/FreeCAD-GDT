@@ -426,7 +426,7 @@ def plotStrings(self, fp, points):
                         displacement+=2
         for i in range(index+1):
             try:
-                DirectionAux = fp.AP.Direction
+                DirectionAux = fp.AP.Direction + FreeCAD.Vector(0.0,0.0,0.0)
                 DirectionAux.x = abs(DirectionAux.x)
                 DirectionAux.y = abs(DirectionAux.y)
                 DirectionAux.z = abs(DirectionAux.z)
@@ -452,7 +452,7 @@ def plotStrings(self, fp, points):
         centerPoint = centerPoint + Vertical * (sizeOfLine/2)
         self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
         try:
-            DirectionAux = fp.AP.Direction
+            DirectionAux = fp.AP.Direction + FreeCAD.Vector(0.0,0.0,0.0)
             DirectionAux.x = abs(DirectionAux.x)
             DirectionAux.y = abs(DirectionAux.y)
             DirectionAux.z = abs(DirectionAux.z)
