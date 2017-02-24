@@ -270,7 +270,7 @@ def getPointsToPlot(obj):
     Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
     Vertical = obj.AP.Direction.cross(Direction).normalize()
     Horizontal = Vertical.cross(obj.AP.Direction).normalize()
-    point = obj.selectedPoint[0]
+    point = obj.selectedPoint
     d = point.distanceToPlane(obj.p1, obj.Direction)*3/4
     P2 = obj.p1 + obj.Direction * d
     P3 = point
@@ -818,7 +818,12 @@ class _Annotation(_GDTObject):
         obj.addProperty("App::PropertyLinkList","GT","GDT","Text").GT=[]
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Start point")
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of your annotation plane")
-        obj.addProperty("App::PropertyVectorList","selectedPoint","GDT","Selected point to where plot the annotation").selectedPoint = []
+        obj.addProperty("App::PropertyVector","selectedPoint","GDT","Selected point to where plot the annotation")
+        obj.addProperty("App::PropertyBool","spBool","GDT","Boolean to confirm that a selected point exists").spBool = False
+
+    def onChanged(self,vobj,prop):
+        if hasattr(vobj,"spBool"):
+            vobj.setEditorMode('spBool',2)
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
@@ -827,8 +832,8 @@ class _Annotation(_GDTObject):
         fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
         diff = fp.p1-auxP1
         fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
-        if fp.selectedPoint <> []:
-            fp.selectedPoint = [fp.selectedPoint[0] + diff]
+        if fp.spBool:
+            fp.selectedPoint = fp.selectedPoint + diff
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
@@ -935,18 +940,17 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def updateData(self, fp, prop):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
-        if prop in "selectedPoint" and hasattr(fp.ViewObject,"Decimals") and hasattr(fp.ViewObject,"ShowUnit"):
-            if fp.selectedPoint <> []:
-                points, segments = getPointsToPlot(fp)
-                # print str(points)
-                # print str(segments)
-                self.data.point.setNum(len(points))
-                cnt=0
-                for p in points:
-                    self.data.point.set1Value(cnt,p.x,p.y,p.z)
-                    cnt=cnt+1
-                self.lines.coordIndex.setValues(0,len(segments),segments)
-                plotStrings(self, fp, points)
+        if prop in "selectedPoint" and hasattr(fp.ViewObject,"Decimals") and hasattr(fp.ViewObject,"ShowUnit") and fp.spBool:
+            points, segments = getPointsToPlot(fp)
+            # print str(points)
+            # print str(segments)
+            self.data.point.setNum(len(points))
+            cnt=0
+            for p in points:
+                self.data.point.set1Value(cnt,p.x,p.y,p.z)
+                cnt=cnt+1
+            self.lines.coordIndex.setValues(0,len(segments),segments)
+            plotStrings(self, fp, points)
 
     def doubleClicked(self,obj):
         select(self.Object)
@@ -1016,6 +1020,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
     select(obj)
     def getPoint(point):
         if point:
+            obj.spBool = True
             obj.selectedPoint = point
             hideGrid()
             doc.recompute()
@@ -1031,7 +1036,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
             hideGrid()
             doc.recompute()
             return None
-    if obj.selectedPoint == []:
+    if not obj.spBool:
         return FreeCADGui.Snapper.getPoint(callback=getPoint)
     else:
         hideGrid()
