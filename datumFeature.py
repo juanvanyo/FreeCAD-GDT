@@ -40,8 +40,14 @@ class DatumFeatureCommand:
         self.idGDT = 1
 
     def Activated(self):
-        showGrid()
-        gdt.dialogWidgets[1] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
+        ContainerOfData = makeContainerOfData()
+        if getAnnotationObj(ContainerOfData):
+            self.toolTip = 'Add Datum Feature to ' + getAnnotationObj(ContainerOfData).Label
+            gdt.dialogWidgets[1] = None
+        else:
+            self.toolTip = 'Add Datum Feature'
+            showGrid()
+            gdt.dialogWidgets[1] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
         gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
 
     def GetResources(self):

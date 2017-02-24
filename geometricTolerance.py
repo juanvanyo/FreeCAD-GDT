@@ -42,10 +42,16 @@ class GeometricToleranceCommand:
         self.FeatureControlFrame = makeFeatureControlFrame()
 
     def Activated(self):
-        showGrid()
+        ContainerOfData = makeContainerOfData()
+        if getAnnotationObj(ContainerOfData):
+            self.toolTip = 'Add Geometric Tolerance to ' + getAnnotationObj(ContainerOfData).Label
+            gdt.dialogWidgets[3] = None
+        else:
+            self.toolTip = 'Add Geometric Tolerance'
+            showGrid()
+            gdt.dialogWidgets[3] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
         gdt.dialogWidgets[1] = fieldLabeCombolWidget(Text='Tolerance value:', List=self.FeatureControlFrame.Label, Icons=self.FeatureControlFrame.Icon, ToolTip=self.FeatureControlFrame.toolTip)
         gdt.dialogWidgets[2] = comboLabelWidget(Text='Datum system:', List=[None]+getAllDatumSystemObjects())
-        gdt.dialogWidgets[3] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
         gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
 
     def GetResources(self):

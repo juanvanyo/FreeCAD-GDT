@@ -936,7 +936,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
         if prop in "selectedPoint" and hasattr(fp.ViewObject,"Decimals") and hasattr(fp.ViewObject,"ShowUnit"):
-            print str(fp.selectedPoint)
             if fp.selectedPoint <> []:
                 points, segments = getPointsToPlot(fp)
                 # print str(points)
@@ -1153,11 +1152,12 @@ class GDTGuiClass(QtGui.QWidget):
         self.ContainerOfData = ContainerOfData
         vbox = QtGui.QVBoxLayout()
         for widg in self.dd_dialogWidgets:
-            w = widg.generateWidget(self.idGDT,self.ContainerOfData)
-            if isinstance(w, QtGui.QLayout):
-                vbox.addLayout( w )
-            else:
-                vbox.addWidget( w )
+            if widg <> None:
+                w = widg.generateWidget(self.idGDT,self.ContainerOfData)
+                if isinstance(w, QtGui.QLayout):
+                    vbox.addLayout( w )
+                else:
+                    vbox.addWidget( w )
         hbox = QtGui.QHBoxLayout()
         buttonCreate = QtGui.QPushButton(title)
         buttonCreate.setDefault(True)
