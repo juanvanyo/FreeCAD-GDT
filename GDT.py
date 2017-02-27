@@ -59,6 +59,9 @@ checkBoxState = True
 auxDictionaryDS=[]
 for i in range(1,100):
     auxDictionaryDS.append('DS'+str(i))
+dictionaryAnnotation=[]
+for i in range(1,100):
+    dictionaryAnnotation.append('Annotation'+str(i))
 
 #---------------------------------------------------------------------------
 # Param functions
@@ -651,8 +654,10 @@ def makeAnnotationPlane(Name, Offset):
     obj.Label = Name
     obj.Offset = Offset
     group.addObject(obj)
-    FreeCAD.ActiveDocument.recompute()
     hideGrid()
+    for l in getAllAnnotationObjects():
+        l.touch()
+    FreeCAD.ActiveDocument.recompute()
     return obj
 
     #-----------------------------------------------------------------------
@@ -693,7 +698,11 @@ def makeDatumFeature(Name, ContainerOfData):
         faces = AnnotationObj.faces
         AP = AnnotationObj.AP
         GT = AnnotationObj.GT
-        makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj)
+        group = makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj)
+        group.addObject(obj)
+    for l in getAllAnnotationObjects():
+        l.touch()
+    FreeCAD.ActiveDocument.recompute()
     return obj
 
     #-----------------------------------------------------------------------
@@ -742,6 +751,8 @@ def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     obj.Tertiary = Tertiary
     group = FreeCAD.ActiveDocument.getObject("GDT")
     group.addObject(obj)
+    for l in getAllAnnotationObjects():
+        l.touch()
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -801,7 +812,11 @@ def makeGeometricTolerance(Name, ContainerOfData):
         faces = AnnotationObj.faces
         AP = AnnotationObj.AP
         DF = AnnotationObj.DF
-        makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj)
+        group = makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj)
+        group.addObject(obj)
+    for l in getAllAnnotationObjects():
+        l.touch()
+    FreeCAD.ActiveDocument.recompute()
     return obj
 
     #-----------------------------------------------------------------------
@@ -1002,46 +1017,54 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
 def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
     ''' Explanation
     '''
-    doc = FreeCAD.ActiveDocument
     if not modify:
-        obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","Annotation")
+        obj = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython",dictionaryAnnotation[len(getAllAnnotationObjects())])
         _Annotation(obj)
         if gui:
             _ViewProviderAnnotation(obj.ViewObject)
         group = FreeCAD.ActiveDocument.getObject("GDT")
         group.addObject(obj)
+        obj.faces = faces
+        obj.AP = AP
+        obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
     else:
         obj = Object
-    obj.faces = faces
-    obj.AP = AP
-    obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
     obj.DF = DF
     obj.GT = GT
-    select(obj)
+
     def getPoint(point):
         if point:
             obj.spBool = True
             obj.selectedPoint = point
             hideGrid()
-            doc.recompute()
+            obj.addObject(obj.DF) if obj.DF <> None else obj.addObject(obj.GT[0])
+            select(obj)
+            for l in getAllAnnotationObjects():
+                l.touch()
+            FreeCAD.ActiveDocument.recompute()
             return obj
         else:
             if DF:
-                doc.removeObject(obj.DF.Name)
+                FreeCAD.ActiveDocument.removeObject(obj.DF.Name)
                 if checkBoxState:
-                    doc.removeObject(getAllDatumSystemObjects()[-1].Name)
+                    FreeCAD.ActiveDocument.removeObject(getAllDatumSystemObjects()[-1].Name)
             else:
-                doc.removeObject(obj.GT[-1].Name)
-            doc.removeObject(obj.Name)
+                FreeCAD.ActiveDocument.removeObject(obj.GT[-1].Name)
+            FreeCAD.ActiveDocument.removeObject(obj.Name)
             hideGrid()
-            doc.recompute()
+            for l in getAllAnnotationObjects():
+                l.touch()
+            FreeCAD.ActiveDocument.recompute()
             return None
     if not obj.spBool:
         return FreeCADGui.Snapper.getPoint(callback=getPoint)
     else:
         hideGrid()
-        doc.recompute()
-        return None
+        select(obj)
+        for l in getAllAnnotationObjects():
+            l.touch()
+        FreeCAD.ActiveDocument.recompute()
+        return obj
 
     #-----------------------------------------------------------------------
     # Other classes
@@ -1179,7 +1202,7 @@ class GDTGuiClass(QtGui.QWidget):
         if self.idGDT == 1:
             obj = makeDatumFeature(self.textName, self.ContainerOfData)
             if checkBoxState:
-                self.DS = makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
+                makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
         elif self.idGDT == 2:
             separator = ' | '
             if self.ContainerOfData.textDS[0] <> '':
