@@ -267,6 +267,21 @@ def getAnnotationObj(obj):
             return l
     return None
 
+def getAnnotationWithDF(obj):
+    List = getAllAnnotationObjects()
+    for l in List:
+        if l.DF == obj:
+            return l
+    return None
+
+def getAnnotationWithGT(obj):
+    List = getAllAnnotationObjects()
+    for l in List:
+        for gt in l.GT:
+            if gt == obj:
+                return l
+    return None
+
 def getPointsToPlot(obj):
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
@@ -1077,15 +1092,19 @@ class Characteristics(object):
         self.IconText = IconText
         self.Proxy = self
 
-def makeCharacteristics(label):
+def makeCharacteristics(label=None):
     Label = ['Straightness', 'Flatness', 'Circularity', 'Cylindricity', 'Profile of a line', 'Profile of a surface', 'Perpendicularity', 'Angularity', 'Parallelism', 'Symmetry', 'Position', 'Concentricity','Circular run-out', 'Total run-out']
     Icon = [':/dd/icons/Characteristic/straightness.svg', ':/dd/icons/Characteristic/flatness.svg', ':/dd/icons/Characteristic/circularity.svg', ':/dd/icons/Characteristic/cylindricity.svg', ':/dd/icons/Characteristic/profileOfALine.svg', ':/dd/icons/Characteristic/profileOfASurface.svg', ':/dd/icons/Characteristic/perpendicularity.svg', ':/dd/icons/Characteristic/angularity.svg', ':/dd/icons/Characteristic/parallelism.svg', ':/dd/icons/Characteristic/symmetry.svg', ':/dd/icons/Characteristic/position.svg', ':/dd/icons/Characteristic/concentricity.svg',':/dd/icons/Characteristic/circularRunOut.svg', ':/dd/icons/Characteristic/totalRunOut.svg']
     textIcon = [('⏤').decode('utf-8'),('⏥').decode('utf-8'),('○').decode('utf-8'),('⌭').decode('utf-8'),('⌒').decode('utf-8'),('⌓').decode('utf-8'),('⟂').decode('utf-8'),('∠').decode('utf-8'),('∥').decode('utf-8'),('⌯').decode('utf-8'),('⌖').decode('utf-8'),('◎').decode('utf-8'),('↗').decode('utf-8'),('⌰').decode('utf-8')]
-    index = Label.index(label)
-    icon = Icon[index]
-    iconText = textIcon[index]
-    characteristics = Characteristics(label, icon, iconText)
-    return characteristics
+    if label == None:
+        characteristics = Characteristics(Label, Icon, textIcon)
+        return characteristics
+    else:
+        index = Label.index(label)
+        icon = Icon[index]
+        iconText = textIcon[index]
+        characteristics = Characteristics(label, icon, iconText)
+        return characteristics
 
 class FeatureControlFrame(object):
     def __init__(self, Label, Icon, toolTip):
@@ -1102,7 +1121,7 @@ def makeFeatureControlFrame():
     return featureControlFrame
 
 class ContainerOfData(object):
-    def __init__(self, faces):
+    def __init__(self, faces = []):
         self.faces = faces
         if self.faces <> []:
             self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
@@ -1119,6 +1138,7 @@ class ContainerOfData(object):
         self.featureControlFrame = ''
         self.datumSystem = 0
         self.annotationPlane = 0
+        self.annotation = None
         self.combo = ['','','','','','']
         self.Proxy = self
 
