@@ -301,6 +301,7 @@ def getPointsToPlot(obj):
         existGT = False
     if obj.DF <> None:
         points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
+    segments = segments + []
     return points, segments
 
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
@@ -452,6 +453,11 @@ def plotStrings(self, fp, points):
                 self.textGTpos[i].rotation.setValue(rotation)
             except:
                 pass
+        for i in range(index+1,len(self.textGT)):
+            if str(self.textGT[i].string) <> "":
+                self.textGT[i].string = self.textGT3d[i].string = ""
+            else:
+                break
         filename = fp.GT[0].CharacteristicIcon
         filename = filename.replace(':/dd/icons', iconPath)
         self.svg.filename = str(filename)
@@ -740,7 +746,6 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
     def updateData(self, obj, prop):
         "called when the base object is changed"
         if prop in ["Primary","Secondary","Tertiary"]:
-            separator1 = ' | '
             textName = obj.Label.split(":")[0]
             if obj.Primary <> None:
                 textName+=': '+obj.Primary.Label
@@ -892,6 +897,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.image.addChild(self.svgPos)
 
         self.data = coin.SoCoordinate3()
+        self.data.point.isDeleteValuesEnabled()
         self.lines = coin.SoIndexedLineSet()
 
         selectionNode = coin.SoType.fromName("SoFCSelection").createInstance()
@@ -979,6 +985,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             for p in points:
                 self.data.point.set1Value(cnt,p.x,p.y,p.z)
                 cnt=cnt+1
+            self.lines.coordIndex.setNum(len(segments))
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
 
