@@ -63,16 +63,16 @@ class GDTGuiClass:
                 self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask = 'NNNn', Data = self.data, Obj = obj))
                 self.dialogWidgets.append(fieldLabelButtonWidget_inv(Text = 'Offset:', Data = self.data, Obj = obj))
 
-            if "DatumSystem" == getType(obj):
+            elif "DatumSystem" == getType(obj):
                 self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Data = self.data, Obj = obj))
                 listDF = [None] + [l for l in getAllDatumFeatureObjects()]
                 self.dialogWidgets.append( groupBoxWidget_inv(Text='Constituents', List=[comboLabelWidget_inv(Text='Primary:',List=listDF, Data = self.data, Obj = obj),comboLabelWidget_inv(Text='Secondary:',List=listDF, Data = self.data, Obj = obj), comboLabelWidget_inv(Text='Tertiary:',List=listDF, Data = self.data, Obj = obj)], Data = self.data, Obj = obj) )
 
-            if "DatumFeature" == getType(obj):
+            elif "DatumFeature" == getType(obj):
                 self.dialogWidgets.append(textLabelWidget_inv(Text = 'Datum feature:', Mask='>A', Data = self.data, Obj = obj))
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='In annotation:', List = [l for l in getAllAnnotationObjects()], Data = self.data, Obj = obj) )
 
-            if "GeometricTolerance" == getType(obj):
+            elif "GeometricTolerance" == getType(obj):
                 self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Data = self.data, Obj = obj))
                 characteristics = makeCharacteristics()
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=characteristics.Label, Icons=characteristics.Icon, Data = self.data, Obj = obj) )
@@ -106,7 +106,7 @@ class GDTGuiClass:
             obj.Label = data.textName
             obj.Offset = data.OffsetValue
 
-        if "DatumSystem" == getType(obj):
+        elif "DatumSystem" == getType(obj):
             obj.Primary = data.primary
             obj.Secondary = data.secondary
             obj.Tertiary = data.tertiary
@@ -119,7 +119,7 @@ class GDTGuiClass:
                         textName+=' | '+obj.Tertiary.Label
             obj.Label = textName
 
-        if "DatumFeature" == getType(obj):
+        elif "DatumFeature" == getType(obj):
             if data.annotation.DF <> None:
                 QtGui.QMessageBox.critical(
                     QtGui.qApp.activeWindow(),
@@ -135,7 +135,7 @@ class GDTGuiClass:
                     data.annotation.DF = obj
                 obj.Label = data.textName
 
-        if "GeometricTolerance" == getType(obj):
+        elif "GeometricTolerance" == getType(obj):
             annotationObj = getAnnotationWithGT(obj)
             if annotationObj.Label <> data.annotation.Label:
                 annotationObj.removeObject(obj)
@@ -162,7 +162,49 @@ class GDTGuiClass:
         Gui.Control.showDialog( GDTGuiClass() )
 
     def deleteFunc(self, obj):
-        FreeCAD.ActiveDocument.removeObject(obj.Name)
+        if "AnnotationPlane" == getType(obj):
+            ok = True
+            for l in getAllAnnotationObjects():
+                if l.AP == obj:
+                    ok = False
+                    break
+            if ok:
+                FreeCAD.ActiveDocument.removeObject(obj.Name)
+            else:
+                QtGui.QMessageBox.critical(
+                    QtGui.qApp.activeWindow(),
+                    'ERROR',
+                    'You can not delete AP in use',
+                    QtGui.QMessageBox.StandardButton.Abort )
+
+        elif "DatumSystem" == getType(obj):
+            FreeCAD.ActiveDocument.removeObject(obj.Name)
+
+        elif "DatumFeature" == getType(obj):
+            for l in getAllDatumSystemObjects():
+                if l.Primary == obj:
+                    l.Primary = l.Secondary
+                    l.Secondary = l.Tertiary
+                    l.Tertiary = None
+                elif l.Secondary == obj:
+                    l.Secondary = l.Tertiary
+                    l.Tertiary = None
+            for l in getAllAnnotationObjects():
+                if l.DF == obj:
+                    l.DF = None
+                    break
+            FreeCAD.ActiveDocument.removeObject(obj.Name)
+
+        elif "GeometricTolerance" == getType(obj):
+            for l in getAllAnnotationObjects():
+                for gt in l.GT:
+                    if gt == obj:
+                        gtAux = l.GT
+                        gtAux.remove(obj)
+                        l.GT = gtAux
+                        break
+            FreeCAD.ActiveDocument.removeObject(obj.Name)
+
         FreeCADGui.Control.closeDialog()
         hideGrid()
         for l in getAllAnnotationObjects():
