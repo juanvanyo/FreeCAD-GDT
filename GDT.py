@@ -462,6 +462,12 @@ def plotStrings(self, fp, points):
         filename = filename.replace(':/dd/icons', iconPath)
         self.svg.filename = str(filename)
         self.svgPos.translation.setValue([points[3].x, points[3].y, points[3].z])
+    else:
+        for i in range(len(self.textGT)):
+            if str(self.textGT[i].string) <> "":
+                self.textGT[i].string = self.textGT3d[i].string = ""
+            else:
+                break
     if fp.DF <> None:
         self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
         distance = 0
@@ -484,6 +490,8 @@ def plotStrings(self, fp, points):
             self.textDFpos.rotation.setValue(rotation)
         except:
             pass
+    else:
+        self.textDF.string = self.textDF3d.string = ""
 
 #---------------------------------------------------------------------------
 # UNITS handling
