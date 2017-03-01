@@ -107,16 +107,57 @@ class GDTGuiClass:
             obj.Offset = data.OffsetValue
 
         if "DatumSystem" == getType(obj):
-            pass
+            obj.Primary = data.primary
+            obj.Secondary = data.secondary
+            obj.Tertiary = data.tertiary
+            textName = data.textName.split(":")[0]
+            if data.primary <> None:
+                textName+=': '+obj.Primary.Label
+                if data.secondary <> None:
+                    textName+=' | '+obj.Secondary.Label
+                    if data.tertiary <> None:
+                        textName+=' | '+obj.Tertiary.Label
+            obj.Label = textName
 
         if "DatumFeature" == getType(obj):
-            pass
+            if data.annotation.DF <> None:
+                QtGui.QMessageBox.critical(
+                    QtGui.qApp.activeWindow(),
+                    'ERROR',
+                    'You can not change the DF to an annotation where one already exists',
+                    QtGui.QMessageBox.StandardButton.Abort )
+            else:
+                annotationObj = getAnnotationWithDF(obj)
+                if annotationObj.Label <> data.annotation.Label:
+                    annotationObj.removeObject(obj)
+                    annotationObj.DF = None
+                    data.annotation.addObject(obj)
+                    data.annotation.DF = obj
+                obj.Label = data.textName
 
         if "GeometricTolerance" == getType(obj):
-            pass
-            
+            annotationObj = getAnnotationWithGT(obj)
+            if annotationObj.Label <> data.annotation.Label:
+                annotationObj.removeObject(obj)
+                gt = annotationObj.GT
+                gt.remove(obj)
+                annotationObj.GT = gt
+                data.annotation.addObject(obj)
+                gt = data.annotation.GT
+                gt.append(obj)
+                data.annotation.GT = gt
+            obj.Label = data.textName
+            obj.Characteristic = data.characteristic.Label
+            obj.CharacteristicIcon = data.characteristic.Icon
+            obj.CharacteristicIconText = data.characteristic.IconText
+            obj.ToleranceValue = data.toleranceValue
+            obj.FeatureControlFrame = data.featureControlFrame
+            obj.DS = data.datumSystem
+
         FreeCADGui.Control.closeDialog()
         hideGrid()
+        for l in getAllAnnotationObjects():
+            l.touch()
         FreeCAD.ActiveDocument.recompute()
         Gui.Control.showDialog( GDTGuiClass() )
 
@@ -274,7 +315,7 @@ class comboLabelWidget_inv:
                 actualValue = self.obj.Characteristic
                 pos = self.getPos(actualValue)
             self.data.combo[self.k].setCurrentIndex(pos)
-            self.data.characteristic = self.data.combo[self.k].currentIndex()
+            self.data.characteristic = makeCharacteristics(self.List[self.data.combo[self.k].currentIndex()])
         elif self.Text == 'Datum system:':
             if self.obj.DS <> None:
                 actualValue = self.obj.DS.Label
@@ -333,13 +374,11 @@ class comboLabelWidget_inv:
             self.data.tertiary = self.List[self.data.combo[self.k].currentIndex()]
             self.updateItemsEnabled(self.k)
         elif self.Text == 'Characteristic:':
-            self.data.characteristic = self.data.combo[self.k].currentIndex()
+            self.data.characteristic = makeCharacteristics(self.List[self.data.combo[self.k].currentIndex()])
         elif self.Text == 'Datum system:':
             self.data.datumSystem = self.List[self.data.combo[self.k].currentIndex()]
-        elif self.Text == 'Active annotation plane:':
-            self.data.annotationPlane = self.List[self.data.combo[self.k].currentIndex()]
-            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.data.annotationPlane.p1, self.data.annotationPlane.Direction, self.data.annotationPlane.PointWithOffset)
-            FreeCADGui.Snapper.grid.set()
+        elif self.Text == 'In annotation:':
+            self.data.annotation = self.List[self.data.combo[self.k].currentIndex()]
 
     def updateItemsEnabled(self, comboIndex):
         comboIndex0 = comboIndex
