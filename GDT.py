@@ -134,13 +134,6 @@ def stringencodecoin(ustr):
     else:
         return ustr.encode('latin1')
 
-def getRealName(name):
-    "getRealName(string): strips the trailing numbers from a string name"
-    for i in range(1,len(name)):
-        if not name[-i] in '1234567890':
-            return name[:len(name)-(i-1)]
-    return name
-
 def getType(obj):
     "getType(object): returns the GDT type of the given object"
     if not obj:
@@ -311,9 +304,9 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     for i in range(len(obj.GT)):
         d = len(newPoints)
         if points[2].x < points[0].x:
-            P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else newPoints[-2] + FreeCAD.Vector(0.0,0.0,0.0)
+            P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else FreeCAD.Vector(newPoints[-2])
         else:
-            P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else newPoints[-1]
+            P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else FreeCAD.Vector(newPoints[-1])
         P1 = P0 + Vertical * (-sizeOfLine*2)
         P2 = P0 + Horizontal * (sizeOfLine*2)
         P3 = P1 + Horizontal * (sizeOfLine*2)
@@ -400,10 +393,11 @@ def plotStrings(self, fp, points):
     if fp.GT <> []:
         label = []
         label3d = []
-        index = -1
+        index = 0
         displacement = 0
         for i in range(len(fp.GT)):
             distance = 0
+            # posToleranceValue
             v = (points[7+displacement] - points[5+displacement])
             if v.x <> 0:
                 distance = (v.x)/2
@@ -413,55 +407,58 @@ def plotStrings(self, fp, points):
                 distance = (v.z)/2
             centerPoint = points[5+displacement] + Horizontal * (distance)
             posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
-            label.append(coin.SoSeparator())
-            label3d.append(coin.SoSeparator())
-            index+=1
+            # posCharacteristic
+            centerPoint2 = points[3+displacement] + Horizontal * (sizeOfLine)
+            posCharacteristic = centerPoint2 + Vertical * (-sizeOfLine)
             self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
+            index+=1
             displacement+=6
             if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
-                label.append(coin.SoSeparator())
-                label3d.append(coin.SoSeparator())
-                index+=1
                 posPrimary = posToleranceValue + Horizontal * (distance+sizeOfLine)
                 self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Primary.Label)
                 self.textGTpos[index].translation.setValue([posPrimary.x, posPrimary.y, posPrimary.z])
+                index+=1
                 displacement+=2
                 if fp.GT[i].DS.Secondary <> None:
-                    label.append(coin.SoSeparator())
-                    label3d.append(coin.SoSeparator())
-                    index+=1
                     posSecondary = posPrimary + Horizontal * (sizeOfLine*2)
                     self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Secondary.Label)
                     self.textGTpos[index].translation.setValue([posSecondary.x, posSecondary.y, posSecondary.z])
+                    index+=1
                     displacement+=2
                     if fp.GT[i].DS.Tertiary <> None:
-                        label.append(coin.SoSeparator())
-                        label3d.append(coin.SoSeparator())
-                        index+=1
                         posTertiary = posSecondary + Horizontal * (sizeOfLine*2)
                         self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Tertiary.Label)
                         self.textGTpos[index].translation.setValue([posTertiary.x, posTertiary.y, posTertiary.z])
+                        index+=1
                         displacement+=2
-        for i in range(index+1):
+            filename = fp.GT[i].CharacteristicIcon
+            filename = filename.replace(':/dd/icons', iconPath)
+            self.svg[i].filename = str(filename)
+            self.box[i].size = (sizeOfLine*2,sizeOfLine*2,0)
+            self.svgPos[i].translation.setValue([posCharacteristic.x, posCharacteristic.y, posCharacteristic.z])
+        for i in range(index):
             try:
-                DirectionAux = fp.AP.Direction + FreeCAD.Vector(0.0,0.0,0.0)
+                DirectionAux = FreeCAD.Vector(fp.AP.Direction)
                 DirectionAux.x = abs(DirectionAux.x)
                 DirectionAux.y = abs(DirectionAux.y)
                 DirectionAux.z = abs(DirectionAux.z)
                 rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
                 self.textGTpos[i].rotation.setValue(rotation)
+                self.svgPos[i].rotation.setValue(rotation)
             except:
                 pass
-        for i in range(index+1,len(self.textGT)):
+        for i in range(index,len(self.textGT)):
             if str(self.textGT[i].string) <> "":
                 self.textGT[i].string = self.textGT3d[i].string = ""
             else:
                 break
-        filename = fp.GT[0].CharacteristicIcon
-        filename = filename.replace(':/dd/icons', iconPath)
-        self.svg.filename = str(filename)
-        self.svgPos.translation.setValue([points[3].x, points[3].y, points[3].z])
+        for i in range(len(fp.GT),len(self.textGT)):
+            if str(self.svg[i].filename) <> "":
+                self.svg[i].filename = ""
+                self.box[i].size = (0,0,0)
+            elif not sig:
+                break
     else:
         for i in range(len(self.textGT)):
             if str(self.textGT[i].string) <> "":
@@ -482,7 +479,7 @@ def plotStrings(self, fp, points):
         centerPoint = centerPoint + Vertical * (sizeOfLine/2)
         self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
         try:
-            DirectionAux = fp.AP.Direction + FreeCAD.Vector(0.0,0.0,0.0)
+            DirectionAux = FreeCAD.Vector(fp.AP.Direction)
             DirectionAux.x = abs(DirectionAux.x)
             DirectionAux.y = abs(DirectionAux.y)
             DirectionAux.z = abs(DirectionAux.z)
@@ -897,12 +894,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.node = coin.SoGroup()
         self.node3d = coin.SoGroup()
         self.color = coin.SoBaseColor()
-        self.image = coin.SoSeparator()
-        self.svg = coin.SoImage()
-        self.svgPos = coin.SoTransform()
-
-        self.image.addChild(self.svg)
-        self.image.addChild(self.svgPos)
 
         self.data = coin.SoCoordinate3()
         self.data.point.isDeleteValuesEnabled()
@@ -936,6 +927,9 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.textGT = []
         self.textGT3d = []
         self.textGTpos = []
+        self.svg = []
+        self.box = []
+        self.svgPos = []
         for i in range(20):
             self.textGT.append(coin.SoAsciiText())
             self.textGT3d.append(coin.SoText2())
@@ -953,9 +947,18 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             labelGT3d.addChild(self.color)
             labelGT3d.addChild(self.font3d)
             labelGT3d.addChild(self.textGT3d[i])
+            self.svg.append(coin.SoTexture2())
+            self.box.append(coin.SoVRMLBox())
+            self.box[i].size = (0,0,0)
+            self.svgPos.append(coin.SoTransform())
+            image = coin.SoSeparator()
+            image.addChild(self.svgPos[i])
+            image.addChild(self.svg[i])
+            image.addChild(self.box[i])
             self.node.addChild(labelGT)
             self.node3d.addChild(labelGT3d)
-
+            self.node.addChild(image)
+            self.node3d.addChild(image)
 
         self.drawstyle = coin.SoDrawStyle()
         self.drawstyle.style = coin.SoDrawStyle.LINES
@@ -963,7 +966,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.node.addChild(labelDF)
         self.node.addChild(self.drawstyle)
         self.node.addChild(self.color)
-        self.node.addChild(self.image)
         self.node.addChild(self.data)
         self.node.addChild(self.lines)
         self.node.addChild(selectionNode)
