@@ -120,20 +120,22 @@ class GDTGuiClass:
             obj.Label = textName
 
         elif "DatumFeature" == getType(obj):
-            if data.annotation.DF <> None:
+            annotationObj = getAnnotationWithDF(obj)
+            remove = False
+            if data.annotation.DF <> None and annotationObj <> data.annotation:
                 QtGui.QMessageBox.critical(
                     QtGui.qApp.activeWindow(),
                     'ERROR',
                     'You can not change the DF to an annotation where one already exists',
                     QtGui.QMessageBox.StandardButton.Abort )
-            else:
-                annotationObj = getAnnotationWithDF(obj)
-                if annotationObj.Label <> data.annotation.Label:
-                    annotationObj.removeObject(obj)
-                    annotationObj.DF = None
-                    data.annotation.addObject(obj)
-                    data.annotation.DF = obj
-                obj.Label = data.textName
+            elif annotationObj <> data.annotation:
+                data.annotation.addObject(obj)
+                data.annotation.DF = obj
+                annotationObj.removeObject(obj)
+                remove = True
+            obj.Label = data.textName
+            if remove:
+                annotationObj.DF = None
 
         elif "GeometricTolerance" == getType(obj):
             annotationObj = getAnnotationWithGT(obj)
