@@ -408,8 +408,9 @@ def plotStrings(self, fp, points):
             centerPoint = points[5+displacement] + Horizontal * (distance)
             posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
             # posCharacteristic
-            centerPoint2 = points[3+displacement] + Horizontal * (sizeOfLine)
-            posCharacteristic = centerPoint2 + Vertical * (-sizeOfLine)
+            auxPoint = points[3+displacement] + Vertical * (-sizeOfLine*2)
+            self.points[i].point.setValues([[auxPoint.x,auxPoint.y,auxPoint.z],[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z],[points[3+displacement].x,points[3+displacement].y,points[3+displacement].z]])
+            self.face[i].numVertices = 4
             self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
             index+=1
@@ -435,8 +436,6 @@ def plotStrings(self, fp, points):
             filename = fp.GT[i].CharacteristicIcon
             filename = filename.replace(':/dd/icons', iconPath)
             self.svg[i].filename = str(filename)
-            self.box[i].size = (sizeOfLine*2,sizeOfLine*2,0)
-            self.svgPos[i].translation.setValue([posCharacteristic.x, posCharacteristic.y, posCharacteristic.z])
         for i in range(index):
             try:
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
@@ -445,7 +444,6 @@ def plotStrings(self, fp, points):
                 DirectionAux.z = abs(DirectionAux.z)
                 rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
                 self.textGTpos[i].rotation.setValue(rotation)
-                self.svgPos[i].rotation.setValue(rotation)
             except:
                 pass
         for i in range(index,len(self.textGT)):
@@ -455,14 +453,16 @@ def plotStrings(self, fp, points):
                 break
         for i in range(len(fp.GT),len(self.textGT)):
             if str(self.svg[i].filename) <> "":
+                self.face[i].numVertices = 0
                 self.svg[i].filename = ""
-                self.box[i].size = (0,0,0)
             elif not sig:
                 break
     else:
         for i in range(len(self.textGT)):
-            if str(self.textGT[i].string) <> "":
+            if str(self.textGT[i].string) <> "" or str(self.svg[i].filename) <> "":
                 self.textGT[i].string = self.textGT3d[i].string = ""
+                self.face[i].numVertices = 0
+                self.svg[i].filename = ""
             else:
                 break
     if fp.DF <> None:
@@ -791,7 +791,6 @@ class _GeometricTolerance(_GDTObject):
         _GDTObject.__init__(self,obj,"GeometricTolerance")
         obj.addProperty("App::PropertyString","Characteristic","GDT","Characteristic of the geometric tolerance")
         obj.addProperty("App::PropertyString","CharacteristicIcon","GDT","Characteristic of the geometric tolerance")
-        obj.addProperty("App::PropertyString","CharacteristicIconText","GDT","Characteristic of the geometric tolerance")
         obj.addProperty("App::PropertyFloat","ToleranceValue","GDT","Tolerance value of the geometric tolerance")
         obj.addProperty("App::PropertyString","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
         obj.addProperty("App::PropertyLink","DS","GDT","Datum system used")
@@ -800,8 +799,6 @@ class _GeometricTolerance(_GDTObject):
         "Do something when a property has changed"
         if hasattr(vobj,"CharacteristicIcon"):
             vobj.setEditorMode('CharacteristicIcon',2)
-        if hasattr(vobj,"CharacteristicIconText"):
-            vobj.setEditorMode('CharacteristicIconText',2)
 
 class _ViewProviderGeometricTolerance(_ViewProviderGDT):
     "A View Provider for the GDT GeometricTolerance object"
@@ -822,7 +819,6 @@ def makeGeometricTolerance(Name, ContainerOfData):
     obj.Label = Name
     obj.Characteristic = ContainerOfData.characteristic.Label
     obj.CharacteristicIcon = ContainerOfData.characteristic.Icon
-    obj.CharacteristicIconText = ContainerOfData.characteristic.IconText
     obj.ToleranceValue = ContainerOfData.toleranceValue
     obj.FeatureControlFrame = ContainerOfData.featureControlFrame
     obj.DS = ContainerOfData.datumSystem
@@ -928,8 +924,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.textGT3d = []
         self.textGTpos = []
         self.svg = []
-        self.box = []
-        self.svgPos = []
+        self.points = []
+        self.face = []
         for i in range(20):
             self.textGT.append(coin.SoAsciiText())
             self.textGT3d.append(coin.SoText2())
@@ -948,13 +944,13 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             labelGT3d.addChild(self.font3d)
             labelGT3d.addChild(self.textGT3d[i])
             self.svg.append(coin.SoTexture2())
-            self.box.append(coin.SoVRMLBox())
-            self.box[i].size = (0,0,0)
-            self.svgPos.append(coin.SoTransform())
+            self.face.append(coin.SoFaceSet())
+            self.face[i].numVertices = 0
+            self.points.append(coin.SoVRMLCoordinate())
             image = coin.SoSeparator()
-            image.addChild(self.svgPos[i])
             image.addChild(self.svg[i])
-            image.addChild(self.box[i])
+            image.addChild(self.points[i])
+            image.addChild(self.face[i])
             self.node.addChild(labelGT)
             self.node3d.addChild(labelGT3d)
             self.node.addChild(image)
@@ -1103,24 +1099,21 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
     #-----------------------------------------------------------------------
 
 class Characteristics(object):
-    def __init__(self, Label, Icon, IconText):
+    def __init__(self, Label, Icon):
         self.Label = Label
         self.Icon = Icon
-        self.IconText = IconText
         self.Proxy = self
 
 def makeCharacteristics(label=None):
     Label = ['Straightness', 'Flatness', 'Circularity', 'Cylindricity', 'Profile of a line', 'Profile of a surface', 'Perpendicularity', 'Angularity', 'Parallelism', 'Symmetry', 'Position', 'Concentricity','Circular run-out', 'Total run-out']
     Icon = [':/dd/icons/Characteristic/straightness.svg', ':/dd/icons/Characteristic/flatness.svg', ':/dd/icons/Characteristic/circularity.svg', ':/dd/icons/Characteristic/cylindricity.svg', ':/dd/icons/Characteristic/profileOfALine.svg', ':/dd/icons/Characteristic/profileOfASurface.svg', ':/dd/icons/Characteristic/perpendicularity.svg', ':/dd/icons/Characteristic/angularity.svg', ':/dd/icons/Characteristic/parallelism.svg', ':/dd/icons/Characteristic/symmetry.svg', ':/dd/icons/Characteristic/position.svg', ':/dd/icons/Characteristic/concentricity.svg',':/dd/icons/Characteristic/circularRunOut.svg', ':/dd/icons/Characteristic/totalRunOut.svg']
-    textIcon = [('⏤').decode('utf-8'),('⏥').decode('utf-8'),('○').decode('utf-8'),('⌭').decode('utf-8'),('⌒').decode('utf-8'),('⌓').decode('utf-8'),('⟂').decode('utf-8'),('∠').decode('utf-8'),('∥').decode('utf-8'),('⌯').decode('utf-8'),('⌖').decode('utf-8'),('◎').decode('utf-8'),('↗').decode('utf-8'),('⌰').decode('utf-8')]
     if label == None:
-        characteristics = Characteristics(Label, Icon, textIcon)
+        characteristics = Characteristics(Label, Icon)
         return characteristics
     else:
         index = Label.index(label)
         icon = Icon[index]
-        iconText = textIcon[index]
-        characteristics = Characteristics(label, icon, iconText)
+        characteristics = Characteristics(label, icon)
         return characteristics
 
 class FeatureControlFrame(object):
