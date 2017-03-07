@@ -411,6 +411,15 @@ def plotStrings(self, fp, points):
             auxPoint = points[3+displacement] + Vertical * (-sizeOfLine*2)
             self.points[i].point.setValues([[auxPoint.x,auxPoint.y,auxPoint.z],[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z],[points[3+displacement].x,points[3+displacement].y,points[3+displacement].z]])
             self.face[i].numVertices = 4
+            s = 1/(sizeOfLine*2)
+            dS = FreeCAD.Vector(Horizontal) * s
+            dT = FreeCAD.Vector(Vertical) * s
+            self.svgPos[i].directionS.setValue(dS.x, dS.y, dS.z)
+            self.svgPos[i].directionT.setValue(dT.x, dT.y, dT.z)
+            displacementH = ((Horizontal*auxPoint)%(sizeOfLine*2))/(sizeOfLine*2)
+            displacementV = ((Vertical*auxPoint)%(sizeOfLine*2))/(sizeOfLine*2)
+            self.textureTransform[i].translation.setValue(-displacementH,-displacementV)
+
             self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
             index+=1
@@ -924,8 +933,10 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.textGT3d = []
         self.textGTpos = []
         self.svg = []
+        self.svgPos = []
         self.points = []
         self.face = []
+        self.textureTransform = []
         for i in range(20):
             self.textGT.append(coin.SoAsciiText())
             self.textGT3d.append(coin.SoText2())
@@ -945,10 +956,14 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             labelGT3d.addChild(self.textGT3d[i])
             self.svg.append(coin.SoTexture2())
             self.face.append(coin.SoFaceSet())
+            self.textureTransform.append(coin.SoTexture2Transform())
+            self.svgPos.append(coin.SoTextureCoordinatePlane())
             self.face[i].numVertices = 0
             self.points.append(coin.SoVRMLCoordinate())
             image = coin.SoSeparator()
             image.addChild(self.svg[i])
+            image.addChild(self.textureTransform[i])
+            image.addChild(self.svgPos[i])
             image.addChild(self.points[i])
             image.addChild(self.face[i])
             self.node.addChild(labelGT)
