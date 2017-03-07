@@ -250,6 +250,7 @@ def makeContainerOfData():
     for i in range(len(getSelectionEx())):
         for j in range(len(getSelectionEx()[i].SubElementNames)):
             faces.append((getSelectionEx()[i].Object, getSelectionEx()[i].SubElementNames[j]))
+    faces.sort()
     container = ContainerOfData(faces)
     return container
 
@@ -401,12 +402,10 @@ def plotStrings(self, fp, points):
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
     Vertical = fp.AP.Direction.cross(Direction).normalize()
     Horizontal = Vertical.cross(fp.AP.Direction).normalize()
+    index = 0
+    indexIcon = 0
+    displacement = 0
     if fp.GT <> []:
-        label = []
-        label3d = []
-        index = 0
-        indexIcon = 0
-        displacement = 0
         for i in range(len(fp.GT)):
             distance = 0
             # posToleranceValue
@@ -527,6 +526,14 @@ def plotStrings(self, fp, points):
             pass
     else:
         self.textDF.string = self.textDF3d.string = ""
+    if fp.GT <> [] or fp.DF <> None:
+        if len(fp.faces) > 1:
+            # posNumFaces
+            centerPoint = points[3] + Horizontal * (sizeOfLine)
+            posNumFaces = centerPoint + Vertical * (sizeOfLine/2)
+            self.textGT[index].string = self.textGT3d[index].string = (str(len(fp.faces))+'x')
+            self.textGTpos[index].translation.setValue([posNumFaces.x, posNumFaces.y, posNumFaces.z])
+            index+=1
 
 #---------------------------------------------------------------------------
 # UNITS handling
