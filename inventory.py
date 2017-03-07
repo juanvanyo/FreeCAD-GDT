@@ -151,7 +151,6 @@ class GDTGuiClass:
             obj.Label = data.textName
             obj.Characteristic = data.characteristic.Label
             obj.CharacteristicIcon = data.characteristic.Icon
-            obj.CharacteristicIconText = data.characteristic.IconText
             obj.ToleranceValue = data.toleranceValue
             obj.FeatureControlFrame = data.featureControlFrame
             obj.DS = data.datumSystem
