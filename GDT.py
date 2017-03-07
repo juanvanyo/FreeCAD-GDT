@@ -300,7 +300,10 @@ def getPointsToPlot(obj):
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     newPoints = points
     newSegments = segments
-    sizeOfLine = obj.ViewObject.LineScale
+    if obj.ViewObject.LineScale > 0:
+        sizeOfLine = obj.ViewObject.LineScale
+    else:
+        sizeOfLine = 1.0
     for i in range(len(obj.GT)):
         d = len(newPoints)
         if points[2].x < points[0].x:
@@ -311,6 +314,8 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P2 = P0 + Horizontal * (sizeOfLine*2)
         P3 = P1 + Horizontal * (sizeOfLine*2)
         lengthToleranceValue = len(stringencodecoin(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
+        if obj.GT[i].FeatureControlFrameIcon <> '':
+            lengthToleranceValue += 2
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
@@ -355,7 +360,10 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     d = len(points)
     newPoints = points
     newSegments = segments
-    sizeOfLine = obj.ViewObject.LineScale
+    if obj.ViewObject.LineScale > 0:
+        sizeOfLine = obj.ViewObject.LineScale
+    else:
+        sizeOfLine = 1.0
     if not existGT:
         P0 = points[-1] + Vertical * (sizeOfLine)
         P1 = P0 + Horizontal * (sizeOfLine*2)
@@ -384,7 +392,10 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
 
 def plotStrings(self, fp, points):
     import DraftGeomUtils
-    sizeOfLine = fp.ViewObject.LineScale
+    if fp.ViewObject.LineScale > 0:
+        sizeOfLine = fp.ViewObject.LineScale
+    else:
+        sizeOfLine = 1.0
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
@@ -394,6 +405,7 @@ def plotStrings(self, fp, points):
         label = []
         label3d = []
         index = 0
+        indexIcon = 0
         displacement = 0
         for i in range(len(fp.GT)):
             distance = 0
@@ -405,26 +417,48 @@ def plotStrings(self, fp, points):
                 distance = (v.y)/2
             else:
                 distance = (v.z)/2
+            if fp.GT[i].FeatureControlFrameIcon <> '':
+                distance -= sizeOfLine
             centerPoint = points[5+displacement] + Horizontal * (distance)
             posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
             # posCharacteristic
             auxPoint = points[3+displacement] + Vertical * (-sizeOfLine*2)
-            self.points[i].point.setValues([[auxPoint.x,auxPoint.y,auxPoint.z],[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z],[points[3+displacement].x,points[3+displacement].y,points[3+displacement].z]])
-            self.face[i].numVertices = 4
+            self.points[indexIcon].point.setValues([[auxPoint.x,auxPoint.y,auxPoint.z],[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z],[points[3+displacement].x,points[3+displacement].y,points[3+displacement].z]])
+            self.face[indexIcon].numVertices = 4
             s = 1/(sizeOfLine*2)
             dS = FreeCAD.Vector(Horizontal) * s
             dT = FreeCAD.Vector(Vertical) * s
-            self.svgPos[i].directionS.setValue(dS.x, dS.y, dS.z)
-            self.svgPos[i].directionT.setValue(dT.x, dT.y, dT.z)
+            self.svgPos[indexIcon].directionS.setValue(dS.x, dS.y, dS.z)
+            self.svgPos[indexIcon].directionT.setValue(dT.x, dT.y, dT.z)
             displacementH = ((Horizontal*auxPoint)%(sizeOfLine*2))/(sizeOfLine*2)
             displacementV = ((Vertical*auxPoint)%(sizeOfLine*2))/(sizeOfLine*2)
-            self.textureTransform[i].translation.setValue(-displacementH,-displacementV)
+            self.textureTransform[indexIcon].translation.setValue(-displacementH,-displacementV)
+            filename = fp.GT[i].CharacteristicIcon
+            filename = filename.replace(':/dd/icons', iconPath)
+            self.svg[indexIcon].filename = str(filename)
+            indexIcon+=1
+            # posFeactureControlFrame
+            auxPoint1 = points[5+displacement] + Horizontal * (distance*2)
+            auxPoint2 = auxPoint1 + Vertical * (sizeOfLine*2)
+            self.points[indexIcon].point.setValues([[auxPoint1.x,auxPoint1.y,auxPoint1.z],[points[7+displacement].x,points[7+displacement].y,points[7+displacement].z],[points[6+displacement].x,points[6+displacement].y,points[6+displacement].z],[auxPoint2.x,auxPoint2.y,auxPoint2.z]])
+            self.face[indexIcon].numVertices = 4
+            self.svgPos[indexIcon].directionS.setValue(dS.x, dS.y, dS.z)
+            self.svgPos[indexIcon].directionT.setValue(dT.x, dT.y, dT.z)
+            displacementH = ((Horizontal*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
+            displacementV = ((Vertical*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
+            self.textureTransform[indexIcon].translation.setValue(-displacementH,-displacementV)
+            filename = fp.GT[i].FeatureControlFrameIcon
+            filename = filename.replace(':/dd/icons', iconPath)
+            self.svg[indexIcon].filename = str(filename)
+            indexIcon+=1
 
             self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
             index+=1
             displacement+=6
             if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
+                if fp.GT[i].FeatureControlFrameIcon <> '':
+                    distance += (sizeOfLine*2)
                 posPrimary = posToleranceValue + Horizontal * (distance+sizeOfLine)
                 self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Primary.Label)
                 self.textGTpos[index].translation.setValue([posPrimary.x, posPrimary.y, posPrimary.z])
@@ -442,9 +476,6 @@ def plotStrings(self, fp, points):
                         self.textGTpos[index].translation.setValue([posTertiary.x, posTertiary.y, posTertiary.z])
                         index+=1
                         displacement+=2
-            filename = fp.GT[i].CharacteristicIcon
-            filename = filename.replace(':/dd/icons', iconPath)
-            self.svg[i].filename = str(filename)
         for i in range(index):
             try:
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
@@ -460,12 +491,10 @@ def plotStrings(self, fp, points):
                 self.textGT[i].string = self.textGT3d[i].string = ""
             else:
                 break
-        for i in range(len(fp.GT),len(self.textGT)):
-            if str(self.svg[i].filename) <> "":
+        for i in range(indexIcon,len(self.svg)):
+            if str(self.face[i].numVertices) <> 0:
                 self.face[i].numVertices = 0
                 self.svg[i].filename = ""
-            elif not sig:
-                break
     else:
         for i in range(len(self.textGT)):
             if str(self.textGT[i].string) <> "" or str(self.svg[i].filename) <> "":
@@ -799,15 +828,18 @@ class _GeometricTolerance(_GDTObject):
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"GeometricTolerance")
         obj.addProperty("App::PropertyString","Characteristic","GDT","Characteristic of the geometric tolerance")
-        obj.addProperty("App::PropertyString","CharacteristicIcon","GDT","Characteristic of the geometric tolerance")
+        obj.addProperty("App::PropertyString","CharacteristicIcon","GDT","Characteristic icon path of the geometric tolerance")
         obj.addProperty("App::PropertyFloat","ToleranceValue","GDT","Tolerance value of the geometric tolerance")
         obj.addProperty("App::PropertyString","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
+        obj.addProperty("App::PropertyString","FeatureControlFrameIcon","GDT","Feature control frame icon path of the geometric tolerance")
         obj.addProperty("App::PropertyLink","DS","GDT","Datum system used")
 
     def onChanged(self,vobj,prop):
         "Do something when a property has changed"
         if hasattr(vobj,"CharacteristicIcon"):
             vobj.setEditorMode('CharacteristicIcon',2)
+        if hasattr(vobj,"FeatureControlFrameIcon"):
+            vobj.setEditorMode('FeatureControlFrameIcon',2)
 
 class _ViewProviderGeometricTolerance(_ViewProviderGDT):
     "A View Provider for the GDT GeometricTolerance object"
@@ -829,7 +861,8 @@ def makeGeometricTolerance(Name, ContainerOfData):
     obj.Characteristic = ContainerOfData.characteristic.Label
     obj.CharacteristicIcon = ContainerOfData.characteristic.Icon
     obj.ToleranceValue = ContainerOfData.toleranceValue
-    obj.FeatureControlFrame = ContainerOfData.featureControlFrame
+    obj.FeatureControlFrame = ContainerOfData.featureControlFrame.toolTip
+    obj.FeatureControlFrameIcon = ContainerOfData.featureControlFrame.Icon
     obj.DS = ContainerOfData.datumSystem
     group = FreeCAD.ActiveDocument.getObject("GDT")
     group.addObject(obj)
@@ -898,7 +931,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         from pivy import coin
         self.node = coin.SoGroup()
         self.node3d = coin.SoGroup()
-        self.color = coin.SoBaseColor()
+        self.lineColor = coin.SoBaseColor()
+        self.textColor = coin.SoBaseColor()
 
         self.data = coin.SoCoordinate3()
         self.data.point.isDeleteValuesEnabled()
@@ -920,12 +954,12 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.textDF.justification = self.textDF3d.justification = coin.SoAsciiText.CENTER
         labelDF = coin.SoSeparator()
         labelDF.addChild(self.textDFpos)
-        labelDF.addChild(self.color)
+        labelDF.addChild(self.textColor)
         labelDF.addChild(self.font)
         labelDF.addChild(self.textDF)
         labelDF3d = coin.SoSeparator()
         labelDF3d.addChild(self.textDFpos)
-        labelDF3d.addChild(self.color)
+        labelDF3d.addChild(self.textColor)
         labelDF3d.addChild(self.font3d)
         labelDF3d.addChild(self.textDF3d)
 
@@ -946,12 +980,12 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.textGT[i].justification = self.textGT3d[i].justification = coin.SoAsciiText.CENTER
             labelGT = coin.SoSeparator()
             labelGT.addChild(self.textGTpos[i])
-            labelGT.addChild(self.color)
+            labelGT.addChild(self.textColor)
             labelGT.addChild(self.font)
             labelGT.addChild(self.textGT[i])
             labelGT3d = coin.SoSeparator()
             labelGT3d.addChild(self.textGTpos[i])
-            labelGT3d.addChild(self.color)
+            labelGT3d.addChild(self.textColor)
             labelGT3d.addChild(self.font3d)
             labelGT3d.addChild(self.textGT3d[i])
             self.svg.append(coin.SoTexture2())
@@ -976,14 +1010,14 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
 
         self.node.addChild(labelDF)
         self.node.addChild(self.drawstyle)
-        self.node.addChild(self.color)
+        self.node.addChild(self.lineColor)
         self.node.addChild(self.data)
         self.node.addChild(self.lines)
         self.node.addChild(selectionNode)
         obj.addDisplayMode(self.node,"2D")
 
         self.node3d.addChild(labelDF3d)
-        self.node3d.addChild(self.color)
+        self.node3d.addChild(self.lineColor)
         self.node3d.addChild(self.data)
         self.node3d.addChild(self.lines)
         self.node3d.addChild(selectionNode)
@@ -1030,22 +1064,24 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def onChanged(self, vobj, prop):
         "Here we can do something when a single property got changed"
         if (prop == "LineColor") and hasattr(vobj,"LineColor"):
-            if hasattr(self,"color"):
+            if hasattr(self,"lineColor"):
                 c = vobj.getPropertyByName("LineColor")
-                self.color.rgb.setValue(c[0],c[1],c[2])
+                self.lineColor.rgb.setValue(c[0],c[1],c[2])
         elif (prop == "LineWidth") and hasattr(vobj,"LineWidth"):
             if hasattr(self,"drawstyle"):
                 w = vobj.getPropertyByName("LineWidth")
                 self.drawstyle.lineWidth = w
         elif (prop == "FontColor") and hasattr(vobj,"FontColor"):
-            if hasattr(self,"color"):
+            if hasattr(self,"textColor"):
                 c = vobj.getPropertyByName("FontColor")
-                self.color.rgb.setValue(c[0],c[1],c[2])
+                self.textColor.rgb.setValue(c[0],c[1],c[2])
         elif (prop == "FontSize") and hasattr(vobj,"FontSize"):
             if hasattr(self,"font"):
-                self.font.size = vobj.FontSize.Value
+                if vobj.FontSize.Value > 0:
+                    self.font.size = vobj.FontSize.Value
             if hasattr(self,"font3d"):
-                self.font3d.size = vobj.FontSize.Value*100
+                if vobj.FontSize.Value > 0:
+                    self.font3d.size = vobj.FontSize.Value*100
             vobj.Object.touch()
         elif (prop == "FontName") and hasattr(vobj,"FontName"):
             if hasattr(self,"font") and hasattr(self,"font3d"):
@@ -1138,12 +1174,22 @@ class FeatureControlFrame(object):
         self.toolTip = toolTip
         self.Proxy = self
 
-def makeFeatureControlFrame():
+def makeFeatureControlFrame(toolTip=None):
     Label = ['','','','','','','','']
     Icon = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
-    toolTip = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
-    featureControlFrame = FeatureControlFrame(Label, Icon, toolTip)
-    return featureControlFrame
+    ToolTip = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
+    if toolTip == None:
+        featureControlFrame = FeatureControlFrame(Label, Icon, ToolTip)
+        return featureControlFrame
+    elif toolTip == '':
+        featureControlFrame = FeatureControlFrame(Label[0], Icon[0], '')
+        return featureControlFrame
+    else:
+        index = ToolTip.index(toolTip)
+        icon = Icon[index]
+        label = Label[index]
+        featureControlFrame = FeatureControlFrame(label, icon, toolTip)
+        return featureControlFrame
 
 class ContainerOfData(object):
     def __init__(self, faces = []):
@@ -1512,9 +1558,9 @@ class fieldLabeCombolWidget:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
             if self.combo.currentIndex() <> 0:
-                self.ContainerOfData.featureControlFrame = self.ToolTip[self.combo.currentIndex()]
+                self.ContainerOfData.featureControlFrame = makeFeatureControlFrame(self.ToolTip[self.combo.currentIndex()])
             else:
-                self.ContainerOfData.featureControlFrame = ''
+                self.ContainerOfData.featureControlFrame = makeFeatureControlFrame('')
 
     def valueChanged(self,d):
         self.ContainerOfData.toleranceValue = d
