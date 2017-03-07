@@ -133,6 +133,9 @@ class GDTGuiClass:
                 data.annotation.DF = obj
                 annotationObj.removeObject(obj)
                 remove = True
+            for l in getAllDatumSystemObjects():
+                if l.Primary == obj or l.Secondary == obj or l.Tertiary == obj:
+                    l.touch
             obj.Label = data.textName
             if remove:
                 annotationObj.DF = None
