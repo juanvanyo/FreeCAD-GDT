@@ -905,6 +905,7 @@ class _Annotation(_GDTObject):
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of your annotation plane")
         obj.addProperty("App::PropertyVector","selectedPoint","GDT","Selected point to where plot the annotation")
         obj.addProperty("App::PropertyBool","spBool","GDT","Boolean to confirm that a selected point exists").spBool = False
+        obj.addProperty("App::PropertyBool","cylinderBool","GDT","Boolean to determine if this annotation is over a cylinder").cylinderBool = False
 
     def onChanged(self,vobj,prop):
         if hasattr(vobj,"spBool"):
@@ -914,9 +915,14 @@ class _Annotation(_GDTObject):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         # FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
-        fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
+        if fp.cylinderBool:
+            vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes
+            fp.p1 = vertexex[0].Point if vertexex[0].Point.z > vertexex[1].Point.z else vertexex[1].Point
+            fp.Direction = fp.AP.Direction
+        else:
+            fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
+            fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
         diff = fp.p1-auxP1
-        fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
         if fp.spBool:
             fp.selectedPoint = fp.selectedPoint + diff
 
@@ -1050,6 +1056,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setNum(len(segments))
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
+        if prop in "faces" and hasattr(fp,"faces"):
+            fp.cylinderBool = True if len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2 else False
 
     def doubleClicked(self,obj):
         select(self.Object)
