@@ -283,9 +283,14 @@ def getPointsToPlot(obj):
     Vertical = obj.AP.Direction.cross(Direction).normalize()
     Horizontal = Vertical.cross(obj.AP.Direction).normalize()
     point = obj.selectedPoint
-    d = point.distanceToPlane(obj.p1, obj.Direction)*3/4
-    P2 = obj.p1 + obj.Direction * d
-    P3 = point
+    d = point.distanceToPlane(obj.p1, obj.Direction)
+    if obj.cylinderBool:
+        P3 = point + obj.Direction * (-d)
+        d2 = point.distanceToPoint(obj.p1)/2
+        P2 = obj.p1 + Vertical * d2
+    else:
+        P2 = obj.p1 + obj.Direction * (d*3/4)
+        P3 = point
     points = [obj.p1, P2, P3]
     segments = [0,1,2]
     existGT = True
@@ -1056,7 +1061,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setNum(len(segments))
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
-        if prop in "faces" and hasattr(fp,"faces"):
+        if prop in "faces" and fp.faces <> []:
             fp.cylinderBool = True if len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2 else False
 
     def doubleClicked(self,obj):
