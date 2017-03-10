@@ -506,7 +506,8 @@ def plotStrings(self, fp, points):
                         self.textGT[index].justification = coin.SoAsciiText.CENTER
                         index+=1
                         displacement+=2
-        if fp.circumferenceBool:
+        if fp.circumferenceBool and True in [l.Circumference for l in fp.GT]:
+            # posDiameterTolerance
             auxPoint1 = FreeCAD.Vector(points[4])
             auxPoint2 = auxPoint1 + Horizontal * (sizeOfLine*2)
             auxPoint3 = auxPoint2 + Vertical * (sizeOfLine*2)
