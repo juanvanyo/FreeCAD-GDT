@@ -135,6 +135,9 @@ def stringencodecoin(ustr):
     else:
         return ustr.encode('latin1')
 
+def stringplusminus():
+    return ' ± ' if coin.COIN_MAJOR_VERSION >= 4 else ' +- '
+
 def getType(obj):
     "getType(object): returns the GDT type of the given object"
     if not obj:
@@ -526,7 +529,7 @@ def plotStrings(self, fp, points):
             self.textGT[index].justification = coin.SoAsciiText.LEFT
             self.textGTpos[index].translation.setValue([posDiameterTolerance.x, posDiameterTolerance.y, posDiameterTolerance.z])
             if fp.toleranceSelectBool:
-                text = stringencodecoin(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' +- ' + displayExternal(fp.toleranceDiameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+                text = stringencodecoin(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + stringplusminus() + displayExternal(fp.toleranceDiameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             else:
                 text = stringencodecoin(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' - ' + displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGT[index].string = self.textGT3d[index].string = text
