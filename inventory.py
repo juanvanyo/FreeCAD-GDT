@@ -77,7 +77,7 @@ class GDTGuiClass:
                 characteristics = makeCharacteristics()
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=characteristics.Label, Icons=characteristics.Icon, Data = self.data, Obj = obj) )
                 featureControlFrame = makeFeatureControlFrame()
-                self.dialogWidgets.append( fieldLabeCombolWidget_inv(Text='Tolerance value:', List=featureControlFrame.Label, Icons=featureControlFrame.Icon, ToolTip=featureControlFrame.toolTip, Data = self.data, Obj = obj) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+                self.dialogWidgets.append( fieldLabeCombolWidget_inv(Text='Tolerance value:', List=featureControlFrame.Label, Circumference=['',':/dd/icons/diameter.svg'] , Icons=featureControlFrame.Icon, ToolTip=featureControlFrame.toolTip, Data = self.data, Obj = obj) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=[None] + [l for l in getAllDatumSystemObjects()], Data = self.data, Obj = obj) )
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='In annotation:', List=[l for l in getAllAnnotationObjects()], Data = self.data, Obj = obj) )
 
@@ -155,6 +155,7 @@ class GDTGuiClass:
             obj.Characteristic = data.characteristic.Label
             obj.CharacteristicIcon = data.characteristic.Icon
             obj.ToleranceValue = data.toleranceValue
+            obj.Circumference = data.circumference
             obj.FeatureControlFrame = data.featureControlFrame
             obj.DS = data.datumSystem
 
@@ -466,9 +467,10 @@ class groupBoxWidget_inv:
         return self.group
 
 class fieldLabeCombolWidget_inv:
-    def __init__(self, Text='Label', List=[''], Icons=None, ToolTip = None, Data = None, Obj = None):
+    def __init__(self, Text='Label', List=[''], Circumference = [''], Icons=None, ToolTip = None, Data = None, Obj = None):
         self.Text = Text
         self.List = List
+        self.Circumference = Circumference
         self.Icons = Icons
         self.ToolTip = ToolTip
         self.data = Data
@@ -479,25 +481,41 @@ class fieldLabeCombolWidget_inv:
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
         self.uiloader = FreeCADGui.UiLoader()
+        self.comboCircumference = QtGui.QComboBox()
         self.combo = QtGui.QComboBox()
         for i in range(len(self.List)):
             if self.Icons <> None:
                 self.combo.addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
                 self.combo.addItem( self.List[i] )
+        for i in range(len(self.Circumference)):
+            self.comboCircumference.addItem(QtGui.QIcon(self.Circumference[i]), '' )
+        self.comboCircumference.setSizeAdjustPolicy(QtGui.QComboBox.SizeAdjustPolicy(2))
+        self.comboCircumference.setToolTip("Indicates whether the tolerance applies to a given diameter")
+        self.combo.setSizeAdjustPolicy(QtGui.QComboBox.SizeAdjustPolicy(2))
         actualValue = self.obj.FeatureControlFrame
         pos = self.getPos(actualValue)
         self.combo.setCurrentIndex(pos)
         self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         self.updateDate()
         self.combo.activated.connect(self.updateDate)
+        if self.obj.Circumference:
+            self.comboCircumference.setCurrentIndex(1)
+            self.data.circumference = True
+        else:
+            self.comboCircumference.setCurrentIndex(0)
+            self.data.circumference = False
+        self.comboCircumference.activated.connect(self.updateDateCircumference)
         hbox = QtGui.QHBoxLayout()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
         auxText = displayExternal(self.obj.ToleranceValue,self.DECIMALS,'Length',True)
         self.inputfield.setText(auxText)
         self.data.toleranceValue = self.obj.ToleranceValue
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),lambda Double = auxText: self.valueChanged(Double))
-        hbox.addLayout( GDTDialog_hbox(self.Text,self.inputfield) )
+        hbox.addWidget( QtGui.QLabel(self.Text) )
+        hbox.addWidget(self.comboCircumference)
+        hbox.addStretch(1)
+        hbox.addWidget(self.inputfield)
         hbox.addStretch(1)
         hbox.addWidget(self.combo)
         return hbox
@@ -515,6 +533,12 @@ class fieldLabeCombolWidget_inv:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
             self.data.featureControlFrame = '' if self.combo.currentIndex() == 0 else self.ToolTip[self.combo.currentIndex()]
+
+    def updateDateCircumference(self):
+        if self.comboCircumference.currentIndex() <> 0:
+            self.data.circumference = True
+        else:
+            self.data.circumference = False
 
     def valueChanged(self,d):
         self.data.toleranceValue = d

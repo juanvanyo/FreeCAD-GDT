@@ -31,6 +31,7 @@ __url__ = "http://www.freecadweb.org"
 import numpy
 import FreeCAD as App
 import FreeCAD, math, sys, os, DraftVecUtils, Draft_rc
+from math import pi
 from FreeCAD import Vector
 from svgLib_dd import SvgTextRenderer, SvgTextParser
 import traceback
@@ -284,10 +285,10 @@ def getPointsToPlot(obj):
     Horizontal = Vertical.cross(obj.AP.Direction).normalize()
     point = obj.selectedPoint
     d = point.distanceToPlane(obj.p1, obj.Direction)
-    if obj.cylinderBool:
+    if obj.circumferenceBool:
         P3 = point + obj.Direction * (-d)
-        d2 = point.distanceToPoint(obj.p1)/2
-        P2 = obj.p1 + Vertical * d2
+        d2 = (P3 - obj.p1) * Vertical
+        P2 = obj.p1 + Vertical * (d2*3/4)
     else:
         P2 = obj.p1 + obj.Direction * (d*3/4)
         P3 = point
@@ -321,6 +322,8 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P3 = P1 + Horizontal * (sizeOfLine*2)
         lengthToleranceValue = len(stringencodecoin(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
         if obj.GT[i].FeatureControlFrameIcon <> '':
+            lengthToleranceValue += 2
+        if obj.GT[i].Circumference:
             lengthToleranceValue += 2
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
@@ -423,6 +426,8 @@ def plotStrings(self, fp, points):
                 distance = (v.z)/2
             if fp.GT[i].FeatureControlFrameIcon <> '':
                 distance -= sizeOfLine
+            if fp.GT[i].Circumference:
+                distance += sizeOfLine
             centerPoint = points[5+displacement] + Horizontal * (distance)
             posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
             # posCharacteristic
@@ -442,44 +447,89 @@ def plotStrings(self, fp, points):
             self.svg[indexIcon].filename = str(filename)
             indexIcon+=1
             # posFeactureControlFrame
-            auxPoint1 = points[5+displacement] + Horizontal * (distance*2)
-            auxPoint2 = auxPoint1 + Vertical * (sizeOfLine*2)
-            self.points[indexIcon].point.setValues([[auxPoint1.x,auxPoint1.y,auxPoint1.z],[points[7+displacement].x,points[7+displacement].y,points[7+displacement].z],[points[6+displacement].x,points[6+displacement].y,points[6+displacement].z],[auxPoint2.x,auxPoint2.y,auxPoint2.z]])
-            self.face[indexIcon].numVertices = 4
-            self.svgPos[indexIcon].directionS.setValue(dS.x, dS.y, dS.z)
-            self.svgPos[indexIcon].directionT.setValue(dT.x, dT.y, dT.z)
-            displacementH = ((Horizontal*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
-            displacementV = ((Vertical*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
-            self.textureTransform[indexIcon].translation.setValue(-displacementH,-displacementV)
-            filename = fp.GT[i].FeatureControlFrameIcon
-            filename = filename.replace(':/dd/icons', iconPath)
-            self.svg[indexIcon].filename = str(filename)
-            indexIcon+=1
+            if fp.GT[i].FeatureControlFrameIcon <> '':
+                auxPoint1 = points[7+displacement] + Horizontal * (-sizeOfLine*2)
+                auxPoint2 = auxPoint1 + Vertical * (sizeOfLine*2)
+                self.points[indexIcon].point.setValues([[auxPoint1.x,auxPoint1.y,auxPoint1.z],[points[7+displacement].x,points[7+displacement].y,points[7+displacement].z],[points[6+displacement].x,points[6+displacement].y,points[6+displacement].z],[auxPoint2.x,auxPoint2.y,auxPoint2.z]])
+                self.face[indexIcon].numVertices = 4
+                self.svgPos[indexIcon].directionS.setValue(dS.x, dS.y, dS.z)
+                self.svgPos[indexIcon].directionT.setValue(dT.x, dT.y, dT.z)
+                displacementH = ((Horizontal*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
+                displacementV = ((Vertical*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
+                self.textureTransform[indexIcon].translation.setValue(-displacementH,-displacementV)
+                filename = fp.GT[i].FeatureControlFrameIcon
+                filename = filename.replace(':/dd/icons', iconPath)
+                self.svg[indexIcon].filename = str(filename)
+                indexIcon+=1
+            # posDiameter
+            if fp.GT[i].Circumference:
+                auxPoint1 = points[5+displacement] + Horizontal * (sizeOfLine*2)
+                auxPoint2 = auxPoint1 + Vertical * (sizeOfLine*2)
+                self.points[indexIcon].point.setValues([[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[auxPoint1.x,auxPoint1.y,auxPoint1.z],[auxPoint2.x,auxPoint2.y,auxPoint2.z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z]])
+                self.face[indexIcon].numVertices = 4
+                self.svgPos[indexIcon].directionS.setValue(dS.x, dS.y, dS.z)
+                self.svgPos[indexIcon].directionT.setValue(dT.x, dT.y, dT.z)
+                displacementH = ((Horizontal*points[5+displacement])%(sizeOfLine*2))/(sizeOfLine*2)
+                displacementV = ((Vertical*points[5+displacement])%(sizeOfLine*2))/(sizeOfLine*2)
+                self.textureTransform[indexIcon].translation.setValue(-displacementH,-displacementV)
+                filename = iconPath + '/diameter.svg'
+                self.svg[indexIcon].filename = str(filename)
+                indexIcon+=1
 
             self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
+            self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
             displacement+=6
             if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
                 if fp.GT[i].FeatureControlFrameIcon <> '':
                     distance += (sizeOfLine*2)
+                if fp.GT[i].Circumference:
+                    distance -= (sizeOfLine*2)
                 posPrimary = posToleranceValue + Horizontal * (distance+sizeOfLine)
                 self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Primary.Label)
                 self.textGTpos[index].translation.setValue([posPrimary.x, posPrimary.y, posPrimary.z])
+                self.textGT[index].justification = coin.SoAsciiText.CENTER
                 index+=1
                 displacement+=2
                 if fp.GT[i].DS.Secondary <> None:
                     posSecondary = posPrimary + Horizontal * (sizeOfLine*2)
                     self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Secondary.Label)
                     self.textGTpos[index].translation.setValue([posSecondary.x, posSecondary.y, posSecondary.z])
+                    self.textGT[index].justification = coin.SoAsciiText.CENTER
                     index+=1
                     displacement+=2
                     if fp.GT[i].DS.Tertiary <> None:
                         posTertiary = posSecondary + Horizontal * (sizeOfLine*2)
                         self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Tertiary.Label)
                         self.textGTpos[index].translation.setValue([posTertiary.x, posTertiary.y, posTertiary.z])
+                        self.textGT[index].justification = coin.SoAsciiText.CENTER
                         index+=1
                         displacement+=2
+        if fp.circumferenceBool:
+            auxPoint1 = FreeCAD.Vector(points[4])
+            auxPoint2 = auxPoint1 + Horizontal * (sizeOfLine*2)
+            auxPoint3 = auxPoint2 + Vertical * (sizeOfLine*2)
+            auxPoint4 = auxPoint1 + Vertical * (sizeOfLine*2)
+            self.points[indexIcon].point.setValues([[auxPoint1.x,auxPoint1.y,auxPoint1.z],[auxPoint2.x,auxPoint2.y,auxPoint2.z],[auxPoint3.x,auxPoint3.y,auxPoint3.z],[auxPoint4.x,auxPoint4.y,auxPoint4.z]])
+            self.face[indexIcon].numVertices = 4
+            self.svgPos[indexIcon].directionS.setValue(dS.x, dS.y, dS.z)
+            self.svgPos[indexIcon].directionT.setValue(dT.x, dT.y, dT.z)
+            displacementH = ((Horizontal*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
+            displacementV = ((Vertical*auxPoint1)%(sizeOfLine*2))/(sizeOfLine*2)
+            self.textureTransform[indexIcon].translation.setValue(-displacementH,-displacementV)
+            filename = iconPath + '/diameter.svg'
+            self.svg[indexIcon].filename = str(filename)
+            indexIcon+=1
+            posDiameterTolerance = auxPoint2 + Vertical * (sizeOfLine/2)
+            self.textGT[index].justification = coin.SoAsciiText.LEFT
+            self.textGTpos[index].translation.setValue([posDiameterTolerance.x, posDiameterTolerance.y, posDiameterTolerance.z])
+            if fp.toleranceSelectBool:
+                text = stringencodecoin(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' +- ' + displayExternal(fp.toleranceDiameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+            else:
+                text = stringencodecoin(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' - ' + displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+            self.textGT[index].string = self.textGT3d[index].string = text
+            index+=1
         for i in range(index):
             try:
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
@@ -538,6 +588,7 @@ def plotStrings(self, fp, points):
             posNumFaces = centerPoint + Vertical * (sizeOfLine/2)
             self.textGT[index].string = self.textGT3d[index].string = (str(len(fp.faces))+'x')
             self.textGTpos[index].translation.setValue([posNumFaces.x, posNumFaces.y, posNumFaces.z])
+            self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
 
 #---------------------------------------------------------------------------
@@ -774,7 +825,12 @@ def makeDatumFeature(Name, ContainerOfData):
         faces = AnnotationObj.faces
         AP = AnnotationObj.AP
         GT = AnnotationObj.GT
-        group = makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj)
+        diameter = AnnotationObj.diameter
+        toleranceSelect = AnnotationObj.toleranceSelectBool
+        toleranceDiameter = AnnotationObj.toleranceDiameter
+        lowLimit = AnnotationObj.lowLimit
+        highLimit = AnnotationObj.highLimit
+        group = makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj, diameter=diameter, toleranceSelect=toleranceSelect, toleranceDiameter=toleranceDiameter, lowLimit=lowLimit, highLimit=highLimit)
         group.addObject(obj)
     for l in getAllAnnotationObjects():
         l.touch()
@@ -841,6 +897,7 @@ class _GeometricTolerance(_GDTObject):
         _GDTObject.__init__(self,obj,"GeometricTolerance")
         obj.addProperty("App::PropertyString","Characteristic","GDT","Characteristic of the geometric tolerance")
         obj.addProperty("App::PropertyString","CharacteristicIcon","GDT","Characteristic icon path of the geometric tolerance")
+        obj.addProperty("App::PropertyBool","Circumference","GDT","Indicates whether the tolerance applies to a given diameter")
         obj.addProperty("App::PropertyFloat","ToleranceValue","GDT","Tolerance value of the geometric tolerance")
         obj.addProperty("App::PropertyString","FeatureControlFrame","GDT","Feature control frame of the geometric tolerance")
         obj.addProperty("App::PropertyString","FeatureControlFrameIcon","GDT","Feature control frame icon path of the geometric tolerance")
@@ -872,6 +929,7 @@ def makeGeometricTolerance(Name, ContainerOfData):
     obj.Label = Name
     obj.Characteristic = ContainerOfData.characteristic.Label
     obj.CharacteristicIcon = ContainerOfData.characteristic.Icon
+    obj.Circumference = ContainerOfData.circumference
     obj.ToleranceValue = ContainerOfData.toleranceValue
     obj.FeatureControlFrame = ContainerOfData.featureControlFrame.toolTip
     obj.FeatureControlFrameIcon = ContainerOfData.featureControlFrame.Icon
@@ -880,14 +938,26 @@ def makeGeometricTolerance(Name, ContainerOfData):
     group.addObject(obj)
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
-        makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=None, GT=obj)
+        makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=None, GT=obj, diameter=ContainerOfData.diameter, toleranceSelect=ContainerOfData.toleranceSelect, toleranceDiameter=ContainerOfData.toleranceDiameter, lowLimit=ContainerOfData.lowLimit, highLimit=ContainerOfData.highLimit)
     else:
         gt=AnnotationObj.GT
         gt.append(obj)
         faces = AnnotationObj.faces
         AP = AnnotationObj.AP
         DF = AnnotationObj.DF
-        group = makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj)
+        if ContainerOfData.circumference:
+            diameter = ContainerOfData.diameter
+            toleranceSelect = ContainerOfData.toleranceSelect
+            toleranceDiameter = ContainerOfData.toleranceDiameter
+            lowLimit = ContainerOfData.lowLimit
+            highLimit = ContainerOfData.highLimit
+        else:
+            diameter = AnnotationObj.diameter
+            toleranceSelect = AnnotationObj.toleranceSelectBool
+            toleranceDiameter = AnnotationObj.toleranceDiameter
+            lowLimit = AnnotationObj.lowLimit
+            highLimit = AnnotationObj.highLimit
+        group = makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj, diameter=diameter, toleranceSelect=toleranceSelect, toleranceDiameter=toleranceDiameter, lowLimit=lowLimit, highLimit=highLimit)
         group.addObject(obj)
     for l in getAllAnnotationObjects():
         l.touch()
@@ -910,17 +980,42 @@ class _Annotation(_GDTObject):
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of your annotation plane")
         obj.addProperty("App::PropertyVector","selectedPoint","GDT","Selected point to where plot the annotation")
         obj.addProperty("App::PropertyBool","spBool","GDT","Boolean to confirm that a selected point exists").spBool = False
-        obj.addProperty("App::PropertyBool","cylinderBool","GDT","Boolean to determine if this annotation is over a cylinder").cylinderBool = False
+        obj.addProperty("App::PropertyBool","circumferenceBool","GDT","Boolean to determine if this annotation is over a circumference").circumferenceBool = False
+        obj.addProperty("App::PropertyFloat","diameter","GDT","Diameter")
+        obj.addProperty("App::PropertyBool","toleranceSelectBool","GDT","Determinates if use plus-minus or low and high limits").toleranceSelectBool = True
+        obj.addProperty("App::PropertyFloat","toleranceDiameter","GDT","Diameter tolerance (Plus-minus)")
+        obj.addProperty("App::PropertyFloat","lowLimit","GDT","Low limit diameter tolerance")
+        obj.addProperty("App::PropertyFloat","highLimit","GDT","High limit diameter tolerance")
 
-    def onChanged(self,vobj,prop):
-        if hasattr(vobj,"spBool"):
-            vobj.setEditorMode('spBool',2)
+    def onChanged(self,obj,prop):
+        if hasattr(obj,"spBool"):
+            obj.setEditorMode('spBool',2)
+        if hasattr(obj,"diameter"):
+            if obj.circumferenceBool:
+                obj.setEditorMode('diameter',0)
+            else:
+                obj.setEditorMode('diameter',2)
+        if hasattr(obj,"toleranceDiameter") and hasattr(obj,"toleranceSelectBool"):
+            if obj.circumferenceBool and obj.toleranceSelectBool:
+                obj.setEditorMode('toleranceDiameter',0)
+            else:
+                obj.setEditorMode('toleranceDiameter',2)
+        if hasattr(obj,"lowLimit") and hasattr(obj,"toleranceSelectBool"):
+            if obj.circumferenceBool and not obj.toleranceSelectBool:
+                obj.setEditorMode('lowLimit',0)
+            else:
+                obj.setEditorMode('lowLimit',2)
+        if hasattr(obj,"highLimit") and hasattr(obj,"toleranceSelectBool"):
+            if obj.circumferenceBool and not obj.toleranceSelectBool:
+                obj.setEditorMode('highLimit',0)
+            else:
+                obj.setEditorMode('highLimit',2)
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         # FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
-        if fp.cylinderBool:
+        if fp.circumferenceBool:
             vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes
             fp.p1 = vertexex[0].Point if vertexex[0].Point.z > vertexex[1].Point.z else vertexex[1].Point
             fp.Direction = fp.AP.Direction
@@ -1062,7 +1157,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
         if prop in "faces" and fp.faces <> []:
-            fp.cylinderBool = True if len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2 else False
+            fp.circumferenceBool = True if True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] else False
 
     def doubleClicked(self,obj):
         select(self.Object)
@@ -1113,7 +1208,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def getIcon(self):
         return(":/dd/icons/annotation.svg")
 
-def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
+def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diameter = 0.0, toleranceSelect = True, toleranceDiameter = 0.0, lowLimit = 0.0, highLimit = 0.0):
     ''' Explanation
     '''
     if not modify:
@@ -1125,11 +1220,28 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None):
         group.addObject(obj)
         obj.faces = faces
         obj.AP = AP
-        obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
+        if obj.circumferenceBool:
+            vertexex = obj.faces[0][0].Shape.getElement(obj.faces[0][1]).Vertexes
+            index = [l.Point.z for l in vertexex].index(max([l.Point.z for l in vertexex]))
+            obj.p1 = vertexex[index].Point
+            obj.Direction = obj.AP.Direction
+        else:
+            obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
+            obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1]).normalAt(0,0)
     else:
         obj = Object
     obj.DF = DF
     obj.GT = GT
+    obj.diameter = diameter
+    obj.toleranceSelectBool = toleranceSelect
+    if toleranceSelect:
+        obj.toleranceDiameter = toleranceDiameter
+        obj.lowLimit = 0.0
+        obj.highLimit = 0.0
+    else:
+        obj.toleranceDiameter = 0.0
+        obj.lowLimit = lowLimit
+        obj.highLimit = highLimit
 
     def getPoint(point):
         if point:
@@ -1214,10 +1326,21 @@ def makeFeatureControlFrame(toolTip=None):
 class ContainerOfData(object):
     def __init__(self, faces = []):
         self.faces = faces
+        self.diameter = 0.0
         if self.faces <> []:
             self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
             self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1]).Surface.Axis
             self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1]).CenterOfMass
+            try:
+                edge = [l.Closed for l in self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges].index(True)
+                self.diameter = self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges[edge].Length/pi
+            except:
+                pass
+        self.circumference = False
+        self.toleranceSelect = True
+        self.toleranceDiameter = 0.0
+        self.lowLimit = 0.0
+        self.highLimit = 0.0
         self.OffsetValue = 0
         self.textName = ''
         self.textDS = ['','','']
@@ -1542,8 +1665,14 @@ class groupBoxWidget:
         return self.group
 
 class fieldLabeCombolWidget:
-    def __init__(self, Text='Label', List=[''], Icons=None, ToolTip = None):
+    def __init__(self, Text='Label', Circumference = [''], Diameter = 0.0, toleranceSelect = True, tolerance = 0.0, lowLimit = 0.0, highLimit = 0.0, List=[''], Icons=None, ToolTip = None):
         self.Text = Text
+        self.Circumference = Circumference
+        self.Diameter = Diameter
+        self.toleranceSelect = toleranceSelect
+        self.tolerance = tolerance
+        self.lowLimit = lowLimit
+        self.highLimit = highLimit
         self.List = List
         self.Icons = Icons
         self.ToolTip = ToolTip
@@ -1555,7 +1684,13 @@ class fieldLabeCombolWidget:
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
         self.uiloader = FreeCADGui.UiLoader()
+        self.comboCircumference = QtGui.QComboBox()
         self.combo = QtGui.QComboBox()
+        for i in range(len(self.Circumference)):
+            self.comboCircumference.addItem(QtGui.QIcon(self.Circumference[i]), '' )
+        self.comboCircumference.setSizeAdjustPolicy(QtGui.QComboBox.SizeAdjustPolicy(2))
+        self.comboCircumference.setToolTip("Indicates whether the tolerance applies to a given diameter")
+        self.combo.setSizeAdjustPolicy(QtGui.QComboBox.SizeAdjustPolicy(2))
         for i in range(len(self.List)):
             if self.Icons <> None:
                 self.combo.addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
@@ -1564,14 +1699,77 @@ class fieldLabeCombolWidget:
         if self.ToolTip <> None:
            self.updateDate()
         self.combo.activated.connect(self.updateDate)
-        hbox = QtGui.QHBoxLayout()
+        self.comboCircumference.activated.connect(self.updateDateCircumference)
+        vbox = QtGui.QVBoxLayout()
+        hbox1 = QtGui.QHBoxLayout()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
         self.inputfield.setText(self.FORMAT % 0)
         QtCore.QObject.connect(self.inputfield,QtCore.SIGNAL("valueChanged(double)"),self.valueChanged)
-        hbox.addLayout( GDTDialog_hbox(self.Text,self.inputfield) )
-        hbox.addStretch(1)
-        hbox.addWidget(self.combo)
-        return hbox
+        hbox1.addWidget( QtGui.QLabel(self.Text) )
+        hbox1.addWidget(self.comboCircumference)
+        hbox1.addStretch(1)
+        hbox1.addWidget(self.inputfield)
+        hbox1.addStretch(1)
+        hbox1.addWidget(self.combo)
+        vbox.addLayout(hbox1)
+        hbox2 = QtGui.QHBoxLayout()
+        self.label = QtGui.QLabel('Diameter:')
+        self.inputfield2 = self.uiloader.createWidget("Gui::InputField")
+        auxText = displayExternal(self.Diameter,self.DECIMALS,'Length',True)
+        self.inputfield2.setText(auxText)
+        QtCore.QObject.connect(self.inputfield2,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedDiameter)
+        self.comboTolerance = QtGui.QComboBox()
+        simbol = '±'
+        self.comboTolerance.addItem( simbol[-1] )
+        self.comboTolerance.addItem( 'Limit' )
+        if self.toleranceSelect:
+            self.comboTolerance.setCurrentIndex(0)
+        else:
+            self.comboTolerance.setCurrentIndex(1)
+        self.updateDateTolerance
+        self.comboTolerance.activated.connect(self.updateDateTolerance)
+        self.labelTolerance = QtGui.QLabel(simbol[-1])
+        self.labelLow = QtGui.QLabel('Low')
+        self.labelHigh = QtGui.QLabel('High')
+        self.inputfieldTolerance = self.uiloader.createWidget("Gui::InputField")
+        auxText = displayExternal(self.tolerance,self.DECIMALS,'Length',True)
+        self.inputfieldTolerance.setText(auxText)
+        QtCore.QObject.connect(self.inputfieldTolerance,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedTolerance)
+        self.inputfieldLow = self.uiloader.createWidget("Gui::InputField")
+        auxText = displayExternal(self.lowLimit,self.DECIMALS,'Length',True)
+        self.inputfieldLow.setText(auxText)
+        QtCore.QObject.connect(self.inputfieldLow,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedLow)
+        self.inputfieldHigh = self.uiloader.createWidget("Gui::InputField")
+        auxText = displayExternal(self.highLimit,self.DECIMALS,'Length',True)
+        self.inputfieldHigh.setText(auxText)
+        QtCore.QObject.connect(self.inputfieldHigh,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedHigh)
+
+        hbox2.addWidget(self.label)
+        hbox2.addStretch(1)
+        hbox2.addWidget(self.inputfield2)
+        vbox.addLayout(hbox2)
+        hbox3 = QtGui.QHBoxLayout()
+        hbox3.addWidget(self.comboTolerance)
+        hbox3.addStretch(1)
+        hbox3.addWidget(self.labelTolerance)
+        hbox3.addWidget(self.inputfieldTolerance)
+        hbox3.addWidget(self.labelLow)
+        hbox3.addWidget(self.inputfieldLow)
+        hbox3.addWidget(self.labelHigh)
+        hbox3.addWidget(self.inputfieldHigh)
+        vbox.addLayout(hbox3)
+        self.label.hide()
+        self.inputfield2.hide()
+        self.label.hide()
+        self.inputfield2.hide()
+        self.comboTolerance.hide()
+        self.labelTolerance.hide()
+        self.inputfieldTolerance.hide()
+        self.labelLow.hide()
+        self.labelHigh.hide()
+        self.inputfieldLow.hide()
+        self.inputfieldHigh.hide()
+        return vbox
 
     def updateDate(self):
         if self.ToolTip <> None:
@@ -1582,8 +1780,70 @@ class fieldLabeCombolWidget:
             else:
                 self.ContainerOfData.featureControlFrame = makeFeatureControlFrame('')
 
+    def updateDateCircumference(self):
+        if self.comboCircumference.currentIndex() <> 0:
+            self.ContainerOfData.circumference = True
+            self.label.show()
+            self.inputfield2.show()
+            self.label.show()
+            self.inputfield2.show()
+            self.comboTolerance.show()
+            if self.comboTolerance.currentIndex() == 0:
+                self.labelTolerance.show()
+                self.inputfieldTolerance.show()
+            else:
+                self.labelLow.show()
+                self.labelHigh.show()
+                self.inputfieldLow.show()
+                self.inputfieldHigh.show()
+        else:
+            self.ContainerOfData.circumference = False
+            self.label.hide()
+            self.inputfield2.hide()
+            self.label.hide()
+            self.inputfield2.hide()
+            self.comboTolerance.hide()
+            if self.comboTolerance.currentIndex() == 0:
+                self.labelTolerance.hide()
+                self.inputfieldTolerance.hide()
+            else:
+                self.labelLow.hide()
+                self.labelHigh.hide()
+                self.inputfieldLow.hide()
+                self.inputfieldHigh.hide()
+
+    def updateDateTolerance(self):
+        if self.comboTolerance.currentIndex() <> 0:
+            self.ContainerOfData.toleranceSelect = False
+            self.labelTolerance.hide()
+            self.inputfieldTolerance.hide()
+            self.labelLow.show()
+            self.labelHigh.show()
+            self.inputfieldLow.show()
+            self.inputfieldHigh.show()
+        else:
+            self.ContainerOfData.toleranceSelect = True
+            self.labelTolerance.show()
+            self.inputfieldTolerance.show()
+            self.labelLow.hide()
+            self.labelHigh.hide()
+            self.inputfieldLow.hide()
+            self.inputfieldHigh.hide()
+
     def valueChanged(self,d):
         self.ContainerOfData.toleranceValue = d
+
+    def valueChangedDiameter(self,d):
+        self.ContainerOfData.diameter = d
+
+    def valueChangedTolerance(self,d):
+        self.ContainerOfData.toleranceDiameter = d
+
+    def valueChangedLow(self,d):
+        self.ContainerOfData.lowLimit = d
+
+    def valueChangedHigh(self,d):
+        self.ContainerOfData.highLimit = d
 
 class CheckBoxWidget:
     def __init__(self, Text='Label'):
