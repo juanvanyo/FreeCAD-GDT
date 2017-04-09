@@ -45,9 +45,7 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
 		self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_annotationPlane']
 		self.inventory = ['dd_inventory']
 		self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)
- 		self.appendMenu("GD&T Tools",self.cmdList+self.inventory+['dd_helpGDT'])
-
-		self.appendToolbar('GD&T Help', [ 'dd_helpGDT' ])
+ 		self.appendMenu("GD&T Tools",self.cmdList+self.inventory)
 
 		FreeCADGui.addIconPath(':/dd/icons')
 		FreeCADGui.addPreferencePage( ':/dd/ui/preferences-gdt.ui','GDT' )

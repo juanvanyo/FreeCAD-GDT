@@ -593,6 +593,15 @@ def plotStrings(self, fp, points):
             self.textGT[index].string = self.textGT3d[index].string = (str(len(fp.faces))+'x')
             self.textGTpos[index].translation.setValue([posNumFaces.x, posNumFaces.y, posNumFaces.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
+            try:
+                DirectionAux = FreeCAD.Vector(fp.AP.Direction)
+                DirectionAux.x = abs(DirectionAux.x)
+                DirectionAux.y = abs(DirectionAux.y)
+                DirectionAux.z = abs(DirectionAux.z)
+                rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
+                self.textGTpos[index].rotation.setValue(rotation)
+            except:
+                pass
             index+=1
 
 #---------------------------------------------------------------------------
@@ -1161,10 +1170,13 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
         if prop in "faces" and fp.faces <> []:
-            fp.circumferenceBool = True if True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] else False
+            fp.circumferenceBool = True if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2) else False
 
     def doubleClicked(self,obj):
-        select(self.Object)
+        try:
+            select(self.Object)
+        except:
+            select(obj.Object)
 
     def getDisplayModes(self,obj):
         "Return a list of display modes."
@@ -1872,20 +1884,3 @@ class CheckBoxWidget:
             checkBoxState = True
         else:
             checkBoxState = False
-
-class helpGDTCommand:
-
-    def Activated(self):
-        QtGui.QMessageBox.information(
-            QtGui.qApp.activeWindow(),
-            'Geometric Dimensioning & Tolerancing Help',
-            'Developing...' )
-
-    def GetResources(self):
-        return {
-            'Pixmap' : ':/dd/icons/helpGDT.svg',
-            'MenuText': 'Help',
-            'ToolTip': 'Help'
-            }
-
-FreeCADGui.addCommand('dd_helpGDT', helpGDTCommand())
