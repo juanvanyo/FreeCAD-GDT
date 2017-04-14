@@ -281,30 +281,33 @@ def getAnnotationWithGT(obj):
     return None
 
 def getPointsToPlot(obj):
-    X = FreeCAD.Vector(1.0,0.0,0.0)
-    Y = FreeCAD.Vector(0.0,1.0,0.0)
-    Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
-    Vertical = obj.AP.Direction.cross(Direction).normalize()
-    Horizontal = Vertical.cross(obj.AP.Direction).normalize()
-    point = obj.selectedPoint
-    d = point.distanceToPlane(obj.p1, obj.Direction)
-    if obj.circumferenceBool:
-        P3 = point + obj.Direction * (-d)
-        d2 = (P3 - obj.p1) * Vertical
-        P2 = obj.p1 + Vertical * (d2*3/4)
-    else:
-        P2 = obj.p1 + obj.Direction * (d*3/4)
-        P3 = point
-    points = [obj.p1, P2, P3]
-    segments = [0,1,2]
-    existGT = True
-    if obj.GT <> []:
-        points, segments = getPointsToPlotGT(obj, points, segments, Vertical, Horizontal)
-    else:
-        existGT = False
-    if obj.DF <> None:
-        points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
-    segments = segments + []
+    points = []
+    segments = []
+    if obj.GT <> [] or obj.DF <> None:
+        X = FreeCAD.Vector(1.0,0.0,0.0)
+        Y = FreeCAD.Vector(0.0,1.0,0.0)
+        Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
+        Vertical = obj.AP.Direction.cross(Direction).normalize()
+        Horizontal = Vertical.cross(obj.AP.Direction).normalize()
+        point = obj.selectedPoint
+        d = point.distanceToPlane(obj.p1, obj.Direction)
+        if obj.circumferenceBool:
+            P3 = point + obj.Direction * (-d)
+            d2 = (P3 - obj.p1) * Vertical
+            P2 = obj.p1 + Vertical * (d2*3/4)
+        else:
+            P2 = obj.p1 + obj.Direction * (d*3/4)
+            P3 = point
+        points = [obj.p1, P2, P3]
+        segments = [0,1,2]
+        existGT = True
+        if obj.GT <> []:
+            points, segments = getPointsToPlotGT(obj, points, segments, Vertical, Horizontal)
+        else:
+            existGT = False
+        if obj.DF <> None:
+            points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
+        segments = segments + []
     return points, segments
 
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
