@@ -5,8 +5,6 @@ FreeCAD-GDT
 
 Geometric Dimensioning and Tolerancing (GD&T) workbench for FreeCAD
 
-----
-
 Abstract
 ----------
 
@@ -23,5 +21,11 @@ Installing
 ----------
 
 Download and install your corresponding version of FreeCAD from [wiki Download page](http://www.freecadweb.org/wiki/Download) and then copy the FreeCAD-GDT folder to the directory Mod of the application FreeCAD.
+
+### Requirements
+
+- Coin3D (4.0+) It is recommended to have Coin version 4.0 or higher installed but also works with version 3.0 but with some visual changes.
+
+----
 
 ### :scroll: License ? [![GitHub license](https://img.shields.io/github/license/juanvanyo/FreeCAD-GDT.svg)](https://github.com/juanvanyo/FreeCAD-GDT/blob/master/LICENSE)
