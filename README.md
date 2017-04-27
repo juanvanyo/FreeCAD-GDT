@@ -46,11 +46,11 @@ Therefore, the running of our module could be summarized in that we have to add 
 Commands
 ----------
 
-- Add Annotation Plane ![Add Annotation Plane](https://forum.freecadweb.org/download/file.php?id=36932)
-- Add Datum Feature ![Add Datum Feature](https://forum.freecadweb.org/download/file.php?id=36933)
-- Add Annotation Systen ![Add Annotation System](https://forum.freecadweb.org/download/file.php?id=36934)
-- Add Geometric Tolerance ![Add Geometric Tolerance](https://forum.freecadweb.org/download/file.php?id=36935)
-- Inventory of the elements of GD&T ![Inventory of the elements of GD&T](https://forum.freecadweb.org/download/file.php?id=36936)
+- ![Add Annotation Plane](https://forum.freecadweb.org/download/file.php?id=36932) Add Annotation Plane
+- ![Add Datum Feature](https://forum.freecadweb.org/download/file.php?id=36933) Add Datum Feature
+- ![Add Annotation System](https://forum.freecadweb.org/download/file.php?id=36934) Add Annotation Systen
+- ![Add Geometric Tolerance](https://forum.freecadweb.org/download/file.php?id=36935) Add Geometric Tolerance
+- ![Inventory of the elements of GD&T](https://forum.freecadweb.org/download/file.php?id=36936) Inventory of the elements of GD&T 
 
 ----
 
