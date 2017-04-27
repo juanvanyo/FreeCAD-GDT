@@ -33,7 +33,6 @@ import FreeCAD as App
 import FreeCAD, math, sys, os, DraftVecUtils, Draft_rc
 from math import pi
 from FreeCAD import Vector
-from svgLib_dd import SvgTextRenderer, SvgTextParser
 import traceback
 import Draft
 import Part
@@ -69,11 +68,11 @@ for i in range(1,100):
 #---------------------------------------------------------------------------
 
 def getParamType(param):
-    if param in ["lineWidth","gridEvery","gridSize"]:
+    if param in ["lineWidth"]:
         return "int"
     elif param in ["textFamily"]:
         return "string"
-    elif param in ["textSize","gridSpacing","lineScale"]:
+    elif param in ["textSize","lineScale"]:
         return "float"
     elif param in ["alwaysShowGrid","showUnit"]:
         return "bool"
@@ -217,12 +216,6 @@ def showGrid():
     if hasattr(FreeCADGui,"Snapper"):
         if FreeCADGui.Snapper.grid:
             if FreeCADGui.Snapper.grid.Visible == False:
-                Draft.setParam("gridEvery",getParam("gridEvery"))
-                Draft.setParam("gridSpacing",getParam("gridSpacing"))
-                Draft.setParam("gridSize",getParam("gridSize"))
-                FreeCADGui.Snapper.grid.setMainlines(getParam("gridEvery"))
-                FreeCADGui.Snapper.grid.setSpacing(getParam("gridSpacing"))
-                FreeCADGui.Snapper.grid.setSize(getParam("gridSize"))
                 FreeCADGui.Snapper.grid.reset()
                 FreeCADGui.Snapper.grid.on()
                 FreeCADGui.Snapper.forceGridOff=False
