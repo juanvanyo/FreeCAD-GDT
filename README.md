@@ -28,6 +28,30 @@ Download and install your corresponding version of FreeCAD from [wiki Download p
 
 - Coin3D (4.0+) It is recommended to have Coin version 4.0 or higher installed but also works with version 3.0 but with some visual changes.
 
+Operation of the module
+----------
+
+When doing a GD&T labeling, the first thing to do is to define an annotation plane on which the annotations we make will be painted. To do this, first select a face of the piece and click the command on the toolbar add annotation plane. This will define a plane on that face and we can also apply an offset to place our annotation plane to the height we want in parallel on the selected face. Defining an annotation plane.
+
+The next step we must do is to create a datum reference or a geometric tolerance. Although it is important to note that if the first thing to be created is a geometric tolerance, it can not contain any datum system since there will not be any created yet. However, this can be added later by modifying the geometric tolerance from the inventory of GD&T elements.
+
+In any case, when creating a datum reference or a geometric characteristic, the user must choose some parameters that will define the element to be created. These include the annotation plane on which the annotation will be represented. Everything followed should select a point on the plane. Point on which will start the representation of the frame that will encapsulate the data of our annotation.
+
+In addition, at any time, you can create a datum system with the datum reference elements that have been created and this system can be applied to the geometric tolerances that we consider appropriate. This will indicate that said geometric tolerance will be applied to the face or faces corresponding to the annotation with respect to the datum references that make up the associated datum system.
+
+Subsequently, if you want to apply a datum reference or a geometric tolerance to a face or faces that already have an annotation associated with it, this module will automatically detect which annotation is and it will add the new element to that annotation.
+
+Therefore, the running of our module could be summarized in that we have to add geometric tolerances to our design but in order to carry this out, we would first have to create different elements like annotation planes to place our annotation in the desired place, or Datum references and datum systems to provide necessary information to our geometric tolerances. So we have to create different elements until we have our piece completely labeled with all the geometric tolerances that we need to indicate.
+
+Commands
+----------
+
+- Add Annotation Plane ![Add Annotation Plane](https://forum.freecadweb.org/download/file.php?id=36932)
+- Add Datum Feature ![Add Datum Feature](https://forum.freecadweb.org/download/file.php?id=36933)
+- Add Annotation Systen ![Add Annotation System](https://forum.freecadweb.org/download/file.php?id=36934)
+- Add Geometric Tolerance ![Add Geometric Tolerance](https://forum.freecadweb.org/download/file.php?id=36935)
+- Inventory of the elements of GD&T ![Inventory of the elements of GD&T](https://forum.freecadweb.org/download/file.php?id=36936)
+
 ----
 
 ### :scroll: License ? [![GitHub license](https://img.shields.io/github/license/juanvanyo/FreeCAD-GDT.svg)](https://github.com/juanvanyo/FreeCAD-GDT/blob/master/LICENSE)
