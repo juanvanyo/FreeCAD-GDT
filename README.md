@@ -48,9 +48,9 @@ Commands
 
 - ![Add Annotation Plane](https://forum.freecadweb.org/download/file.php?id=36932) Add Annotation Plane
 - ![Add Datum Feature](https://forum.freecadweb.org/download/file.php?id=36933) Add Datum Feature
-- ![Add Annotation System](https://forum.freecadweb.org/download/file.php?id=36934) Add Annotation Systen
+- ![Add Annotation System](https://forum.freecadweb.org/download/file.php?id=36934) Add Annotation System
 - ![Add Geometric Tolerance](https://forum.freecadweb.org/download/file.php?id=36935) Add Geometric Tolerance
-- ![Inventory of the elements of GD&T](https://forum.freecadweb.org/download/file.php?id=36936) Inventory of the elements of GD&T 
+- ![Inventory of the elements of GD&T](https://forum.freecadweb.org/download/file.php?id=36936) Inventory of the elements of GD&T
 
 ----
 
