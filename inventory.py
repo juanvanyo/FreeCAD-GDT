@@ -277,14 +277,18 @@ class fieldLabelButtonWidget_inv:
         self.data.OffsetValue = d
         if self.firstAttempt == False:
             showGrid()
-            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.obj.p1, self.obj.Direction, self.data.OffsetValue)
-            FreeCADGui.Snapper.grid.set()
+            if hasattr(FreeCADGui,"Snapper"):
+                if FreeCADGui.Snapper.grid:
+                    FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.obj.p1, self.obj.Direction, self.data.OffsetValue)
+                    FreeCADGui.Snapper.grid.set()
         self.firstAttempt = False
 
     def visualizeFunc(self):
         showGrid()
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.obj.PointWithOffset, self.obj.Direction, 0)
-        FreeCADGui.Snapper.grid.set()
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.obj.PointWithOffset, self.obj.Direction, 0)
+                FreeCADGui.Snapper.grid.set()
         self.inputfield.setText(self.auxText)
 
 class comboLabelWidget_inv:

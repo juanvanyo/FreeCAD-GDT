@@ -766,9 +766,11 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
 
     def doubleClicked(self,obj):
         showGrid()
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.Object.PointWithOffset, self.Object.Direction, 0)
-        FreeCADGui.Snapper.grid.set()
-        FreeCAD.ActiveDocument.recompute()
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.Object.PointWithOffset, self.Object.Direction, 0)
+                FreeCADGui.Snapper.grid.set()
+                FreeCAD.ActiveDocument.recompute()
 
     def getIcon(self):
         return(":/dd/icons/annotationPlane.svg")
@@ -1532,8 +1534,10 @@ class fieldLabelWidget:
     def generateWidget( self, idGDT, ContainerOfData ):
         self.idGDT = idGDT
         self.ContainerOfData = ContainerOfData
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.ContainerOfData.p1, self.ContainerOfData.Direction, 0.0)
-        FreeCADGui.Snapper.grid.set()
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.ContainerOfData.p1, self.ContainerOfData.Direction, 0.0)
+                FreeCADGui.Snapper.grid.set()
         self.FORMAT = makeFormatSpec(0,'Length')
         self.uiloader = FreeCADGui.UiLoader()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
@@ -1545,8 +1549,10 @@ class fieldLabelWidget:
 
     def valueChanged(self, d):
         self.ContainerOfData.OffsetValue = d
-        FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.ContainerOfData.p1, self.ContainerOfData.Direction, self.ContainerOfData.OffsetValue)
-        FreeCADGui.Snapper.grid.set()
+        if hasattr(FreeCADGui,"Snapper"):
+            if FreeCADGui.Snapper.grid:
+                FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.ContainerOfData.p1, self.ContainerOfData.Direction, self.ContainerOfData.OffsetValue)
+                FreeCADGui.Snapper.grid.set()
 
 class comboLabelWidget:
     def __init__(self, Text='Label', List=None, Icons=None, ToolTip = None):
@@ -1634,8 +1640,10 @@ class comboLabelWidget:
             self.ContainerOfData.annotationPlane = self.List[comboIndex]
             self.ContainerOfData.Direction = self.List[comboIndex].Direction
             self.ContainerOfData.PointWithOffset = self.List[comboIndex].PointWithOffset
-            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.ContainerOfData.PointWithOffset, self.ContainerOfData.Direction, 0.0)
-            FreeCADGui.Snapper.grid.set()
+            if hasattr(FreeCADGui,"Snapper"):
+                if FreeCADGui.Snapper.grid:
+                    FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.ContainerOfData.PointWithOffset, self.ContainerOfData.Direction, 0.0)
+                    FreeCADGui.Snapper.grid.set()
 
     def updateItemsEnabled(self, comboIndex):
         comboIndex0 = comboIndex
