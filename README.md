@@ -5,7 +5,7 @@ FreeCAD-GDT
 
 Geometric Dimensioning and Tolerancing (GD&T) workbench for FreeCAD
 
-[Forum Thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=22072&start=10)
+[Forum Thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=22072)
 
 ![screenshot](https://forum.freecadweb.org/download/file.php?id=36916)
 
