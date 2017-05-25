@@ -5,7 +5,7 @@ FreeCAD-GDT
 
 Geometric Dimensioning and Tolerancing (GD&T) workbench for FreeCAD
 
-[Forum Thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=22072)
+Please see [forum thread](https://forum.freecadweb.org/viewtopic.php?f=10&t=22072) to discuss or report issues regarding this Addon with it's author and the FreeCAD community.
 
 ![screenshot](https://forum.freecadweb.org/download/file.php?id=36916)
 
@@ -24,7 +24,9 @@ The implementation of the software is done as a module of the parametric modelin
 Installing
 ----------
 
-Download and install your corresponding version of FreeCAD from [wiki Download page](http://www.freecadweb.org/wiki/Download) and then copy the FreeCAD-GDT folder to the directory Mod of the application FreeCAD.
+Download and install your corresponding version of FreeCAD from [wiki Download page](http://www.freecadweb.org/wiki/Download) and either install
+- automaticallu using the [FreeCAD Add-on Manager](https://github.com/FreeCAD/FreeCAD-addons) (bundled in to 0.17 dev version)
+- manually by copying the FreeCAD-GDT folder to the Mod sub-directory of the FreeCAD application.
 
 ### Requirements
 
