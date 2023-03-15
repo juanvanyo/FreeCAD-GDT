@@ -744,6 +744,7 @@ class _AnnotationPlane(_GDTObject):
         _GDTObject.__init__(self,obj,"AnnotationPlane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
         obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (getSelectionEx()[0].Object, getSelectionEx()[0].SubElementNames[0])
+        print("DEbug 5@xes {}".format(obj.faces[1][0]))
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Center point of Grid").p1 = obj.faces[0].Shape.getElement(obj.faces[1][0]).CenterOfMass
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane").Direction = obj.faces[0].Shape.getElement(obj.faces[1][0]).normalAt(0,0)
         obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
@@ -1033,12 +1034,12 @@ class _Annotation(_GDTObject):
         # FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
         if fp.circumferenceBool:
-            vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes
+            vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Vertexes
             fp.p1 = vertexex[0].Point if vertexex[0].Point.z > vertexex[1].Point.z else vertexex[1].Point
             fp.Direction = fp.AP.Direction
         else:
-            fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
-            fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).normalAt(0,0)
+            fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
+            fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).normalAt(0,0)
         diff = fp.p1-auxP1
         if fp.spBool:
             fp.selectedPoint = fp.selectedPoint + diff
@@ -1174,13 +1175,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
         
-        print("5@xes updateData  prop {}".format(prop))
-        if prop == "faces" and fp.faces != []:
-            print("5@xes updateData  Vertexes  {}".format(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes))
-            for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges :
-                print("5@xes updateData  l  {}".format(l))
-            
-            if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2) :
+        if prop == "faces" and fp.faces != []:         
+            if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Vertexes) == 2) :
                 fp.circumferenceBool = True
             else:
                 fp.circumferenceBool = False 
@@ -1250,13 +1246,22 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
         obj.faces = faces
         obj.AP = AP
         if obj.circumferenceBool:
-            vertexex = obj.faces[0][0].Shape.getElement(obj.faces[0][1]).Vertexes
+            vertexex = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).Vertexes
             index = [l.Point.z for l in vertexex].index(max([l.Point.z for l in vertexex]))
             obj.p1 = vertexex[index].Point
             obj.Direction = obj.AP.Direction
         else:
-            obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
-            obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1]).normalAt(0,0)
+            print("5@xes p1 {}".format(obj.p1))
+            print("5@xes obj.Shape {}".format(obj.faces[0][0].Shape))
+            print("5@xes obj.faces 2 : {}".format(obj.faces[0][1][0]))
+            print("5@xes obj.Shape {}".format(obj.faces[0][0].Shape))
+            print("5@xes CenterOfMass {}".format(obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass))
+            print("5@xes Direction {}".format(obj.AP.Direction))
+            print("5@xes PointWithOffset {}".format(obj.AP.PointWithOffset))
+            obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
+            print("5@xes p1 {}".format(obj.p1))
+            obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).normalAt(0,0)
+            print("5@xes Direction {}".format(obj.Direction))
     else:
         obj = Object
     obj.DF = DF
@@ -1357,12 +1362,12 @@ class ContainerOfData(object):
         self.faces = faces
         self.diameter = 0.0
         if self.faces != []:
-            self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
-            self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1]).Surface.Axis
-            self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1]).CenterOfMass
+            self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).normalAt(0,0)
+            self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).Surface.Axis
+            self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).CenterOfMass
             try:
-                edge = [l.Closed for l in self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges].index(True)
-                self.diameter = self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges[edge].Length/pi
+                edge = [l.Closed for l in self.faces[0][0].Shape.getElement(self.faces[0][1][0]).Edges].index(True)
+                self.diameter = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).Edges[edge].Length/pi
             except:
                 pass
         self.circumference = False
@@ -1463,11 +1468,16 @@ class GDTGuiClass(QtGui.QWidget):
         global auxDictionaryDS
         # 5@xes modif for test
         # self.textName = self.ContainerOfData.textName.encode('utf-8')
-        self.textName = self.ContainerOfData.textName
+        self.textName = str(self.ContainerOfData.textName)
+        print("5@xes createObject textName {}".format(self.textName))
+        print("5@xes createObject textName encode utf-8 {}".format(self.ContainerOfData.textName.encode('utf-8')))
         if self.idGDT == 1:
+            print("5@xes createObject textName 1 {}".format(self.textName))
             obj = makeDatumFeature(self.textName, self.ContainerOfData)
             if checkBoxState:
-                makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
+                datumNAme = auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName
+                print("5@xes Datum Name {}".format(datumNAme))
+                makeDatumSystem(datumNAme, obj, None, None)
         elif self.idGDT == 2:
             separator = ' | '
             if self.ContainerOfData.textDS[0] != '':
@@ -1529,6 +1539,7 @@ class textLabelWidget:
             self.Text = self.Dictionary[NumberOfObjects]
         self.lineEdit.textChanged.connect(self.valueChanged)
         self.ContainerOfData.textName = self.Text.strip()
+        print("5@xes ContainerOfData.textName {}".format(self.ContainerOfData.textName))
         return GDTDialog_hbox(self.Text,self.lineEdit)
 
     def valueChanged(self, argGDT):
