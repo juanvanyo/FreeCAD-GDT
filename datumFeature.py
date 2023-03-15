@@ -25,7 +25,7 @@ import  DraftTools
 
 gdt = GDTWidget()
 dictionaryDF = []
-dictionaryDF = map(chr, range(65, 91)) # 65 = A, 91 = Z
+dictionaryDF = list(map(chr, range(65, 91))) # 65 = A, 91 = Z
 gdt.dialogWidgets.append( textLabelWidget(Text='Datum feature:',Mask='>A', Dictionary=dictionaryDF) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
 gdt.dialogWidgets.append( comboLabelWidget(Text='Active annotation plane:', List=[]) )
 gdt.dialogWidgets.append( CheckBoxWidget(Text = 'Create corresponding Datum System') )
@@ -34,9 +34,9 @@ class DatumFeatureCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/datumFeature.svg'
         self.toolTip = 'Add Datum Feature'
-        self.dictionary = []
+        self.Dictionary = []
         for i in range(1,100):
-            self.dictionary.append('DF'+str(i))
+            self.Dictionary.append('DF'+str(i))
         self.idGDT = 1
 
     def Activated(self):
@@ -48,7 +48,7 @@ class DatumFeatureCommand:
             self.toolTip = 'Add Datum Feature'
             showGrid()
             gdt.dialogWidgets[1] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
-        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
+        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, Dictionary=self.Dictionary)
 
     def GetResources(self):
         return {
@@ -58,6 +58,7 @@ class DatumFeatureCommand:
             }
 
     def IsActive(self):
+
         if len(getObjectsOfType('AnnotationPlane')) == 0:
             return False
         if getSelection():

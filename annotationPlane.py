@@ -29,14 +29,14 @@ class AnnotationPlaneCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/annotationPlane.svg'
         self.toolTip = 'Add Annotation Plane'
-        self.dictionary = []
+        self.Dictionary = []
         for i in range(1,100):
-            self.dictionary.append('AP'+str(i))
+            self.Dictionary.append('AP'+str(i))
         self.idGDT = 4
 
     def Activated(self):
         showGrid()
-        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
+        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, Dictionary=self.Dictionary)
 
     def GetResources(self):
         return {

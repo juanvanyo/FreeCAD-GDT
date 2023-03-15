@@ -789,7 +789,9 @@ def makeAnnotationPlane(Name, Offset):
     _AnnotationPlane(obj)
     if gui:
         _ViewProviderAnnotationPlane(obj.ViewObject)
-    obj.Label = Name
+    print("5@xes makeAnnotationPlane Name = {}".format(Name))
+    print("5@xes makeAnnotationPlane Offset = {}".format(Offset))
+    obj.Label = str(Name)
     obj.Offset = Offset
     group.addObject(obj)
     hideGrid()
@@ -826,7 +828,8 @@ def makeDatumFeature(Name, ContainerOfData):
     _DatumFeature(obj)
     if gui:
         _ViewProviderDatumFeature(obj.ViewObject)
-    obj.Label = Name
+    print("5@xes makeDatumFeature Name = {}".format(Name))
+    obj.Label = str(Name)
     group = FreeCAD.ActiveDocument.getObject("GDT")
     group.addObject(obj)
     AnnotationObj = getAnnotationObj(ContainerOfData)
@@ -875,7 +878,7 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
                     textName+=' | '+obj.Secondary.Label
                     if obj.Tertiary != None:
                         textName+=' | '+obj.Tertiary.Label
-            obj.Label = textName
+            obj.Label = str(textName)
 
     def getIcon(self):
         return(":/dd/icons/datumSystem.svg")
@@ -887,7 +890,7 @@ def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     _DatumSystem(obj)
     if gui:
         _ViewProviderDatumSystem(obj.ViewObject)
-    obj.Label = Name
+    obj.Label = str(Name)
     obj.Primary = Primary
     obj.Secondary = Secondary
     obj.Tertiary = Tertiary
@@ -1167,8 +1170,17 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setNum(len(segments))
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
-        if prop in "faces" and fp.faces != []:
-            fp.circumferenceBool = True if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2) else False
+        
+        print("5@xes updateData  prop {}".format(prop))
+        if prop == "faces" and fp.faces != []:
+            print("5@xes updateData  Vertexes  {}".format(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes))
+            for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges :
+                print("5@xes updateData  l  {}".format(l))
+            
+            if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2) :
+                fp.circumferenceBool = True
+            else:
+                fp.circumferenceBool = False 
 
     def doubleClicked(self,obj):
         try:
@@ -1379,16 +1391,16 @@ class GDTWidget:
         self.dialogWidgets = []
         self.ContainerOfData = None
 
-    def activate( self, idGDT=0, dialogTitle='GD&T Widget', dialogIconPath=':/dd/icons/GDT.svg', endFunction=None, dictionary=None):
+    def activate( self, idGDT=0, dialogTitle='GD&T Widget', dialogIconPath=':/dd/icons/GDT.svg', endFunction=None, Dictionary=None):
         self.dialogTitle=dialogTitle
         self.dialogIconPath = dialogIconPath
         self.endFunction = endFunction
-        self.dictionary = dictionary
+        self.Dictionary = Dictionary
         self.idGDT=idGDT
         self.ContainerOfData = makeContainerOfData()
         extraWidgets = []
-        if dictionary != None:
-            extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn', Dictionary=self.dictionary)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+        if Dictionary != None:
+            extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn', Dictionary=self.Dictionary)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
         else:
             extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn'))
         self.taskDialog = GDTDialog( self.dialogTitle, self.dialogIconPath, self.idGDT, extraWidgets + self.dialogWidgets, self.ContainerOfData)
@@ -1497,21 +1509,26 @@ class textLabelWidget:
         if self.Mask != None:
             self.lineEdit.setInputMask(self.Mask)
         if self.Dictionary == None:
+            print("5@xes Dictionary = None")
             self.lineEdit.setText('text')
-            self.text = 'text'
+            self.Text = 'text'
         else:
             NumberOfObjects = self.getNumberOfObjects()
+            print("5@xes NumberOfObjects {}".format(NumberOfObjects))
+            print("5@xes Dictionary {}".format(self.Dictionary))
+            print("5@xes Self {}".format(self))
+            
             if NumberOfObjects > len(self.Dictionary)-1:
                 NumberOfObjects = len(self.Dictionary)-1
             self.lineEdit.setText(self.Dictionary[NumberOfObjects])
-            self.text = self.Dictionary[NumberOfObjects]
+            self.Text = self.Dictionary[NumberOfObjects]
         self.lineEdit.textChanged.connect(self.valueChanged)
-        self.ContainerOfData.textName = self.text.strip()
+        self.ContainerOfData.textName = self.Text.strip()
         return GDTDialog_hbox(self.Text,self.lineEdit)
 
     def valueChanged(self, argGDT):
-        self.text = argGDT.strip()
-        self.ContainerOfData.textName = self.text
+        self.Text = argGDT.strip()
+        self.ContainerOfData.textName = self.Text
 
     def getNumberOfObjects(self):
         "getNumberOfObjects(): returns the number of objects of the same type as the active widget"

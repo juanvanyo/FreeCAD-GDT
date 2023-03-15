@@ -29,15 +29,15 @@ class DatumSystemCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/datumSystem.svg'
         self.toolTip = 'Add Datum System'
-        self.dictionary = []
+        self.Dictionary = []
         for i in range(1,100):
-            self.dictionary.append('DS'+str(i))
+            self.Dictionary.append('DS'+str(i))
         self.idGDT = 2
 
     def Activated(self):
         listDF = [None] + getAllDatumFeatureObjects()
         gdt.dialogWidgets[0] = ( groupBoxWidget(Text='Constituents', List=[comboLabelWidget(Text='Primary:',List=listDF),comboLabelWidget(Text='Secondary:',List=listDF), comboLabelWidget(Text='Tertiary:',List=listDF)]) )
-        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
+        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, Dictionary=self.Dictionary)
 
     def GetResources(self):
         return {

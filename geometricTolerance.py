@@ -35,9 +35,9 @@ class GeometricToleranceCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/geometricTolerance.svg'
         self.toolTip = 'Add Geometric Tolerance'
-        self.dictionary = []
+        self.Dictionary = []
         for i in range(1,100):
-            self.dictionary.append('GT'+str(i))
+            self.Dictionary.append('GT'+str(i))
         self.idGDT = 3
         self.FeatureControlFrame = makeFeatureControlFrame()
 
@@ -60,7 +60,7 @@ class GeometricToleranceCommand:
             gdt.dialogWidgets[3] = comboLabelWidget(Text='Active annotation plane:', List=getAllAnnotationPlaneObjects())
             gdt.dialogWidgets[1] = fieldLabeCombolWidget(Text='Tolerance value:', Circumference = ['',':/dd/icons/diameter.svg'], Diameter = ContainerOfData.diameter, List=self.FeatureControlFrame.Label, Icons=self.FeatureControlFrame.Icon, ToolTip=self.FeatureControlFrame.toolTip)
         gdt.dialogWidgets[2] = comboLabelWidget(Text='Datum system:', List=[None]+getAllDatumSystemObjects())
-        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, dictionary=self.dictionary)
+        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, Dictionary=self.Dictionary)
 
     def GetResources(self):
         return {
