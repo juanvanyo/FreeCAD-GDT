@@ -744,7 +744,6 @@ class _AnnotationPlane(_GDTObject):
         _GDTObject.__init__(self,obj,"AnnotationPlane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
         obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (getSelectionEx()[0].Object, getSelectionEx()[0].SubElementNames[0])
-        print("DEbug 5@xes {}".format(obj.faces[1][0]))
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Center point of Grid").p1 = obj.faces[0].Shape.getElement(obj.faces[1][0]).CenterOfMass
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane").Direction = obj.faces[0].Shape.getElement(obj.faces[1][0]).normalAt(0,0)
         obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
@@ -1252,9 +1251,11 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.Direction = obj.AP.Direction
         else:
             print("5@xes p1 {}".format(obj.p1))
+            print("5@xes obj.faces {}".format(obj.faces))
             print("5@xes obj.Shape {}".format(obj.faces[0][0].Shape))
+            print("5@xes obj.faces 0 : {}".format(obj.faces[0][0]))
             print("5@xes obj.faces 2 : {}".format(obj.faces[0][1][0]))
-            print("5@xes obj.Shape {}".format(obj.faces[0][0].Shape))
+            
             print("5@xes CenterOfMass {}".format(obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass))
             print("5@xes Direction {}".format(obj.AP.Direction))
             print("5@xes PointWithOffset {}".format(obj.AP.PointWithOffset))
@@ -1362,12 +1363,12 @@ class ContainerOfData(object):
         self.faces = faces
         self.diameter = 0.0
         if self.faces != []:
-            self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).normalAt(0,0)
-            self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).Surface.Axis
-            self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).CenterOfMass
+            self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
+            self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1]).Surface.Axis
+            self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1]).CenterOfMass
             try:
-                edge = [l.Closed for l in self.faces[0][0].Shape.getElement(self.faces[0][1][0]).Edges].index(True)
-                self.diameter = self.faces[0][0].Shape.getElement(self.faces[0][1][0]).Edges[edge].Length/pi
+                edge = [l.Closed for l in self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges].index(True)
+                self.diameter = self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges[edge].Length/pi
             except:
                 pass
         self.circumference = False
