@@ -111,24 +111,24 @@ class GDTGuiClass:
             obj.Secondary = data.secondary
             obj.Tertiary = data.tertiary
             textName = data.textName.split(":")[0]
-            if data.primary <> None:
+            if data.primary != None:
                 textName+=': '+obj.Primary.Label
-                if data.secondary <> None:
+                if data.secondary != None:
                     textName+=' | '+obj.Secondary.Label
-                    if data.tertiary <> None:
+                    if data.tertiary != None:
                         textName+=' | '+obj.Tertiary.Label
             obj.Label = textName
 
         elif "DatumFeature" == getType(obj):
             annotationObj = getAnnotationWithDF(obj)
             remove = False
-            if data.annotation.DF <> None and annotationObj <> data.annotation:
+            if data.annotation.DF != None and annotationObj != data.annotation:
                 QtGui.QMessageBox.critical(
                     QtGui.qApp.activeWindow(),
                     'ERROR',
                     'You can not change the DF to an annotation where one already exists',
                     QtGui.QMessageBox.StandardButton.Abort )
-            elif annotationObj <> data.annotation:
+            elif annotationObj != data.annotation:
                 data.annotation.addObject(obj)
                 data.annotation.DF = obj
                 annotationObj.removeObject(obj)
@@ -142,7 +142,7 @@ class GDTGuiClass:
 
         elif "GeometricTolerance" == getType(obj):
             annotationObj = getAnnotationWithGT(obj)
-            if annotationObj.Label <> data.annotation.Label:
+            if annotationObj.Label != data.annotation.Label:
                 annotationObj.removeObject(obj)
                 gt = annotationObj.GT
                 gt.remove(obj)
@@ -238,7 +238,7 @@ class textLabelWidget_inv:
 
     def generateWidget( self ):
         self.lineEdit = QtGui.QLineEdit()
-        if self.Mask <> None:
+        if self.Mask != None:
             self.lineEdit.setInputMask(self.Mask)
         self.lineEdit.setText(self.obj.Label)
         self.text = self.obj.Label
@@ -319,21 +319,21 @@ class comboLabelWidget_inv:
         for i in range(len(self.List)):
             if self.List[i] == None:
                 self.data.combo[self.k].addItem( '' )
-            elif self.Icons <> None:
+            elif self.Icons != None:
                 self.data.combo[self.k].addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
                 self.data.combo[self.k].addItem( self.List[i].Label )
 
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
             self.data.combo[self.k].setToolTip( self.ToolTip[0] )
         self.updateCurrentItem()
         if self.Text == 'Secondary:' and self.data.combo[self.k].currentIndex() == 0 or self.Text == 'Tertiary:' and self.data.combo[self.k].currentIndex() == 0:
             self.data.combo[self.k].setEnabled(False)
         if self.k == 2:
             self.updateItemsEnabled(self.k)
-            if self.data.combo[0].currentIndex() <> 0:
+            if self.data.combo[0].currentIndex() != 0:
                 self.data.combo[1].setEnabled(True)
-                if self.data.combo[1].currentIndex() <> 0:
+                if self.data.combo[1].currentIndex() != 0:
                     self.data.combo[2].setEnabled(True)
         self.data.combo[self.k].activated.connect(lambda comboIndex = self.data.combo[self.k].currentIndex(): self.updateDate(comboIndex))
 
@@ -341,41 +341,41 @@ class comboLabelWidget_inv:
 
     def updateCurrentItem(self):
         if self.Text == 'Primary:':
-            if self.obj.Primary <> None:
+            if self.obj.Primary != None:
                 actualValue = self.obj.Primary.Label
                 pos = self.getPos(actualValue)
                 self.data.combo[self.k].setCurrentIndex(pos)
             self.data.textDS[0] = self.data.combo[self.k].currentText()
             self.data.primary = self.List[self.data.combo[self.k].currentIndex()]
         elif self.Text == 'Secondary:':
-            if self.obj.Secondary <> None:
+            if self.obj.Secondary != None:
                 actualValue = self.obj.Secondary.Label
                 pos = self.getPos(actualValue)
                 self.data.combo[self.k].setCurrentIndex(pos)
             self.data.textDS[1] = self.data.combo[self.k].currentText()
             self.data.secondary = self.List[self.data.combo[self.k].currentIndex()]
         elif self.Text == 'Tertiary:':
-            if self.obj.Tertiary <> None:
+            if self.obj.Tertiary != None:
                 actualValue = self.obj.Tertiary.Label
                 pos = self.getPos(actualValue)
                 self.data.combo[self.k].setCurrentIndex(pos)
             self.data.textDS[2] = self.data.combo[self.k].currentText()
             self.data.tertiary = self.List[self.data.combo[self.k].currentIndex()]
         elif self.Text == 'Characteristic:':
-            if self.obj.Characteristic <> '':
+            if self.obj.Characteristic != '':
                 actualValue = self.obj.Characteristic
                 pos = self.getPos(actualValue)
             self.data.combo[self.k].setCurrentIndex(pos)
             self.data.characteristic = makeCharacteristics(self.List[self.data.combo[self.k].currentIndex()])
         elif self.Text == 'Datum system:':
-            if self.obj.DS <> None:
+            if self.obj.DS != None:
                 actualValue = self.obj.DS.Label
                 pos = self.getPos(actualValue)
                 self.data.combo[self.k].setCurrentIndex(pos)
             self.data.datumSystem = self.List[self.data.combo[self.k].currentIndex()]
         elif self.Text == 'In annotation:':
             annotationObj = getAnnotationWithDF(self.obj) if "DatumFeature" == getType(self.obj) else getAnnotationWithGT(self.obj)
-            if annotationObj <> None:
+            if annotationObj != None:
                 actualValue = annotationObj.Label
                 pos = self.getPos(actualValue)
                 self.data.combo[self.k].setCurrentIndex(pos)
@@ -392,12 +392,12 @@ class comboLabelWidget_inv:
                 return i
 
     def updateDate(self, comboIndex):
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
             self.data.combo[self.k].setToolTip( self.ToolTip[self.data.combo[self.k].currentIndex()] )
         if self.Text == 'Primary:':
             self.data.textDS[0] = self.data.combo[self.k].currentText()
             self.data.primary = self.List[self.data.combo[self.k].currentIndex()]
-            if self.data.combo[self.k].currentIndex() <> 0:
+            if self.data.combo[self.k].currentIndex() != 0:
                 self.data.combo[1].setEnabled(True)
             else:
                 self.data.combo[1].setEnabled(False)
@@ -412,7 +412,7 @@ class comboLabelWidget_inv:
         elif self.Text == 'Secondary:':
             self.data.textDS[1] = self.data.combo[self.k].currentText()
             self.data.secondary = self.List[self.data.combo[self.k].currentIndex()]
-            if self.data.combo[self.k].currentIndex() <> 0:
+            if self.data.combo[self.k].currentIndex() != 0:
                 self.data.combo[2].setEnabled(True)
             else:
                 self.data.combo[2].setEnabled(False)
@@ -438,21 +438,21 @@ class comboLabelWidget_inv:
 
         for i in range(self.data.combo[comboIndex0].count()):
             self.data.combo[comboIndex0].model().item(i).setEnabled(True)
-        if self.data.combo[comboIndex1].currentIndex() <> 0:
+        if self.data.combo[comboIndex1].currentIndex() != 0:
             self.data.combo[comboIndex0].model().item(self.data.combo[comboIndex1].currentIndex()).setEnabled(False)
-        if self.data.combo[comboIndex2].currentIndex() <> 0:
+        if self.data.combo[comboIndex2].currentIndex() != 0:
             self.data.combo[comboIndex0].model().item(self.data.combo[comboIndex2].currentIndex()).setEnabled(False)
         for i in range(self.data.combo[comboIndex1].count()):
             self.data.combo[comboIndex1].model().item(i).setEnabled(True)
-        if self.data.combo[comboIndex0].currentIndex() <> 0:
+        if self.data.combo[comboIndex0].currentIndex() != 0:
             self.data.combo[comboIndex1].model().item(self.data.combo[comboIndex0].currentIndex()).setEnabled(False)
-        if self.data.combo[comboIndex2].currentIndex() <> 0:
+        if self.data.combo[comboIndex2].currentIndex() != 0:
             self.data.combo[comboIndex1].model().item(self.data.combo[comboIndex2].currentIndex()).setEnabled(False)
         for i in range(self.data.combo[comboIndex2].count()):
             self.data.combo[comboIndex2].model().item(i).setEnabled(True)
-        if self.data.combo[comboIndex0].currentIndex() <> 0:
+        if self.data.combo[comboIndex0].currentIndex() != 0:
             self.data.combo[comboIndex2].model().item(self.data.combo[comboIndex0].currentIndex()).setEnabled(False)
-        if self.data.combo[comboIndex1].currentIndex() <> 0:
+        if self.data.combo[comboIndex1].currentIndex() != 0:
             self.data.combo[comboIndex2].model().item(self.data.combo[comboIndex1].currentIndex()).setEnabled(False)
 
 class groupBoxWidget_inv:
@@ -488,7 +488,7 @@ class fieldLabeCombolWidget_inv:
         self.comboCircumference = QtGui.QComboBox()
         self.combo = QtGui.QComboBox()
         for i in range(len(self.List)):
-            if self.Icons <> None:
+            if self.Icons != None:
                 self.combo.addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
                 self.combo.addItem( self.List[i] )
@@ -533,13 +533,13 @@ class fieldLabeCombolWidget_inv:
                     return i
 
     def updateDate(self):
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
             self.data.featureControlFrame = '' if self.combo.currentIndex() == 0 else self.ToolTip[self.combo.currentIndex()]
 
     def updateDateCircumference(self):
-        if self.comboCircumference.currentIndex() <> 0:
+        if self.comboCircumference.currentIndex() != 0:
             self.data.circumference = True
         else:
             self.data.circumference = False
@@ -550,7 +550,7 @@ class fieldLabeCombolWidget_inv:
 def GDTDialog_hbox_inv( label, inputWidget):
     hbox = QtGui.QHBoxLayout()
     hbox.addWidget( QtGui.QLabel(label) )
-    if inputWidget <> None:
+    if inputWidget != None:
         hbox.addStretch(1)
         hbox.addWidget(inputWidget)
     return hbox

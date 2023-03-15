@@ -276,7 +276,7 @@ def getAnnotationWithGT(obj):
 def getPointsToPlot(obj):
     points = []
     segments = []
-    if obj.GT <> [] or obj.DF <> None:
+    if obj.GT != [] or obj.DF != None:
         X = FreeCAD.Vector(1.0,0.0,0.0)
         Y = FreeCAD.Vector(0.0,1.0,0.0)
         Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
@@ -294,11 +294,11 @@ def getPointsToPlot(obj):
         points = [obj.p1, P2, P3]
         segments = [0,1,2]
         existGT = True
-        if obj.GT <> []:
+        if obj.GT != []:
             points, segments = getPointsToPlotGT(obj, points, segments, Vertical, Horizontal)
         else:
             existGT = False
-        if obj.DF <> None:
+        if obj.DF != None:
             points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
         segments = segments + []
     return points, segments
@@ -320,7 +320,7 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P2 = P0 + Horizontal * (sizeOfLine*2)
         P3 = P1 + Horizontal * (sizeOfLine*2)
         lengthToleranceValue = len(stringencodecoin(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
-        if obj.GT[i].FeatureControlFrameIcon <> '':
+        if obj.GT[i].FeatureControlFrameIcon != '':
             lengthToleranceValue += 2
         if obj.GT[i].Circumference:
             lengthToleranceValue += 2
@@ -336,10 +336,10 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         else:
             P6 = P4 + Horizontal * (sizeOfLine*2)
             P7 = P5 + Horizontal * (sizeOfLine*2)
-            if obj.GT[i].DS.Secondary <> None:
+            if obj.GT[i].DS.Secondary != None:
                 P8 = P6 + Horizontal * (sizeOfLine*2)
                 P9 = P7 + Horizontal * (sizeOfLine*2)
-                if obj.GT[i].DS.Tertiary <> None:
+                if obj.GT[i].DS.Tertiary != None:
                     P10 = P8 + Horizontal * (sizeOfLine*2)
                     P11 = P9 + Horizontal * (sizeOfLine*2)
                     newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P1]
@@ -412,18 +412,18 @@ def plotStrings(self, fp, points):
     index = 0
     indexIcon = 0
     displacement = 0
-    if fp.GT <> []:
+    if fp.GT != []:
         for i in range(len(fp.GT)):
             distance = 0
             # posToleranceValue
             v = (points[7+displacement] - points[5+displacement])
-            if v.x <> 0:
+            if v.x != 0:
                 distance = (v.x)/2
-            elif v.y <> 0:
+            elif v.y != 0:
                 distance = (v.y)/2
             else:
                 distance = (v.z)/2
-            if fp.GT[i].FeatureControlFrameIcon <> '':
+            if fp.GT[i].FeatureControlFrameIcon != '':
                 distance -= sizeOfLine
             if fp.GT[i].Circumference:
                 distance += sizeOfLine
@@ -446,7 +446,7 @@ def plotStrings(self, fp, points):
             self.svg[indexIcon].filename = str(filename)
             indexIcon+=1
             # posFeactureControlFrame
-            if fp.GT[i].FeatureControlFrameIcon <> '':
+            if fp.GT[i].FeatureControlFrameIcon != '':
                 auxPoint1 = points[7+displacement] + Horizontal * (-sizeOfLine*2)
                 auxPoint2 = auxPoint1 + Vertical * (sizeOfLine*2)
                 self.points[indexIcon].point.setValues([[auxPoint1.x,auxPoint1.y,auxPoint1.z],[points[7+displacement].x,points[7+displacement].y,points[7+displacement].z],[points[6+displacement].x,points[6+displacement].y,points[6+displacement].z],[auxPoint2.x,auxPoint2.y,auxPoint2.z]])
@@ -480,8 +480,8 @@ def plotStrings(self, fp, points):
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
             displacement+=6
-            if fp.GT[i].DS <> None and fp.GT[i].DS.Primary <> None:
-                if fp.GT[i].FeatureControlFrameIcon <> '':
+            if fp.GT[i].DS != None and fp.GT[i].DS.Primary != None:
+                if fp.GT[i].FeatureControlFrameIcon != '':
                     distance += (sizeOfLine*2)
                 if fp.GT[i].Circumference:
                     distance -= (sizeOfLine*2)
@@ -491,14 +491,14 @@ def plotStrings(self, fp, points):
                 self.textGT[index].justification = coin.SoAsciiText.CENTER
                 index+=1
                 displacement+=2
-                if fp.GT[i].DS.Secondary <> None:
+                if fp.GT[i].DS.Secondary != None:
                     posSecondary = posPrimary + Horizontal * (sizeOfLine*2)
                     self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Secondary.Label)
                     self.textGTpos[index].translation.setValue([posSecondary.x, posSecondary.y, posSecondary.z])
                     self.textGT[index].justification = coin.SoAsciiText.CENTER
                     index+=1
                     displacement+=2
-                    if fp.GT[i].DS.Tertiary <> None:
+                    if fp.GT[i].DS.Tertiary != None:
                         posTertiary = posSecondary + Horizontal * (sizeOfLine*2)
                         self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Tertiary.Label)
                         self.textGTpos[index].translation.setValue([posTertiary.x, posTertiary.y, posTertiary.z])
@@ -541,29 +541,29 @@ def plotStrings(self, fp, points):
             except:
                 pass
         for i in range(index,len(self.textGT)):
-            if str(self.textGT[i].string) <> "":
+            if str(self.textGT[i].string) != "":
                 self.textGT[i].string = self.textGT3d[i].string = ""
             else:
                 break
         for i in range(indexIcon,len(self.svg)):
-            if str(self.face[i].numVertices) <> 0:
+            if str(self.face[i].numVertices) != 0:
                 self.face[i].numVertices = 0
                 self.svg[i].filename = ""
     else:
         for i in range(len(self.textGT)):
-            if str(self.textGT[i].string) <> "" or str(self.svg[i].filename) <> "":
+            if str(self.textGT[i].string) != "" or str(self.svg[i].filename) != "":
                 self.textGT[i].string = self.textGT3d[i].string = ""
                 self.face[i].numVertices = 0
                 self.svg[i].filename = ""
             else:
                 break
-    if fp.DF <> None:
+    if fp.DF != None:
         self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
         distance = 0
         v = (points[-3] - points[-2])
-        if v.x <> 0:
+        if v.x != 0:
             distance = (v.x)/2
-        elif v.y <> 0:
+        elif v.y != 0:
             distance = (v.y)/2
         else:
             distance = (v.z)/2
@@ -581,7 +581,7 @@ def plotStrings(self, fp, points):
             pass
     else:
         self.textDF.string = self.textDF3d.string = ""
-    if fp.GT <> [] or fp.DF <> None:
+    if fp.GT != [] or fp.DF != None:
         if len(fp.faces) > 1:
             # posNumFaces
             centerPoint = points[3] + Horizontal * (sizeOfLine)
@@ -869,11 +869,11 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
         "called when the base object is changed"
         if prop in ["Primary","Secondary","Tertiary"]:
             textName = obj.Label.split(":")[0]
-            if obj.Primary <> None:
+            if obj.Primary != None:
                 textName+=': '+obj.Primary.Label
-                if obj.Secondary <> None:
+                if obj.Secondary != None:
                     textName+=' | '+obj.Secondary.Label
-                    if obj.Tertiary <> None:
+                    if obj.Tertiary != None:
                         textName+=' | '+obj.Tertiary.Label
             obj.Label = textName
 
@@ -1167,7 +1167,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             self.lines.coordIndex.setNum(len(segments))
             self.lines.coordIndex.setValues(0,len(segments),segments)
             plotStrings(self, fp, points)
-        if prop in "faces" and fp.faces <> []:
+        if prop in "faces" and fp.faces != []:
             fp.circumferenceBool = True if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes) == 2) else False
 
     def doubleClicked(self,obj):
@@ -1262,7 +1262,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.spBool = True
             obj.selectedPoint = point
             hideGrid()
-            obj.addObject(obj.DF) if obj.DF <> None else obj.addObject(obj.GT[0])
+            obj.addObject(obj.DF) if obj.DF != None else obj.addObject(obj.GT[0])
             select(obj)
             for l in getAllAnnotationObjects():
                 l.touch()
@@ -1341,7 +1341,7 @@ class ContainerOfData(object):
     def __init__(self, faces = []):
         self.faces = faces
         self.diameter = 0.0
-        if self.faces <> []:
+        if self.faces != []:
             self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
             self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1]).Surface.Axis
             self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1]).CenterOfMass
@@ -1387,7 +1387,7 @@ class GDTWidget:
         self.idGDT=idGDT
         self.ContainerOfData = makeContainerOfData()
         extraWidgets = []
-        if dictionary <> None:
+        if dictionary != None:
             extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn', Dictionary=self.dictionary)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
         else:
             extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn'))
@@ -1428,7 +1428,7 @@ class GDTGuiClass(QtGui.QWidget):
         self.ContainerOfData = ContainerOfData
         vbox = QtGui.QVBoxLayout()
         for widg in self.dd_dialogWidgets:
-            if widg <> None:
+            if widg != None:
                 w = widg.generateWidget(self.idGDT,self.ContainerOfData)
                 if isinstance(w, QtGui.QLayout):
                     vbox.addLayout( w )
@@ -1453,9 +1453,9 @@ class GDTGuiClass(QtGui.QWidget):
                 makeDatumSystem(auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName, obj, None, None)
         elif self.idGDT == 2:
             separator = ' | '
-            if self.ContainerOfData.textDS[0] <> '':
-                if self.ContainerOfData.textDS[1] <> '':
-                    if self.ContainerOfData.textDS[2] <> '':
+            if self.ContainerOfData.textDS[0] != '':
+                if self.ContainerOfData.textDS[1] != '':
+                    if self.ContainerOfData.textDS[2] != '':
                         self.textName = self.textName + ': ' + separator.join(self.ContainerOfData.textDS)
                     else:
                         self.textName = self.textName + ': ' + separator.join([self.ContainerOfData.textDS[0], self.ContainerOfData.textDS[1]])
@@ -1479,7 +1479,7 @@ class GDTGuiClass(QtGui.QWidget):
 def GDTDialog_hbox( label, inputWidget):
     hbox = QtGui.QHBoxLayout()
     hbox.addWidget( QtGui.QLabel(label) )
-    if inputWidget <> None:
+    if inputWidget != None:
         hbox.addStretch(1)
         hbox.addWidget(inputWidget)
     return hbox
@@ -1494,7 +1494,7 @@ class textLabelWidget:
         self.idGDT = idGDT
         self.ContainerOfData = ContainerOfData
         self.lineEdit = QtGui.QLineEdit()
-        if self.Mask <> None:
+        if self.Mask != None:
             self.lineEdit.setInputMask(self.Mask)
         if self.Dictionary == None:
             self.lineEdit.setText('text')
@@ -1582,7 +1582,7 @@ class comboLabelWidget:
 
         self.ContainerOfData.combo[self.k] = QtGui.QComboBox()
         for i in range(len(self.List)):
-            if self.Icons <> None:
+            if self.Icons != None:
                 self.ContainerOfData.combo[self.k].addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
                 if self.List[i] == None:
@@ -1591,21 +1591,21 @@ class comboLabelWidget:
                     self.ContainerOfData.combo[self.k].addItem( self.List[i].Label )
         if self.Text == 'Secondary:' or self.Text == 'Tertiary:':
             self.ContainerOfData.combo[self.k].setEnabled(False)
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
             self.ContainerOfData.combo[self.k].setToolTip( self.ToolTip[0] )
         self.comboIndex = self.ContainerOfData.combo[self.k].currentIndex()
-        if self.k <> 0 and self.k <> 1:
+        if self.k != 0 and self.k != 1:
             self.updateDate(self.comboIndex)
         self.ContainerOfData.combo[self.k].activated.connect(lambda comboIndex = self.comboIndex: self.updateDate(comboIndex))
         return GDTDialog_hbox(self.Text,self.ContainerOfData.combo[self.k])
 
     def updateDate(self, comboIndex):
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
             self.ContainerOfData.combo[self.k].setToolTip( self.ToolTip[comboIndex] )
         if self.Text == 'Primary:':
             self.ContainerOfData.textDS[0] = self.ContainerOfData.combo[self.k].currentText()
             self.ContainerOfData.primary = self.List[comboIndex]
-            if comboIndex <> 0:
+            if comboIndex != 0:
                 self.ContainerOfData.combo[1].setEnabled(True)
             else:
                 self.ContainerOfData.combo[1].setEnabled(False)
@@ -1620,7 +1620,7 @@ class comboLabelWidget:
         elif self.Text == 'Secondary:':
             self.ContainerOfData.textDS[1] = self.ContainerOfData.combo[self.k].currentText()
             self.ContainerOfData.secondary = self.List[comboIndex]
-            if comboIndex <> 0:
+            if comboIndex != 0:
                 self.ContainerOfData.combo[2].setEnabled(True)
             else:
                 self.ContainerOfData.combo[2].setEnabled(False)
@@ -1652,21 +1652,21 @@ class comboLabelWidget:
 
         for i in range(self.ContainerOfData.combo[comboIndex0].count()):
             self.ContainerOfData.combo[comboIndex0].model().item(i).setEnabled(True)
-        if self.ContainerOfData.combo[comboIndex1].currentIndex() <> 0:
+        if self.ContainerOfData.combo[comboIndex1].currentIndex() != 0:
             self.ContainerOfData.combo[comboIndex0].model().item(self.ContainerOfData.combo[comboIndex1].currentIndex()).setEnabled(False)
-        if self.ContainerOfData.combo[comboIndex2].currentIndex() <> 0:
+        if self.ContainerOfData.combo[comboIndex2].currentIndex() != 0:
             self.ContainerOfData.combo[comboIndex0].model().item(self.ContainerOfData.combo[comboIndex2].currentIndex()).setEnabled(False)
         for i in range(self.ContainerOfData.combo[comboIndex1].count()):
             self.ContainerOfData.combo[comboIndex1].model().item(i).setEnabled(True)
-        if self.ContainerOfData.combo[comboIndex0].currentIndex() <> 0:
+        if self.ContainerOfData.combo[comboIndex0].currentIndex() != 0:
             self.ContainerOfData.combo[comboIndex1].model().item(self.ContainerOfData.combo[comboIndex0].currentIndex()).setEnabled(False)
-        if self.ContainerOfData.combo[comboIndex2].currentIndex() <> 0:
+        if self.ContainerOfData.combo[comboIndex2].currentIndex() != 0:
             self.ContainerOfData.combo[comboIndex1].model().item(self.ContainerOfData.combo[comboIndex2].currentIndex()).setEnabled(False)
         for i in range(self.ContainerOfData.combo[comboIndex2].count()):
             self.ContainerOfData.combo[comboIndex2].model().item(i).setEnabled(True)
-        if self.ContainerOfData.combo[comboIndex0].currentIndex() <> 0:
+        if self.ContainerOfData.combo[comboIndex0].currentIndex() != 0:
             self.ContainerOfData.combo[comboIndex2].model().item(self.ContainerOfData.combo[comboIndex0].currentIndex()).setEnabled(False)
-        if self.ContainerOfData.combo[comboIndex1].currentIndex() <> 0:
+        if self.ContainerOfData.combo[comboIndex1].currentIndex() != 0:
             self.ContainerOfData.combo[comboIndex2].model().item(self.ContainerOfData.combo[comboIndex1].currentIndex()).setEnabled(False)
 
 class groupBoxWidget:
@@ -1712,11 +1712,11 @@ class fieldLabeCombolWidget:
         self.comboCircumference.setToolTip("Indicates whether the tolerance applies to a given diameter")
         self.combo.setSizeAdjustPolicy(QtGui.QComboBox.SizeAdjustPolicy(2))
         for i in range(len(self.List)):
-            if self.Icons <> None:
+            if self.Icons != None:
                 self.combo.addItem( QtGui.QIcon(self.Icons[i]), self.List[i] )
             else:
                 self.combo.addItem( self.List[i] )
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
            self.updateDate()
         self.combo.activated.connect(self.updateDate)
         self.comboCircumference.activated.connect(self.updateDateCircumference)
@@ -1792,16 +1792,16 @@ class fieldLabeCombolWidget:
         return vbox
 
     def updateDate(self):
-        if self.ToolTip <> None:
+        if self.ToolTip != None:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
-            if self.combo.currentIndex() <> 0:
+            if self.combo.currentIndex() != 0:
                 self.ContainerOfData.featureControlFrame = makeFeatureControlFrame(self.ToolTip[self.combo.currentIndex()])
             else:
                 self.ContainerOfData.featureControlFrame = makeFeatureControlFrame('')
 
     def updateDateCircumference(self):
-        if self.comboCircumference.currentIndex() <> 0:
+        if self.comboCircumference.currentIndex() != 0:
             self.ContainerOfData.circumference = True
             self.label.show()
             self.inputfield2.show()
@@ -1833,7 +1833,7 @@ class fieldLabeCombolWidget:
                 self.inputfieldHigh.hide()
 
     def updateDateTolerance(self):
-        if self.comboTolerance.currentIndex() <> 0:
+        if self.comboTolerance.currentIndex() != 0:
             self.ContainerOfData.toleranceSelect = False
             self.labelTolerance.hide()
             self.inputfieldTolerance.hide()
