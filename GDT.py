@@ -130,7 +130,9 @@ def stringencodecoin(ustr):
     except (ImportError, AttributeError):
         coin4 = False
     if coin4:
-        return ustr.encode('utf-8')
+        #return ustr.encode('utf-8')
+        # 5@xes for test
+        return ustr
     else:
         return ustr.encode('latin1')
 
@@ -669,6 +671,7 @@ class _GDTObject:
         '''Add some custom properties to our GDT feature'''
         obj.Proxy = self
         self.Type = tp
+        # print("COIN_MAJOR_VERSION {}".format(coin.COIN_MAJOR_VERSION))
 
     def __getstate__(self):
         return self.Type
@@ -940,7 +943,7 @@ def makeGeometricTolerance(Name, ContainerOfData):
     _GeometricTolerance(obj)
     if gui:
         _ViewProviderGeometricTolerance(obj.ViewObject)
-    obj.Label = Name
+    obj.Label = str(Name)
     obj.Characteristic = ContainerOfData.characteristic.Label
     obj.CharacteristicIcon = ContainerOfData.characteristic.Icon
     obj.Circumference = ContainerOfData.circumference
@@ -1458,7 +1461,9 @@ class GDTGuiClass(QtGui.QWidget):
 
     def createObject(self):
         global auxDictionaryDS
-        self.textName = self.ContainerOfData.textName.encode('utf-8')
+        # 5@xes modif for test
+        # self.textName = self.ContainerOfData.textName.encode('utf-8')
+        self.textName = self.ContainerOfData.textName
         if self.idGDT == 1:
             obj = makeDatumFeature(self.textName, self.ContainerOfData)
             if checkBoxState:
