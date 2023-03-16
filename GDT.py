@@ -319,8 +319,8 @@ def getPointsToPlot(obj):
             existGT = False
         
         print("5@xes getPointsToPlot DF {}".format(obj.DF))
-        if obj.DF != None:
-            points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
+        #if obj.DF != None:
+        #    points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
         
         segments += []
         
@@ -343,20 +343,25 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         
     for i in range(len(obj.GT)):
         d = len(newPoints)
+        
         if points[2].x < points[0].x:
             P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else FreeCAD.Vector(newPoints[-2])
         else:
             P0 = newPoints[-1] + Vertical * (sizeOfLine) if i == 0 else FreeCAD.Vector(newPoints[-1])
+        
         P1 = P0 + Vertical * (-sizeOfLine*2)
         P2 = P0 + Horizontal * (sizeOfLine*2)
         P3 = P1 + Horizontal * (sizeOfLine*2)
         lengthToleranceValue = len(stringencodecoin(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
+        
         if obj.GT[i].FeatureControlFrameIcon != '':
             lengthToleranceValue += 2
+        
         if obj.GT[i].Circumference:
             lengthToleranceValue += 2
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
+        
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
             newPoints = newPoints + [P0, P2, P3, P4, P5, P1]
             newSegments = newSegments + [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
