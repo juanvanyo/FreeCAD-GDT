@@ -195,11 +195,13 @@ def getRGB(param):
 def getRGBText():
     return getRGB("textColor")
 
+# Modif 5@xes
 def getTextFamily():
-    return getParam("textFamily","")
+    return getParam("textFamily","Iso-Gps")
 
+# Modif 5@xes
 def getTextSize():
-    return getParam("textSize",2.2)
+    return getParam("textSize",1.8)
 
 def getLineWidth():
     return getParam("lineWidth",2)
@@ -1250,8 +1252,6 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.p1 = vertexex[index].Point
             obj.Direction = obj.AP.Direction
         else:
-            print("5@xes p1 {}".format(obj.p1))
-            print("5@xes obj.faces {}".format(obj.faces))
             print("5@xes obj.Shape {}".format(obj.faces[0][0].Shape))
             print("5@xes obj.faces 0 : {}".format(obj.faces[0][0]))
             print("5@xes obj.faces 2 : {}".format(obj.faces[0][1][0]))
@@ -1259,6 +1259,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             print("5@xes CenterOfMass {}".format(obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass))
             print("5@xes Direction {}".format(obj.AP.Direction))
             print("5@xes PointWithOffset {}".format(obj.AP.PointWithOffset))
+            
             obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
             print("5@xes p1 {}".format(obj.p1))
             obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).normalAt(0,0)
@@ -1471,7 +1472,6 @@ class GDTGuiClass(QtGui.QWidget):
         # self.textName = self.ContainerOfData.textName.encode('utf-8')
         self.textName = str(self.ContainerOfData.textName)
         print("5@xes createObject textName {}".format(self.textName))
-        print("5@xes createObject textName encode utf-8 {}".format(self.ContainerOfData.textName.encode('utf-8')))
         if self.idGDT == 1:
             print("5@xes createObject textName 1 {}".format(self.textName))
             obj = makeDatumFeature(self.textName, self.ContainerOfData)
