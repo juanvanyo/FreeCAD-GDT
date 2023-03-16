@@ -307,26 +307,27 @@ def getPointsToPlot(obj):
         else:
             P2 = obj.p1 + obj.Direction * (d*3/4)
             P3 = point
-            
+        
+        # Attach Line        
         points = [obj.p1, P2, P3]
         segments = [0,1,2]
         existGT = True
         
-        print("5@xes getPointsToPlot GT {}".format(obj.GT))
+        # Draw Geometric Tolerance
         if obj.GT != []:
             points, segments = getPointsToPlotGT(obj, points, segments, Vertical, Horizontal)
         else:
-            existGT = False
+            existGT = False 
         
-        print("5@xes getPointsToPlot DF {}".format(obj.DF))
-        #if obj.DF != None:
-        #    points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
+        # Draw Datum Feature
+        if obj.DF != None:
+            points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
         
         segments += []
         
     return points, segments
 
-
+# Draw Geometric Tolerance
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     
     newPoints = points
@@ -362,9 +363,13 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
         
+        print("5@xes getPointsToPlotGT GT {}".format(obj.GT[i]))
+        print("5@xes getPointsToPlotGT DS {}".format(obj.GT[i].DS))
+        print("5@xes getPointsToPlotGT Primary {}".format(obj.GT[i].DS.Primary))
+        
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
-            newPoints = newPoints + [P0, P2, P3, P4, P5, P1]
-            newSegments = newSegments + [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
+            newPoints += [P0, P2, P3, P4, P5, P1]
+            newSegments += [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
             if points[2].x < points[0].x:
                 displacement = newPoints[-3].x - newPoints[-6].x
                 for i in range(len(newPoints)-6, len(newPoints)):
@@ -378,52 +383,62 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
                 if obj.GT[i].DS.Tertiary != None:
                     P10 = P8 + Horizontal * (sizeOfLine*2)
                     P11 = P9 + Horizontal * (sizeOfLine*2)
-                    newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P1]
-                    newSegments = newSegments + [-1, 0+d, 9+d, 10+d, 11+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d, -1, 7+d, 8+d]
+                    newPoints += [P0, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P1]
+                    newSegments += [-1, 0+d, 9+d, 10+d, 11+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d, -1, 7+d, 8+d]
                     if points[2].x < points[0].x:
                         displacement = newPoints[-3].x - newPoints[-12].x
                         for i in range(len(newPoints)-12, len(newPoints)):
                             newPoints[i].x-=displacement
                 else:
-                    newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P8, P9, P1]
-                    newSegments = newSegments + [-1, 0+d, 7+d, 8+d, 9+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d]
+                    newPoints += [P0, P2, P3, P4, P5, P6, P7, P8, P9, P1]
+                    newSegments += [-1, 0+d, 7+d, 8+d, 9+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d, -1, 5+d, 6+d]
                     if points[2].x < points[0].x:
                         displacement = newPoints[-3].x - newPoints[-10].x
                         for i in range(len(newPoints)-10, len(newPoints)):
                             newPoints[i].x-=displacement
             else:
-                newPoints = newPoints + [P0, P2, P3, P4, P5, P6, P7, P1]
-                newSegments = newSegments + [-1, 0+d, 5+d, 6+d, 7+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d]
+                newPoints += [P0, P2, P3, P4, P5, P6, P7, P1]
+                newSegments += [-1, 0+d, 5+d, 6+d, 7+d, 0+d, -1, 1+d, 2+d, -1, 3+d, 4+d]
                 if points[2].x < points[0].x:
                     displacement = newPoints[-3].x - newPoints[-8].x
                     for i in range(len(newPoints)-8, len(newPoints)):
                         newPoints[i].x-=displacement
     return newPoints, newSegments
 
+# Draw Datum Feature
 def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     print("5@xes getPointsToPlotDF")
     d = len(points)
     newPoints = points
     newSegments = segments
+    
     if obj.ViewObject.LineScale > 0:
         sizeOfLine = obj.ViewObject.LineScale
     else:
         sizeOfLine = 1.0
+    
+    '''
     if not existGT:
         P0 = points[-1] + Vertical * (sizeOfLine)
         P1 = P0 + Horizontal * (sizeOfLine*2)
         P2 = P1 + Vertical * (-sizeOfLine*2)
         P3 = P2 + Horizontal * (-sizeOfLine*2)
-        newPoints = newPoints + [P0, P1, P2, P3]
-        newSegments = newSegments + [-1, 0+d, 1+d, 2+d, 3+d, 0+d]
+        newPoints += [P0, P1, P2, P3]
+        newSegments += [-1, 0+d, 1+d, 2+d, 3+d, 0+d]
         if points[2].x < points[0].x:
             displacement = newPoints[-2].x - newPoints[-1].x
             for i in range(len(newPoints)-4, len(newPoints)):
                 newPoints[i].x-=displacement
+    ''' 
+    
+    # Draw the Square arount the Datum + The    
     d=len(newPoints)
+    # newPoints[-1]should be end of attach line
+    h = math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
+    
+    '''
     P0 = newPoints[-1] + Horizontal * (sizeOfLine/2)
     P1 = P0 + Horizontal * (sizeOfLine)
-    h = math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
     PAux = newPoints[-1] + Horizontal * (sizeOfLine)
     P2 = PAux + Vertical * (-h)
     P3 = PAux + Vertical * (-sizeOfLine*3)
@@ -431,8 +446,20 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     P5 = P4 + Vertical * (-sizeOfLine*2)
     P6 = P5 + Horizontal * (-sizeOfLine*2)
     P7 = P6 + Vertical * (sizeOfLine*2)
-    newPoints = newPoints + [P0, P1, P2, P3, P4, P5, P6, P7]
-    newSegments = newSegments + [-1, 0+d, 2+d, -1, 1+d, 2+d, 3+d, 4+d, 5+d, 6+d, 7+d, 3+d]
+    '''
+    PAux = newPoints[-1] + Horizontal * (sizeOfLine) - Horizontal
+    P0 = newPoints[-1] + Horizontal * (sizeOfLine/2) - Horizontal  
+    P1 = P0 + Horizontal * (sizeOfLine)
+    P2 = PAux + Vertical * (-h)
+    P3 = PAux + Vertical * (-sizeOfLine*3)
+    P4 = P3 + Horizontal * (sizeOfLine)
+    P5 = P4 + Vertical * (-sizeOfLine*2)
+    P6 = P5 + Horizontal * (-sizeOfLine*2)
+    P7 = P6 + Vertical * (sizeOfLine*2)   
+    
+    newPoints += [P0, P1, P2, P3, P4, P5, P6, P7]
+    newSegments += [-1, 0+d, 1+d, 0+d, 2+d, -1, 1+d, 2+d, 3+d, 4+d, 5+d, 6+d, 7+d, 3+d]
+    
     return newPoints, newSegments
 
 def plotStrings(self, fp, points):
