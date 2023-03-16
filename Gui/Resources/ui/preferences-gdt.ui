@@ -86,7 +86,7 @@
            <string>Text family</string>
           </property>
           <property name="text">
-           <string>Verdana</string>
+           <string>Iso-Gps</string>
           </property>
           <property name="prefEntry" stdset="0">
            <cstring>textFamily</cstring>

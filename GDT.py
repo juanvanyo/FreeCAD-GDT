@@ -38,6 +38,7 @@ import Draft
 import Part
 from pivy import coin
 import FreeCADGui, WorkingPlane
+
 if FreeCAD.GuiUp:
     gui = True
 else:
@@ -57,8 +58,10 @@ assert resourcesLoaded
 
 checkBoxState = True
 auxDictionaryDS=[]
+
 for i in range(1,100):
     auxDictionaryDS.append('DS'+str(i))
+    
 dictionaryAnnotation=[]
 for i in range(1,100):
     dictionaryAnnotation.append('Annotation'+str(i))
@@ -195,9 +198,8 @@ def getRGB(param):
 def getRGBText():
     return getRGB("textColor")
 
-# Modif 5@xes
 def getTextFamily():
-    return getParam("textFamily","Iso-Gps")
+    return getParam("textFamily","")
 
 # Modif 5@xes
 def getTextSize():
@@ -278,16 +280,26 @@ def getAnnotationWithGT(obj):
     return None
 
 def getPointsToPlot(obj):
+    print("5@xes getPointsToPlot : {}".format(obj.Name))
     points = []
     segments = []
+
+     
     if obj.GT != [] or obj.DF != None:
         X = FreeCAD.Vector(1.0,0.0,0.0)
         Y = FreeCAD.Vector(0.0,1.0,0.0)
         Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
+        
         Vertical = obj.AP.Direction.cross(Direction).normalize()
         Horizontal = Vertical.cross(obj.AP.Direction).normalize()
+        
         point = obj.selectedPoint
         d = point.distanceToPlane(obj.p1, obj.Direction)
+
+        print("5@xes getPointsToPlot point {}".format(point))    
+        print("5@xes getPointsToPlot Direction {}".format(Direction))
+        print("5@xes getPointsToPlot circumferenceBool {}".format(obj.circumferenceBool))
+        
         if obj.circumferenceBool:
             P3 = point + obj.Direction * (-d)
             d2 = (P3 - obj.p1) * Vertical
@@ -295,25 +307,40 @@ def getPointsToPlot(obj):
         else:
             P2 = obj.p1 + obj.Direction * (d*3/4)
             P3 = point
+            
         points = [obj.p1, P2, P3]
         segments = [0,1,2]
         existGT = True
+        
+        print("5@xes getPointsToPlot GT {}".format(obj.GT))
         if obj.GT != []:
             points, segments = getPointsToPlotGT(obj, points, segments, Vertical, Horizontal)
         else:
             existGT = False
+        
+        print("5@xes getPointsToPlot DF {}".format(obj.DF))
         if obj.DF != None:
             points, segments = getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal)
-        segments = segments + []
+        
+        segments += []
+        
     return points, segments
 
+
 def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
+    
     newPoints = points
     newSegments = segments
+    
+    print("5@xes getPointsToPlotGT newPoints {}".format(newPoints))
+    print("5@xes getPointsToPlotGT newSegments {}".format(newSegments))
+    print("5@xes getPointsToPlotGT LineScale {}".format(obj.ViewObject.LineScale))
+    
     if obj.ViewObject.LineScale > 0:
         sizeOfLine = obj.ViewObject.LineScale
     else:
         sizeOfLine = 1.0
+        
     for i in range(len(obj.GT)):
         d = len(newPoints)
         if points[2].x < points[0].x:
@@ -369,6 +396,7 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     return newPoints, newSegments
 
 def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
+    print("5@xes getPointsToPlotDF")
     d = len(points)
     newPoints = points
     newSegments = segments
@@ -408,6 +436,7 @@ def plotStrings(self, fp, points):
         sizeOfLine = fp.ViewObject.LineScale
     else:
         sizeOfLine = 1.0
+    print("5@xes plotStrings")
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
@@ -758,6 +787,7 @@ class _AnnotationPlane(_GDTObject):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         fp.p1 = fp.faces[0].Shape.getElement(fp.faces[1][0]).CenterOfMass
         fp.Direction = fp.faces[0].Shape.getElement(fp.faces[1][0]).normalAt(0,0)
+        print("5@xes AnnotationPlane Direction {}".format(fp.Direction))
 
 class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     "A View Provider for the GDT AnnotationPlane object"
@@ -878,11 +908,11 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
         if prop in ["Primary","Secondary","Tertiary"]:
             textName = obj.Label.split(":")[0]
             if obj.Primary != None:
-                textName+=': '+obj.Primary.Label
+                textName += ': ' + obj.Primary.Label
                 if obj.Secondary != None:
-                    textName+=' | '+obj.Secondary.Label
+                    textName += ' | ' + obj.Secondary.Label
                     if obj.Tertiary != None:
-                        textName+=' | '+obj.Tertiary.Label
+                        textName += ' | ' + obj.Tertiary.Label
             obj.Label = str(textName)
 
     def getIcon(self):
