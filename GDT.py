@@ -279,11 +279,10 @@ def getAnnotationWithGT(obj):
                 return l
     return None
 
+# Point definition for the geometry
 def getPointsToPlot(obj):
-    print("5@xes getPointsToPlot : {}".format(obj.Name))
     points = []
     segments = []
-
      
     if obj.GT != [] or obj.DF != None:
         X = FreeCAD.Vector(1.0,0.0,0.0)
@@ -295,10 +294,6 @@ def getPointsToPlot(obj):
         
         point = obj.selectedPoint
         d = point.distanceToPlane(obj.p1, obj.Direction)
-
-        print("5@xes getPointsToPlot point {}".format(point))    
-        print("5@xes getPointsToPlot Direction {}".format(Direction))
-        print("5@xes getPointsToPlot circumferenceBool {}".format(obj.circumferenceBool))
         
         if obj.circumferenceBool:
             P3 = point + obj.Direction * (-d)
@@ -308,7 +303,7 @@ def getPointsToPlot(obj):
             P2 = obj.p1 + obj.Direction * (d*3/4)
             P3 = point
         
-        # Attach Line        
+        # Crate the points for the Attach Line        
         points = [obj.p1, P2, P3]
         segments = [0,1,2]
         existGT = True
@@ -332,10 +327,6 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     
     newPoints = points
     newSegments = segments
-    
-    print("5@xes getPointsToPlotGT newPoints {}".format(newPoints))
-    print("5@xes getPointsToPlotGT newSegments {}".format(newSegments))
-    print("5@xes getPointsToPlotGT LineScale {}".format(obj.ViewObject.LineScale))
     
     if obj.ViewObject.LineScale > 0:
         sizeOfLine = obj.ViewObject.LineScale
@@ -363,9 +354,6 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
         
-        print("5@xes getPointsToPlotGT GT {}".format(obj.GT[i]))
-        print("5@xes getPointsToPlotGT DS {}".format(obj.GT[i].DS))
-        print("5@xes getPointsToPlotGT Primary {}".format(obj.GT[i].DS.Primary))
         
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
             newPoints += [P0, P2, P3, P4, P5, P1]
@@ -406,9 +394,7 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
     return newPoints, newSegments
 
 # Draw Datum Feature
-def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
-    print("5@xes getPointsToPlotDF")
-    d = len(points)
+def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):    
     newPoints = points
     newSegments = segments
     
@@ -418,6 +404,8 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
         sizeOfLine = 1.0
     
     '''
+    d = len(points)
+    # Remove the Square initialy created at the base of the Datum Reference
     if not existGT:
         P0 = points[-1] + Vertical * (sizeOfLine)
         P1 = P0 + Horizontal * (sizeOfLine*2)
@@ -431,21 +419,14 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
                 newPoints[i].x-=displacement
     ''' 
     
-    # Draw the Square arount the Datum + The    
+    # Draw the Square arount the Datum + The bas triangle  
     d=len(newPoints)
     # newPoints[-1]should be end of attach line
     h = math.sqrt(sizeOfLine*sizeOfLine+(sizeOfLine/2)*(sizeOfLine/2))
     
     '''
-    P0 = newPoints[-1] + Horizontal * (sizeOfLine/2)
-    P1 = P0 + Horizontal * (sizeOfLine)
     PAux = newPoints[-1] + Horizontal * (sizeOfLine)
-    P2 = PAux + Vertical * (-h)
-    P3 = PAux + Vertical * (-sizeOfLine*3)
-    P4 = P3 + Horizontal * (sizeOfLine)
-    P5 = P4 + Vertical * (-sizeOfLine*2)
-    P6 = P5 + Horizontal * (-sizeOfLine*2)
-    P7 = P6 + Vertical * (sizeOfLine*2)
+    P0 = newPoints[-1] + Horizontal * (sizeOfLine/2)
     '''
     PAux = newPoints[-1] + Horizontal * (sizeOfLine) - Horizontal
     P0 = newPoints[-1] + Horizontal * (sizeOfLine/2) - Horizontal  
@@ -462,13 +443,15 @@ def getPointsToPlotDF(obj, existGT, points, segments, Vertical, Horizontal):
     
     return newPoints, newSegments
 
+# Draw the Text for the Tolerance
 def plotStrings(self, fp, points):
     import DraftGeomUtils
+
     if fp.ViewObject.LineScale > 0:
         sizeOfLine = fp.ViewObject.LineScale
     else:
         sizeOfLine = 1.0
-    print("5@xes plotStrings")
+
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
@@ -494,6 +477,7 @@ def plotStrings(self, fp, points):
                 distance += sizeOfLine
             centerPoint = points[5+displacement] + Horizontal * (distance)
             posToleranceValue = centerPoint + Vertical * (sizeOfLine/2)
+            
             # posCharacteristic
             auxPoint = points[3+displacement] + Vertical * (-sizeOfLine*2)
             self.points[indexIcon].point.setValues([[auxPoint.x,auxPoint.y,auxPoint.z],[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z],[points[3+displacement].x,points[3+displacement].y,points[3+displacement].z]])
@@ -510,6 +494,7 @@ def plotStrings(self, fp, points):
             filename = filename.replace(':/dd/icons', iconPath)
             self.svg[indexIcon].filename = str(filename)
             indexIcon+=1
+            
             # posFeactureControlFrame
             if fp.GT[i].FeatureControlFrameIcon != '':
                 auxPoint1 = points[7+displacement] + Horizontal * (-sizeOfLine*2)
@@ -525,6 +510,7 @@ def plotStrings(self, fp, points):
                 filename = filename.replace(':/dd/icons', iconPath)
                 self.svg[indexIcon].filename = str(filename)
                 indexIcon+=1
+            
             # posDiameter
             if fp.GT[i].Circumference:
                 auxPoint1 = points[5+displacement] + Horizontal * (sizeOfLine*2)
@@ -545,6 +531,7 @@ def plotStrings(self, fp, points):
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
             displacement+=6
+            
             if fp.GT[i].DS != None and fp.GT[i].DS.Primary != None:
                 if fp.GT[i].FeatureControlFrameIcon != '':
                     distance += (sizeOfLine*2)
@@ -622,6 +609,7 @@ def plotStrings(self, fp, points):
                 self.svg[i].filename = ""
             else:
                 break
+                
     if fp.DF != None:
         self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
         distance = 0
@@ -819,7 +807,7 @@ class _AnnotationPlane(_GDTObject):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         fp.p1 = fp.faces[0].Shape.getElement(fp.faces[1][0]).CenterOfMass
         fp.Direction = fp.faces[0].Shape.getElement(fp.faces[1][0]).normalAt(0,0)
-        print("5@xes AnnotationPlane Direction {}".format(fp.Direction))
+        # print("5@xes AnnotationPlane Direction {}".format(fp.Direction))
 
 class _ViewProviderAnnotationPlane(_ViewProviderGDT):
     "A View Provider for the GDT AnnotationPlane object"
@@ -856,8 +844,9 @@ def makeAnnotationPlane(Name, Offset):
     _AnnotationPlane(obj)
     if gui:
         _ViewProviderAnnotationPlane(obj.ViewObject)
+    
     print("5@xes makeAnnotationPlane Name = {}".format(Name))
-    print("5@xes makeAnnotationPlane Offset = {}".format(Offset))
+    
     obj.Label = str(Name)
     obj.Offset = Offset
     group.addObject(obj)
@@ -895,7 +884,9 @@ def makeDatumFeature(Name, ContainerOfData):
     _DatumFeature(obj)
     if gui:
         _ViewProviderDatumFeature(obj.ViewObject)
+    
     print("5@xes makeDatumFeature Name = {}".format(Name))
+    
     obj.Label = str(Name)
     group = FreeCAD.ActiveDocument.getObject("GDT")
     group.addObject(obj)
@@ -1314,18 +1305,22 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.p1 = vertexex[index].Point
             obj.Direction = obj.AP.Direction
         else:
-            print("5@xes obj.Shape {}".format(obj.faces[0][0].Shape))
-            print("5@xes obj.faces 0 : {}".format(obj.faces[0][0]))
-            print("5@xes obj.faces 2 : {}".format(obj.faces[0][1][0]))
             
+            '''
+            print("5@xes obj.faces  : {}".format(obj.faces[0][1][0]))
             print("5@xes CenterOfMass {}".format(obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass))
             print("5@xes Direction {}".format(obj.AP.Direction))
             print("5@xes PointWithOffset {}".format(obj.AP.PointWithOffset))
+            '''
             
             obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
-            print("5@xes p1 {}".format(obj.p1))
+            
             obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).normalAt(0,0)
+            
+            '''
+            print("5@xes p1 {}".format(obj.p1))
             print("5@xes Direction {}".format(obj.Direction))
+            '''
     else:
         obj = Object
     obj.DF = DF
@@ -1533,13 +1528,13 @@ class GDTGuiClass(QtGui.QWidget):
         # 5@xes modif for test
         # self.textName = self.ContainerOfData.textName.encode('utf-8')
         self.textName = str(self.ContainerOfData.textName)
+        
         print("5@xes createObject textName {}".format(self.textName))
+        
         if self.idGDT == 1:
-            print("5@xes createObject textName 1 {}".format(self.textName))
             obj = makeDatumFeature(self.textName, self.ContainerOfData)
             if checkBoxState:
                 datumNAme = auxDictionaryDS[len(getAllDatumSystemObjects())] + ': ' + self.textName
-                print("5@xes Datum Name {}".format(datumNAme))
                 makeDatumSystem(datumNAme, obj, None, None)
         elif self.idGDT == 2:
             separator = ' | '
@@ -1587,7 +1582,6 @@ class textLabelWidget:
         if self.Mask != None:
             self.lineEdit.setInputMask(self.Mask)
         if self.Dictionary == None:
-            print("5@xes Dictionary = None")
             self.lineEdit.setText('text')
             self.Text = 'text'
         else:
@@ -1598,7 +1592,6 @@ class textLabelWidget:
             self.Text = self.Dictionary[NumberOfObjects]
         self.lineEdit.textChanged.connect(self.valueChanged)
         self.ContainerOfData.textName = self.Text.strip()
-        print("5@xes ContainerOfData.textName {}".format(self.ContainerOfData.textName))
         return GDTDialog_hbox(self.Text,self.lineEdit)
 
     def valueChanged(self, argGDT):
