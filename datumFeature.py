@@ -25,6 +25,7 @@ import  DraftTools
 
 gdt = GDTWidget()
 dictionaryDF = []
+# Modification 5@xes
 dictionaryDF = list(map(chr, range(65, 91))) # 65 = A, 91 = Z
 gdt.dialogWidgets.append( textLabelWidget(Text='Datum feature:',Mask='>A', Dictionary=dictionaryDF) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
 gdt.dialogWidgets.append( comboLabelWidget(Text='Active annotation plane:', List=[]) )

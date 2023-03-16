@@ -1529,11 +1529,7 @@ class textLabelWidget:
             self.lineEdit.setText('text')
             self.Text = 'text'
         else:
-            NumberOfObjects = self.getNumberOfObjects()
-            print("5@xes NumberOfObjects {}".format(NumberOfObjects))
-            print("5@xes Dictionary {}".format(self.Dictionary))
-            print("5@xes Self {}".format(self))
-            
+            NumberOfObjects = self.getNumberOfObjects()           
             if NumberOfObjects > len(self.Dictionary)-1:
                 NumberOfObjects = len(self.Dictionary)-1
             self.lineEdit.setText(self.Dictionary[NumberOfObjects])
@@ -1773,8 +1769,8 @@ class fieldLabeCombolWidget:
         self.inputfield2.setText(auxText)
         QtCore.QObject.connect(self.inputfield2,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedDiameter)
         self.comboTolerance = QtGui.QComboBox()
-        simbol = '±'
-        self.comboTolerance.addItem( simbol[-1] )
+        symbol = '±'
+        self.comboTolerance.addItem( symbol[-1] )
         self.comboTolerance.addItem( 'Limit' )
         if self.toleranceSelect:
             self.comboTolerance.setCurrentIndex(0)
@@ -1782,7 +1778,7 @@ class fieldLabeCombolWidget:
             self.comboTolerance.setCurrentIndex(1)
         self.updateDateTolerance
         self.comboTolerance.activated.connect(self.updateDateTolerance)
-        self.labelTolerance = QtGui.QLabel(simbol[-1])
+        self.labelTolerance = QtGui.QLabel(symbol[-1])
         self.labelLow = QtGui.QLabel('Low')
         self.labelHigh = QtGui.QLabel('High')
         self.inputfieldTolerance = self.uiloader.createWidget("Gui::InputField")
