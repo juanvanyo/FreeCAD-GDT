@@ -59,6 +59,7 @@ class GDTGuiClass:
             hbox = QtGui.QHBoxLayout()
             self.data = ContainerOfData()
             self.data.textName = obj.Label
+            
             if "AnnotationPlane" == getType(obj):
                 self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask = 'NNNn', Data = self.data, Obj = obj))
                 self.dialogWidgets.append(fieldLabelButtonWidget_inv(Text = 'Offset:', Data = self.data, Obj = obj))

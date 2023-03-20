@@ -25,9 +25,11 @@ import  DraftTools
 
 gdt = GDTWidget()
 gdt.dialogWidgets.append( fieldLabelWidget(Text='Offset:') )
+
 class AnnotationPlaneCommand:
     def __init__(self):
         self.iconPath = ':/dd/icons/annotationPlane.svg'
+        self.toolTitle = 'Add Annotation Plane'
         self.toolTip = 'Add Annotation Plane'
         self.Dictionary = []
         for i in range(1,100):
@@ -36,12 +38,12 @@ class AnnotationPlaneCommand:
 
     def Activated(self):
         showGrid()
-        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTip, dialogIconPath=self.iconPath, endFunction=self.Activated, Dictionary=self.Dictionary)
+        gdt.activate(idGDT = self.idGDT, dialogTitle=self.toolTitle, dialogIconPath=self.iconPath, endFunction=self.Activated, Dictionary=self.Dictionary)
 
     def GetResources(self):
         return {
             'Pixmap' : self.iconPath,
-            'MenuText': self.toolTip,
+            'MenuText': self.toolTitle,
             'ToolTip':  self.toolTip
             }
 
