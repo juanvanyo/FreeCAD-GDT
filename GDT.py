@@ -38,6 +38,8 @@ import Draft
 import Part
 from pivy import coin
 import FreeCADGui, WorkingPlane
+from PySide import QtGui, QtCore
+
 
 if FreeCAD.GuiUp:
     gui = True

@@ -49,6 +49,7 @@ class GDTGuiClass:
     def __init__(self):
         self.widgetsGDT = []
         inventory = getAllAnnotationPlaneObjects() + getAllDatumSystemObjects() + getAllDatumFeatureObjects() + getAllGeometricToleranceObjects()
+        
         for obj in inventory:
             self.widget = QtGui.QWidget()
             self.widget.setWindowTitle( obj.Label )
@@ -91,11 +92,12 @@ class GDTGuiClass:
 
             buttonModify = QtGui.QPushButton('Modify')
             buttonModify.clicked.connect(lambda obj = obj, data = self.data: self.modifyFunc(obj, data))
-            buttonDelate = QtGui.QPushButton('Delete')
-            buttonDelate.clicked.connect(lambda obj = obj: self.deleteFunc(obj))
+            buttonDelete = QtGui.QPushButton('Delete')
+            buttonDelete.clicked.connect(lambda obj = obj, data = self.data: self.deleteFunc(obj, data))
+            
             hbox.addStretch(1)
             hbox.addWidget( buttonModify )
-            hbox.addWidget( buttonDelate )
+            hbox.addWidget( buttonDelete )
             hbox.addStretch(1)
             vbox.addLayout(hbox)
             self.widget.setLayout(vbox)
@@ -103,6 +105,8 @@ class GDTGuiClass:
         self.form = self.widgetsGDT
 
     def modifyFunc(self, obj, data):
+        print("5@xes modifyFunc = {}".format(obj))
+        print("5@xes modifyFunc getType = {}".format(getType(obj)))    
         if "AnnotationPlane" == getType(obj):
             obj.Label = data.textName
             obj.Offset = data.OffsetValue
@@ -125,7 +129,7 @@ class GDTGuiClass:
             remove = False
             if data.annotation.DF != None and annotationObj != data.annotation:
                 QtGui.QMessageBox.critical(
-                    QtGui.qApp.activeWindow(),
+                    QtGui.QApplication.activeWindow(),
                     'ERROR',
                     'You can not change the DF to an annotation where one already exists',
                     QtGui.QMessageBox.StandardButton.Abort )
@@ -167,7 +171,12 @@ class GDTGuiClass:
         FreeCAD.ActiveDocument.recompute()
         Gui.Control.showDialog( GDTGuiClass() )
 
-    def deleteFunc(self, obj):
+    """
+        Delete Function
+    """
+    def deleteFunc(self, obj, data):
+        print("5@xes deleteFunc = {}".format(obj))
+        print("5@xes deleteFunc getType = {}".format(getType(obj)))
         if "AnnotationPlane" == getType(obj):
             ok = True
             for l in getAllAnnotationObjects():
@@ -178,7 +187,7 @@ class GDTGuiClass:
                 FreeCAD.ActiveDocument.removeObject(obj.Name)
             else:
                 QtGui.QMessageBox.critical(
-                    QtGui.qApp.activeWindow(),
+                    QtGui.QApplication.activeWindow(),
                     'ERROR',
                     'You can not delete AP in use',
                     QtGui.QMessageBox.StandardButton.Abort )
