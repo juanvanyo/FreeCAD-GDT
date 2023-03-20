@@ -20,6 +20,7 @@
 #*   USA                                                                   *
 #*                                                                         *
 #***************************************************************************
+import os
 import GDT
 import GDT_locator
 
@@ -29,6 +30,11 @@ GDTWB_icons_path =  os.path.join( GDTWBpath, 'GUI', 'Resources', 'icons')
 global main_DWB_Icon
 main_DWB_Icon = os.path.join( GDTWB_icons_path , 'GDT.svg')
 
+"""
+    +-----------------------------------------------+
+    |            Initialize the workbench           |
+    +-----------------------------------------------+
+"""
 class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
     Icon = main_DWB_Icon
     MenuText = 'GD&T'
@@ -37,6 +43,12 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
     def GetClassName(self):
         return "Gui::PythonWorkbench"
 
+
+    """
+    +-----------------------------------------------+
+    |        This is where all is defined           |
+    +-----------------------------------------------+
+    """
     def Initialize(self):
         # load the module
         # import GD&T tools
@@ -49,6 +61,12 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
         except ImportError:
             FreeCAD.Console.PrintWarning("Error: Initializing one or more of the GD&T modules failed, GD&T will not work as expected.\n")
 
+
+        """
+        +-----------------------------------------------+
+        |            Assembly Menu & Toolbar            |
+        +-----------------------------------------------+
+        """
         self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_annotationPlane']
         self.inventory = ['dd_inventory']
         # https://freecad.github.io/SourceDoc/d7/dc3/group__workbench.html
@@ -61,13 +79,18 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
         Log ("Loading Geometric Dimensioning & Tolerancing... done\n")
 
     def Activated(self):
-                # do something here if needed...
+        # do something here if needed...
         Msg ("Geometric Dimensioning & Tolerancing workbench activated\n")
 
     def Deactivated(self):
-                # do something here if needed...
-         Msg ("Geometric Dimensioning & Tolerancing workbench desactivated\n")
+        # do something here if needed...
+        Msg ("Geometric Dimensioning & Tolerancing workbench desactivated\n")
 
+    """
+    +-----------------------------------------------+
+    |                Contextual Menus               |
+    +-----------------------------------------------+
+    """
     def ContextMenu(self, recipient):
         # "This is executed whenever the user right-clicks on screen"
         # "recipient" will be either "view" or "tree"
@@ -85,6 +108,11 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
             self.appendContextMenu("",self.cmdList) # add commands to the context menu
             
         self.appendContextMenu("",self.inventory)   # add inventory commands to the context menu
-        self.appendContextMenu("", "Separator") # Add Separator 5@xes
+        self.appendContextMenu("", "Separator")     # Add Separator 5@xes
 
+"""
++-----------------------------------------------+
+|          actually make the workbench          |
++-----------------------------------------------+
+"""
 FreeCADGui.addWorkbench(GeometricDimensioningAndTolerancingWorkbench)
