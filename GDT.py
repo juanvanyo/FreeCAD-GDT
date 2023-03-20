@@ -464,19 +464,23 @@ def plotStrings(self, fp, points):
     index = 0
     indexIcon = 0
     displacement = 0
+    
     if fp.GT != []:
         for i in range(len(fp.GT)):
             distance = 0
             # posToleranceValue
             v = (points[7+displacement] - points[5+displacement])
+            
             if v.x != 0:
                 distance = (v.x)/2
             elif v.y != 0:
                 distance = (v.y)/2
             else:
                 distance = (v.z)/2
+                
             if fp.GT[i].FeatureControlFrameIcon != '':
                 distance -= sizeOfLine
+                
             if fp.GT[i].Circumference:
                 distance += sizeOfLine
             centerPoint = points[5+displacement] + Horizontal * (distance)
@@ -561,6 +565,7 @@ def plotStrings(self, fp, points):
                         self.textGT[index].justification = coin.SoAsciiText.CENTER
                         index+=1
                         displacement+=2
+        
         if fp.circumferenceBool and True in [l.Circumference for l in fp.GT]:
             # posDiameterTolerance
             auxPoint1 = FreeCAD.Vector(points[4])
@@ -586,6 +591,7 @@ def plotStrings(self, fp, points):
                 text = string_encode(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' - ' + displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGT[index].string = self.textGT3d[index].string = text
             index+=1
+        
         for i in range(index):
             try:
                 #AP Annotation Plane
@@ -640,12 +646,33 @@ def plotStrings(self, fp, points):
             pass
     else:
         self.textDF.string = self.textDF3d.string = ""
+    
+      
+
+    """
+    print("5@xes fp.Name = {}".format(fp.Name)) 
+    print("5@xes fp.Label = {}".format(fp.Label))
+    
+    print("5@xes size = {}".format(numpy.size(fp.faces)))
+    print("5@xes size = {}".format(numpy.size(fp.faces[0])))
+    print("5@xes size = {}".format(numpy.size(fp.faces[0][1])))
+
+    print("5@xes fp.faces = {}".format(fp.faces))
+    print("5@xes fp.faces = {}".format(fp.faces[0]))
+    print("5@xes fp.faces = {}".format(fp.faces[0][0]))
+    print("5@xes fp.faces = {}".format(fp.faces[0][1]))
+    """
+    
+    """
+        Write the 2x on the GT if 2 faces
+    """    
     if fp.GT != [] or fp.DF != None:
-        if len(fp.faces) > 1:
+        if numpy.size(fp.faces[0][1]) > 1:
             # posNumFaces
             centerPoint = points[3] + Horizontal * (sizeOfLine)
             posNumFaces = centerPoint + Vertical * (sizeOfLine/2)
-            self.textGT[index].string = self.textGT3d[index].string = (str(len(fp.faces))+'x')
+            # 2x
+            self.textGT[index].string = self.textGT3d[index].string = (str(numpy.size(fp.faces[0][1]))+'x')
             self.textGTpos[index].translation.setValue([posNumFaces.x, posNumFaces.y, posNumFaces.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             try:
@@ -914,7 +941,7 @@ def makeDatumFeature(Name, ContainerOfData):
         makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=obj, GT=[])
     else:
         faces = AnnotationObj.faces
-        #AP Annotation Plane
+        # AP Annotation Plane
         AP = AnnotationObj.AP
         GT = AnnotationObj.GT
         diameter = AnnotationObj.diameter
