@@ -21,7 +21,6 @@
 #***************************************************************************
 import FreeCAD as App
 import FreeCADGui as Gui
-import copy
 
 from GDT import *
 
