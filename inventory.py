@@ -21,6 +21,7 @@
 #***************************************************************************
 import FreeCAD as App
 import FreeCADGui as Gui
+import copy
 
 from GDT import *
 
@@ -103,7 +104,10 @@ class GDTGuiClass:
             self.widget.setLayout(vbox)
 
         self.form = self.widgetsGDT
-
+    
+    """
+        Modify Function 
+    """
     def modifyFunc(self, obj, data):
         print("5@xes modifyFunc = {}".format(obj))
         print("5@xes modifyFunc getType = {}".format(getType(obj)))    
@@ -127,21 +131,31 @@ class GDTGuiClass:
         elif "DatumFeature" == getType(obj):
             annotationObj = getAnnotationWithDF(obj)
             remove = False
+            
             if data.annotation.DF != None and annotationObj != data.annotation:
                 QtGui.QMessageBox.critical(
                     QtGui.QApplication.activeWindow(),
                     'ERROR',
                     'You can not change the DF to an annotation where one already exists',
                     QtGui.QMessageBox.StandardButton.Abort )
-            elif annotationObj != data.annotation:
+            
+            elif annotationObj != data.annotation :
+                # print("5@xes data.annotation New Name = {}".format(data.annotation.Name))
+                
+                annotationObj.removeObject(obj)
+                annotationObj.DF = None
+                
                 data.annotation.addObject(obj)
                 data.annotation.DF = obj
-                annotationObj.removeObject(obj)
+               
                 remove = True
+            
             for l in getAllDatumSystemObjects():
                 if l.Primary == obj or l.Secondary == obj or l.Tertiary == obj:
                     l.touch
+            
             obj.Label = data.textName
+            
             if remove:
                 annotationObj.DF = None
 
