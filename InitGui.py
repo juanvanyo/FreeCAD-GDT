@@ -52,8 +52,8 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
         self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_annotationPlane']
         self.inventory = ['dd_inventory']
         # https://freecad.github.io/SourceDoc/d7/dc3/group__workbench.html
-        self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)
-        self.appendMenu("GD&T Tools",self.cmdList+self.inventory)
+        self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)  # Create ToolBar
+        self.appendMenu("GD&T Tools",self.cmdList+self.inventory) # Create Menu
 
         FreeCADGui.addIconPath(':/dd/icons')
         FreeCADGui.addPreferencePage( ':/dd/ui/preferences-gdt.ui','GDT' )
@@ -81,7 +81,10 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
         else:
             showCmdList = False
         if showCmdList:
+            self.appendContextMenu("", "Separator") # Add Separator 5@xes
             self.appendContextMenu("",self.cmdList) # add commands to the context menu
-        self.appendContextMenu("",self.inventory)
+            
+        self.appendContextMenu("",self.inventory)   # add inventory commands to the context menu
+        self.appendContextMenu("", "Separator") # Add Separator 5@xes
 
 FreeCADGui.addWorkbench(GeometricDimensioningAndTolerancingWorkbench)
