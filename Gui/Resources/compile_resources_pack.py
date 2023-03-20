@@ -5,7 +5,7 @@ qrc_filename = 'gdt.qrc'
 assert not os.path.exists(qrc_filename)
 
 qrc = '''<RCC version="1.0">
-	<qresource prefix="/dd">'''
+    <qresource prefix="/dd">'''
 for fn in glob.glob('icons/*.svg') + glob.glob('icons/Characteristic/*.svg') + glob.glob('icons/FeatureControlFrame/*.svg') + glob.glob('ui/*.ui'):
     qrc = qrc + '\n\t\t<file>%s</file>' % fn
 qrc = qrc + '''\n\t</qresource>

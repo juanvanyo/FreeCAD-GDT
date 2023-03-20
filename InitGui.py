@@ -30,57 +30,58 @@ global main_DWB_Icon
 main_DWB_Icon = os.path.join( GDTWB_icons_path , 'GDT.svg')
 
 class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
-	Icon = main_DWB_Icon
-	MenuText = 'GD&T'
-	ToolTip = 'Geometric Dimensioning & Tolerancing'
+    Icon = main_DWB_Icon
+    MenuText = 'GD&T'
+    ToolTip = 'Geometric Dimensioning & Tolerancing'
 
-	def GetClassName(self):
-		return "Gui::PythonWorkbench"
+    def GetClassName(self):
+        return "Gui::PythonWorkbench"
 
-	def Initialize(self):
-		# load the module
-		# import GD&T tools
-		try:
-			import datumFeature
-			import datumSystem
-			import geometricTolerance
-			import annotationPlane
-			import inventory
-		except ImportError:
-			FreeCAD.Console.PrintWarning("Error: Initializing one or more of the GD&T modules failed, GD&T will not work as expected.\n")
+    def Initialize(self):
+        # load the module
+        # import GD&T tools
+        try:
+            import datumFeature
+            import datumSystem
+            import geometricTolerance
+            import annotationPlane
+            import inventory
+        except ImportError:
+            FreeCAD.Console.PrintWarning("Error: Initializing one or more of the GD&T modules failed, GD&T will not work as expected.\n")
 
-		self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_annotationPlane']
-		self.inventory = ['dd_inventory']
-		self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)
-		self.appendMenu("GD&T Tools",self.cmdList+self.inventory)
+        self.cmdList = ['dd_datumFeature','dd_datumSystem','dd_geometricTolerance','dd_annotationPlane']
+        self.inventory = ['dd_inventory']
+        # https://freecad.github.io/SourceDoc/d7/dc3/group__workbench.html
+        self.appendToolbar("GD&T Tools",self.cmdList+self.inventory)
+        self.appendMenu("GD&T Tools",self.cmdList+self.inventory)
 
-		FreeCADGui.addIconPath(':/dd/icons')
-		FreeCADGui.addPreferencePage( ':/dd/ui/preferences-gdt.ui','GDT' )
+        FreeCADGui.addIconPath(':/dd/icons')
+        FreeCADGui.addPreferencePage( ':/dd/ui/preferences-gdt.ui','GDT' )
 
-		Log ("Loading Geometric Dimensioning & Tolerancing... done\n")
+        Log ("Loading Geometric Dimensioning & Tolerancing... done\n")
 
-	def Activated(self):
+    def Activated(self):
                 # do something here if needed...
-		Msg ("Geometric Dimensioning & Tolerancing workbench activated\n")
+        Msg ("Geometric Dimensioning & Tolerancing workbench activated\n")
 
-	def Deactivated(self):
+    def Deactivated(self):
                 # do something here if needed...
- 		Msg ("Geometric Dimensioning & Tolerancing workbench desactivated\n")
+         Msg ("Geometric Dimensioning & Tolerancing workbench desactivated\n")
 
-	def ContextMenu(self, recipient):
+    def ContextMenu(self, recipient):
         # "This is executed whenever the user right-clicks on screen"
         # "recipient" will be either "view" or "tree"
-		showCmdList = True
-		if FreeCADGui.Selection.getSelection():
-			for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
-				if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
-					pass
-				else:
-					showCmdList = False
-		else:
-			showCmdList = False
-		if showCmdList:
-			self.appendContextMenu("",self.cmdList) # add commands to the context menu
-		self.appendContextMenu("",self.inventory)
+        showCmdList = True
+        if FreeCADGui.Selection.getSelection():
+            for i in range(len(FreeCADGui.Selection.getSelectionEx()[0].SubObjects)):
+                if FreeCADGui.Selection.getSelectionEx()[0].SubObjects[i].ShapeType == 'Face':
+                    pass
+                else:
+                    showCmdList = False
+        else:
+            showCmdList = False
+        if showCmdList:
+            self.appendContextMenu("",self.cmdList) # add commands to the context menu
+        self.appendContextMenu("",self.inventory)
 
 FreeCADGui.addWorkbench(GeometricDimensioningAndTolerancingWorkbench)

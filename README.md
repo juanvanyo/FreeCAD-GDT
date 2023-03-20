@@ -25,12 +25,9 @@ Installing
 ----------
 
 Download and install your corresponding version of FreeCAD from [wiki Download page](http://www.freecadweb.org/wiki/Download) and either install
-- automaticallu using the [FreeCAD Add-on Manager](https://github.com/FreeCAD/FreeCAD-addons) (bundled in to 0.17 dev version)
+- automatically using the [FreeCAD Add-on Manager](https://github.com/FreeCAD/FreeCAD-addons) 
 - manually by copying the FreeCAD-GDT folder to the Mod sub-directory of the FreeCAD application.
 
-### Requirements
-
-- Coin3D (4.0+) It is recommended to have Coin version 4.0 or higher installed but also works with version 3.0 but with some visual changes.
 
 Operation of the module
 ----------

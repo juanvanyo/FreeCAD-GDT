@@ -124,33 +124,26 @@ def setParam(param,value):
 #---------------------------------------------------------------------------
 # General functions
 #---------------------------------------------------------------------------
-
-def stringencodecoin(ustr):
-    """stringencodecoin(str): Encodes a unicode object to be used as a string in coin"""
-    try:
-        from pivy import coin
-        coin4 = coin.COIN_MAJOR_VERSION >= 4
-    except (ImportError, AttributeError):
-        coin4 = False
-    if coin4:
-        #return ustr.encode('utf-8')
-        # 5@xes for test
-        return ustr
-    else:
-        return ustr.encode('latin1')
-
+# Modif 5@xes for test
+def string_encode(ustr):
+    """string_encode(str): Encodes a unicode object to be used as a string in coin"""
+        # return ustr.encode('utf-8')
+        # return ustr.encode('latin1')
+    return ustr
+        
 def stringplusminus():
-    return ' ± ' if coin.COIN_MAJOR_VERSION >= 4 else ' +- '
+    # else ' +- '
+    return ' ± '
 
-def getType(obj):
+def getType(objt):
     "getType(object): returns the GDT type of the given object"
-    if not obj:
+    if not objt:
         return None
-    if "Proxy" in obj.PropertiesList:
-        if hasattr(obj.Proxy,"Type"):
-            return obj.Proxy.Type
-    return "Unknown"
-
+    if "Proxy" in objt.PropertiesList:
+        if hasattr(objt.Proxy,"Type"):
+            return objt.Proxy.Type
+    return "Unknown"    
+    
 def getObjectsOfType(typeList):
     "getObjectsOfType(string): returns a list of objects of the given type"
     listObjectsOfType = []
@@ -228,24 +221,27 @@ def showGrid():
         else:
             FreeCADGui.Snapper.show()
 
+# Just to know if we have a selection
 def getSelection():
     "getSelection(): returns the current FreeCAD selection"
     if gui:
         return FreeCADGui.Selection.getSelection()
     return None
 
+# Possibility to modify FreeCADGui.Selection.getSelectionEx("",0)
+# https://forum.freecad.org/viewtopic.php?p=668442#p668442
 def getSelectionEx():
     "getSelectionEx(): returns the current FreeCAD selection (with subobjects)"
     if gui:
         return FreeCADGui.Selection.getSelectionEx()
     return None
 
-def select(obj):
+def select(objt):
     "select(object): deselects everything and selects only the working faces of the passed object"
     if gui:
         FreeCADGui.Selection.clearSelection()
-        for i in range(len(obj.faces)):
-            FreeCADGui.Selection.addSelection(obj.faces[i][0],obj.faces[i][1])
+        for i in range(len(objt.faces)):
+            FreeCADGui.Selection.addSelection(objt.faces[i][0],objt.faces[i][1])
 
 def makeContainerOfData():
     ""
@@ -279,7 +275,11 @@ def getAnnotationWithGT(obj):
                 return l
     return None
 
-# Point definition for the geometry
+#-----------------------------------
+# Geometric creation for the entity
+#-----------------------------------
+
+# Points definition for the geometry
 def getPointsToPlot(obj):
     points = []
     segments = []
@@ -287,6 +287,7 @@ def getPointsToPlot(obj):
     if obj.GT != [] or obj.DF != None:
         X = FreeCAD.Vector(1.0,0.0,0.0)
         Y = FreeCAD.Vector(0.0,1.0,0.0)
+        #AP Annotation Plane
         Direction = X if abs(X.dot(obj.AP.Direction)) < 0.8 else Y
         
         Vertical = obj.AP.Direction.cross(Direction).normalize()
@@ -344,7 +345,7 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
         P1 = P0 + Vertical * (-sizeOfLine*2)
         P2 = P0 + Horizontal * (sizeOfLine*2)
         P3 = P1 + Horizontal * (sizeOfLine*2)
-        lengthToleranceValue = len(stringencodecoin(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
+        lengthToleranceValue = len(string_encode(displayExternal(obj.GT[i].ToleranceValue, obj.ViewObject.Decimals, 'Length', obj.ViewObject.ShowUnit)))
         
         if obj.GT[i].FeatureControlFrameIcon != '':
             lengthToleranceValue += 2
@@ -454,6 +455,7 @@ def plotStrings(self, fp, points):
 
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
+    #AP Annotation Plane
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
     Vertical = fp.AP.Direction.cross(Direction).normalize()
     Horizontal = Vertical.cross(fp.AP.Direction).normalize()
@@ -526,7 +528,7 @@ def plotStrings(self, fp, points):
                 self.svg[indexIcon].filename = str(filename)
                 indexIcon+=1
 
-            self.textGT[index].string = self.textGT3d[index].string = stringencodecoin(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+            self.textGT[index].string = self.textGT3d[index].string = string_encode(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
@@ -577,13 +579,14 @@ def plotStrings(self, fp, points):
             self.textGT[index].justification = coin.SoAsciiText.LEFT
             self.textGTpos[index].translation.setValue([posDiameterTolerance.x, posDiameterTolerance.y, posDiameterTolerance.z])
             if fp.toleranceSelectBool:
-                text = stringencodecoin(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + stringplusminus() + displayExternal(fp.toleranceDiameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+                text = string_encode(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + stringplusminus() + displayExternal(fp.toleranceDiameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             else:
-                text = stringencodecoin(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' - ' + displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+                text = string_encode(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + ' - ' + displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGT[index].string = self.textGT3d[index].string = text
             index+=1
         for i in range(index):
             try:
+                #AP Annotation Plane
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
                 DirectionAux.x = abs(DirectionAux.x)
                 DirectionAux.y = abs(DirectionAux.y)
@@ -624,6 +627,7 @@ def plotStrings(self, fp, points):
         centerPoint = centerPoint + Vertical * (sizeOfLine/2)
         self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
         try:
+            #AP Annotation Plane
             DirectionAux = FreeCAD.Vector(fp.AP.Direction)
             DirectionAux.x = abs(DirectionAux.x)
             DirectionAux.y = abs(DirectionAux.y)
@@ -643,6 +647,7 @@ def plotStrings(self, fp, points):
             self.textGTpos[index].translation.setValue([posNumFaces.x, posNumFaces.y, posNumFaces.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             try:
+                #AP Annotation Plane
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
                 DirectionAux.x = abs(DirectionAux.x)
                 DirectionAux.y = abs(DirectionAux.y)
@@ -712,9 +717,9 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
 # Python Features definitions
 #---------------------------------------------------------------------------
 
-    #-----------------------------------------------------------------------
-    # Base class for GDT objects
-    #-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+# Base class for GDT objects
+#-----------------------------------------------------------------------
 
 class _GDTObject:
     "The base class for GDT objects"
@@ -735,7 +740,7 @@ class _GDTObject:
         '''Do something when doing a recomputation, this method is mandatory'''
         pass
 
-    def onChanged(self, vobj, prop):
+    def onChanged(self, obj, prop):
         '''Do something when a property has changed'''
         pass
 
@@ -758,7 +763,7 @@ class _ViewProviderGDT:
         self.Object = vobj.Object
         return
 
-    def updateData(self, obj, prop):
+    def updateData(self, vobj, prop):
         '''If a property of the handled feature has changed we have the chance to handle this here'''
         # fp is the handled feature, prop is the name of the property that has changed
         return
@@ -785,9 +790,9 @@ class _ViewProviderGDT:
                 optional and if not defined a default icon is shown.'''
         return(":/dd/icons/GDT.svg")
 
-    #-----------------------------------------------------------------------
-    # Annotation Plane
-    #-----------------------------------------------------------------------
+#-----------------------------------------------------------------------
+# Annotation Plane
+#-----------------------------------------------------------------------
 
 class _AnnotationPlane(_GDTObject):
     "The GDT AnnotationPlane object"
@@ -838,8 +843,11 @@ def makeAnnotationPlane(Name, Offset):
         _GDTObject(group)
         _ViewProviderGDT(group.ViewObject)
     else:
-        group = FreeCAD.ActiveDocument.getObject("GDT")
+        group = FreeCAD.ActiveDocument.getObject("GDT")   
 
+    print("5@xes makeAnnotationPlane Group = {}".format(group.Name))
+    
+    
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","AnnotationPlane")
     _AnnotationPlane(obj)
     if gui:
@@ -849,7 +857,12 @@ def makeAnnotationPlane(Name, Offset):
     
     obj.Label = str(Name)
     obj.Offset = Offset
+
+    print("5@xes makeAnnotationPlane Group = {}".format(group.Name))
+    print("5@xes makeAnnotationPlane obj = {}".format(obj))    
     group.addObject(obj)
+    print("5@xes makeAnnotationPlane Group = {}".format(group.Group))
+    
     hideGrid()
     for l in getAllAnnotationObjects():
         l.touch()
@@ -889,12 +902,18 @@ def makeDatumFeature(Name, ContainerOfData):
     
     obj.Label = str(Name)
     group = FreeCAD.ActiveDocument.getObject("GDT")
+    print("5@xes makeDatumFeature group = {}".format(group.Name))
+    print("5@xes makeDatumFeature obj = {}".format(obj))    
     group.addObject(obj)
+    print("5@xes makeDatumFeature group = {}".format(group))
+    
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
+        print("5@xes makeDatumFeature group AnnotationObj == None = {}".format(obj))
         makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=obj, GT=[])
     else:
         faces = AnnotationObj.faces
+        #AP Annotation Plane
         AP = AnnotationObj.AP
         GT = AnnotationObj.GT
         diameter = AnnotationObj.diameter
@@ -903,7 +922,12 @@ def makeDatumFeature(Name, ContainerOfData):
         lowLimit = AnnotationObj.lowLimit
         highLimit = AnnotationObj.highLimit
         group = makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj, diameter=diameter, toleranceSelect=toleranceSelect, toleranceDiameter=toleranceDiameter, lowLimit=lowLimit, highLimit=highLimit)
+        print("5@xes makeDatumFeature group makeAnnotation = {}".format(group.Name))
+        print("5@xes makeDatumFeature obj makeAnnotation = {}".format(obj))         
         group.addObject(obj)
+        print("5@xes makeDatumFeature group makeAnnotation = {}".format(group))
+        
+    # Update   
     for l in getAllAnnotationObjects():
         l.touch()
     FreeCAD.ActiveDocument.recompute()
@@ -945,17 +969,27 @@ def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     ''' Explanation
     '''
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumSystem")
+    
     _DatumSystem(obj)
+    
     if gui:
         _ViewProviderDatumSystem(obj.ViewObject)
+        
     obj.Label = str(Name)
     obj.Primary = Primary
     obj.Secondary = Secondary
     obj.Tertiary = Tertiary
+    
     group = FreeCAD.ActiveDocument.getObject("GDT")
+    
+    print("5@xes makeDatumSystem group = {}".format(group.Name))
+    print("5@xes makeDatumSystem obj = {}".format(obj))  
     group.addObject(obj)
+    print("5@xes makeDatumSystem group = {}".format(group))
+    
     for l in getAllAnnotationObjects():
         l.touch()
+        
     FreeCAD.ActiveDocument.recompute()
     return obj
 
@@ -1006,8 +1040,13 @@ def makeGeometricTolerance(Name, ContainerOfData):
     obj.FeatureControlFrame = ContainerOfData.featureControlFrame.toolTip
     obj.FeatureControlFrameIcon = ContainerOfData.featureControlFrame.Icon
     obj.DS = ContainerOfData.datumSystem
+    
     group = FreeCAD.ActiveDocument.getObject("GDT")
+    print("5@xes makeGeometricTolerance group = {}".format(group.Name))
+    print("5@xes makeGeometricTolerance obj = {}".format(obj))  
     group.addObject(obj)
+    print("5@xes makeGeometricTolerance group = {}".format(group))
+    
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
         makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=None, GT=obj, diameter=ContainerOfData.diameter, toleranceSelect=ContainerOfData.toleranceSelect, toleranceDiameter=ContainerOfData.toleranceDiameter, lowLimit=ContainerOfData.lowLimit, highLimit=ContainerOfData.highLimit)
@@ -1030,7 +1069,12 @@ def makeGeometricTolerance(Name, ContainerOfData):
             lowLimit = AnnotationObj.lowLimit
             highLimit = AnnotationObj.highLimit
         group = makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj, diameter=diameter, toleranceSelect=toleranceSelect, toleranceDiameter=toleranceDiameter, lowLimit=lowLimit, highLimit=highLimit)
+        print("5@xes makeGeometricTolerance AnnotationObj group = {}".format(group.Name))
+        print("5@xes makeGeometricTolerance AnnotationObj obj = {}".format(obj))          
         group.addObject(obj)
+        print("5@xes makeGeometricTolerance AnnotationObj group = {}".format(group))
+        
+        
     for l in getAllAnnotationObjects():
         l.touch()
     FreeCAD.ActiveDocument.recompute()
@@ -1087,6 +1131,7 @@ class _Annotation(_GDTObject):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
         # FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
+        print("Faces {}".format(fp.faces[0][1][0]))
         if fp.circumferenceBool:
             vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Vertexes
             fp.p1 = vertexex[0].Point if vertexex[0].Point.z > vertexex[1].Point.z else vertexex[1].Point
@@ -1290,15 +1335,26 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
 def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diameter = 0.0, toleranceSelect = True, toleranceDiameter = 0.0, lowLimit = 0.0, highLimit = 0.0):
     ''' Explanation
     '''
+    print("5@xes makeAnnotation Object = {}".format(Object))
     if not modify:
+        print("5@xes makeAnnotation getAllAnnotationObjects = {}".format(getAllAnnotationObjects()))
         obj = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython",dictionaryAnnotation[len(getAllAnnotationObjects())])
         _Annotation(obj)
+        
         if gui:
             _ViewProviderAnnotation(obj.ViewObject)
+        
         group = FreeCAD.ActiveDocument.getObject("GDT")
+        
+        print("5@xes makeAnnotation Group = {}".format(group.Name))
+        print("5@xes makeAnnotation obj = {}".format(obj))
         group.addObject(obj)
+        print("5@xes makeAnnotation Group = {}".format(group))
+        print("5@xes makeAnnotation Group = {}".format(group.Group))
+        
         obj.faces = faces
         obj.AP = AP
+        
         if obj.circumferenceBool:
             vertexex = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).Vertexes
             index = [l.Point.z for l in vertexex].index(max([l.Point.z for l in vertexex]))
@@ -1313,8 +1369,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             print("5@xes PointWithOffset {}".format(obj.AP.PointWithOffset))
             '''
             
-            obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)
-            
+            obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)            
             obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).normalAt(0,0)
             
             '''
@@ -1323,6 +1378,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             '''
     else:
         obj = Object
+        
     obj.DF = DF
     obj.GT = GT
     obj.diameter = diameter
@@ -1341,7 +1397,16 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.spBool = True
             obj.selectedPoint = point
             hideGrid()
-            obj.addObject(obj.DF) if obj.DF != None else obj.addObject(obj.GT[0])
+            print("5@xes getPoint {}".format(obj.DF))
+            if obj.DF is not None:
+                print("5@xes getPoint DF {}".format(obj.DF))
+                obj.addObject(obj.DF)
+                
+            else:
+                print("5@xes getPoint GT {}".format(obj.GT[0]))
+                obj.addObject(obj.GT[0])
+                
+
             select(obj)
             for l in getAllAnnotationObjects():
                 l.touch()
@@ -1467,7 +1532,7 @@ class GDTWidget:
         self.ContainerOfData = makeContainerOfData()
         extraWidgets = []
         if Dictionary != None:
-            extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn', Dictionary=self.Dictionary)) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+            extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn', Dictionary=self.Dictionary)) # http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
         else:
             extraWidgets.append(textLabelWidget(Text='Name:',Mask='NNNn'))
         self.taskDialog = GDTDialog( self.dialogTitle, self.dialogIconPath, self.idGDT, extraWidgets + self.dialogWidgets, self.ContainerOfData)
@@ -1489,7 +1554,7 @@ class GDTDialog:
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.Control.closeDialog()
 
-    def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
+    def getStandardButtons(self): # http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
         return 0x00200000 #close button
 
 class GDTGuiClass(QtGui.QWidget):
@@ -1785,7 +1850,7 @@ class fieldLabeCombolWidget:
     def generateWidget( self, idGDT, ContainerOfData ):
         self.idGDT = idGDT
         self.ContainerOfData = ContainerOfData
-        self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",2)
+        self.DECIMALS = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Units").GetInt("Decimals",3)
         self.FORMAT = makeFormatSpec(self.DECIMALS,'Length')
         self.AFORMAT = makeFormatSpec(self.DECIMALS,'Angle')
         self.uiloader = FreeCADGui.UiLoader()
@@ -1821,6 +1886,7 @@ class fieldLabeCombolWidget:
         self.label = QtGui.QLabel('Diameter:')
         self.inputfield2 = self.uiloader.createWidget("Gui::InputField")
         auxText = displayExternal(self.Diameter,self.DECIMALS,'Length',True)
+        print("Diameter auxText {}".format(auxText))
         self.inputfield2.setText(auxText)
         QtCore.QObject.connect(self.inputfield2,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedDiameter)
         self.comboTolerance = QtGui.QComboBox()
@@ -1838,6 +1904,7 @@ class fieldLabeCombolWidget:
         self.labelHigh = QtGui.QLabel('High')
         self.inputfieldTolerance = self.uiloader.createWidget("Gui::InputField")
         auxText = displayExternal(self.tolerance,self.DECIMALS,'Length',True)
+        print("tolerance auxText {} {}".format(self.DECIMALS,auxText))
         self.inputfieldTolerance.setText(auxText)
         QtCore.QObject.connect(self.inputfieldTolerance,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedTolerance)
         self.inputfieldLow = self.uiloader.createWidget("Gui::InputField")
