@@ -139,12 +139,11 @@ class GDTGuiClass:
                     'You can not change the DF to an annotation where one already exists',
                     QtGui.QMessageBox.StandardButton.Abort )
             
-            elif annotationObj != data.annotation :
-                # print("5@xes data.annotation New Name = {}".format(data.annotation.Name))
-                
+            elif annotationObj != data.annotation :               
+                # First Remove
                 annotationObj.removeObject(obj)
                 annotationObj.DF = None
-                
+                # Then Add to the new annotation
                 data.annotation.addObject(obj)
                 data.annotation.DF = obj
                
