@@ -730,11 +730,17 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
         conversion = pref[1]
         uom = pref[2]  # can gibe uom  Micron
         # To suppress the Micron conversion
+        # print("uom {}".format(uom))
+        # print("conversion {}".format(conversion))
         if uom == "µm" :
             decimals = 3
             conversion = 1.0
             uom == "mm" 
-        
+        elif uom == 'thou': 
+            decimals = 4
+            conversion = 25.4
+            uom == "in" 
+            
     elif dim == 'Angle':
         qty = FreeCAD.Units.Quantity(internValue,FreeCAD.Units.Angle)
         pref=qty.getUserPreferred()
