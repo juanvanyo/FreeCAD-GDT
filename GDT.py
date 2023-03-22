@@ -356,8 +356,7 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
             lengthToleranceValue += 2
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
-        
-        
+    
         if obj.GT[i].DS == None or obj.GT[i].DS.Primary == None:
             newPoints += [P0, P2, P3, P4, P5, P1]
             newSegments += [-1, 0+d, 3+d, 4+d, 5+d, 0+d, -1, 1+d, 2+d]
@@ -596,28 +595,25 @@ def plotStrings(self, fp, points):
             try:
                 #AP Annotation Plane
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
-                print("DirectionAux {}".format(DirectionAux))
                 DirectionAux.x = abs(DirectionAux.x)
                 DirectionAux.y = abs(DirectionAux.y)
                 DirectionAux.z = abs(DirectionAux.z)
-                # ().Q return the rotation and not Rotation()
-                rotation=DraftGeomUtils.getRotation(DirectionAux).Q
-                print("rotation {}".format(DraftGeomUtils.getRotation(DirectionAux)))
-                print("rotation {}".format(rotation))
-
+                rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
                 self.textGTpos[i].rotation.setValue(rotation)
-                
             except:
                 pass
+                
         for i in range(index,len(self.textGT)):
             if str(self.textGT[i].string) != "":
                 self.textGT[i].string = self.textGT3d[i].string = ""
             else:
                 break
+                
         for i in range(indexIcon,len(self.svg)):
             if str(self.face[i].numVertices) != 0:
                 self.face[i].numVertices = 0
                 self.svg[i].filename = ""
+                
     else:
         for i in range(len(self.textGT)):
             if str(self.textGT[i].string) != "" or str(self.svg[i].filename) != "":
@@ -653,6 +649,8 @@ def plotStrings(self, fp, points):
     else:
         self.textDF.string = self.textDF3d.string = ""
     
+      
+
     """
     print("5@xes fp.Name = {}".format(fp.Name)) 
     print("5@xes fp.Label = {}".format(fp.Label))
@@ -730,7 +728,13 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
         qty = FreeCAD.Units.Quantity(internValue,FreeCAD.Units.Length)
         pref = qty.getUserPreferred()
         conversion = pref[1]
-        uom = pref[2]
+        uom = pref[2]  # can gibe uom  Micron
+        # To suppress the Micron conversion
+        if uom == "µm" :
+            decimals = 3
+            conversion = 1.0
+            uom == "mm" 
+        
     elif dim == 'Angle':
         qty = FreeCAD.Units.Quantity(internValue,FreeCAD.Units.Angle)
         pref=qty.getUserPreferred()
@@ -739,11 +743,14 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
     else:
         conversion = 1.0
         uom = "??"
+        
     if not showUnit:
         uom = ""
+        
     fmt = "{0:."+ str(decimals) + "f} "+ uom
     displayExt = fmt.format(float(internValue) / float(conversion))
     displayExt = displayExt.replace(".",QtCore.QLocale().decimalPoint())
+    
     return displayExt
 
 #---------------------------------------------------------------------------
@@ -1234,6 +1241,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.points = []
         self.face = []
         self.textureTransform = []
+        
         for i in range(20):
             self.textGT.append(coin.SoAsciiText())
             self.textGT3d.append(coin.SoText2())
