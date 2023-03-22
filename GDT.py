@@ -596,11 +596,17 @@ def plotStrings(self, fp, points):
             try:
                 #AP Annotation Plane
                 DirectionAux = FreeCAD.Vector(fp.AP.Direction)
+                print("DirectionAux {}".format(DirectionAux))
                 DirectionAux.x = abs(DirectionAux.x)
                 DirectionAux.y = abs(DirectionAux.y)
                 DirectionAux.z = abs(DirectionAux.z)
-                rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
+                # ().Q return the rotation and not Rotation()
+                rotation=DraftGeomUtils.getRotation(DirectionAux).Q
+                print("rotation {}".format(DraftGeomUtils.getRotation(DirectionAux)))
+                print("rotation {}".format(rotation))
+
                 self.textGTpos[i].rotation.setValue(rotation)
+                
             except:
                 pass
         for i in range(index,len(self.textGT)):
@@ -647,8 +653,6 @@ def plotStrings(self, fp, points):
     else:
         self.textDF.string = self.textDF3d.string = ""
     
-      
-
     """
     print("5@xes fp.Name = {}".format(fp.Name)) 
     print("5@xes fp.Label = {}".format(fp.Label))
