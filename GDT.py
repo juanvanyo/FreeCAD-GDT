@@ -127,6 +127,20 @@ def setParam(param,value):
 # General functions
 #---------------------------------------------------------------------------
 # Modif 5@xes for test
+"""
+def stringencodecoin(ustr):
+    # stringencodecoin(str): Encodes a unicode object to be used as a string in coin
+    try:
+        from pivy import coin
+        coin4 = coin.COIN_MAJOR_VERSION >= 4
+    except (ImportError, AttributeError):
+        coin4 = False
+    if coin4:
+        return ustr.encode('utf-8')
+    else:
+        return ustr.encode('latin1')
+"""
+
 def string_encode(ustr):
     """string_encode(str): Encodes a unicode object to be used as a string in coin"""
         # return ustr.encode('utf-8')
@@ -1293,12 +1307,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.node.addChild(selectionNode)
         obj.addDisplayMode(self.node,"2D")
 
-        self.node3d.addChild(labelDF3d)
-        self.node3d.addChild(self.lineColor)
-        self.node3d.addChild(self.data)
-        self.node3d.addChild(self.lines)
-        self.node3d.addChild(selectionNode)
-        obj.addDisplayMode(self.node3d,"3D")
+
+        
         self.onChanged(obj,"LineColor")
         self.onChanged(obj,"LineWidth")
         self.onChanged(obj,"FontSize")
@@ -1940,7 +1950,6 @@ class fieldLabeCombolWidget:
         self.label = QtGui.QLabel('Diameter:')
         self.inputfield2 = self.uiloader.createWidget("Gui::InputField")
         auxText = displayExternal(self.Diameter,self.DECIMALS,'Length',True)
-        print("Diameter auxText {}".format(auxText))
         self.inputfield2.setText(auxText)
         QtCore.QObject.connect(self.inputfield2,QtCore.SIGNAL("valueChanged(double)"),self.valueChangedDiameter)
         self.comboTolerance = QtGui.QComboBox()
