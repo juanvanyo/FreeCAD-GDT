@@ -15,13 +15,13 @@ Abstract
 The project is aimed at the development of a labeling software module for Geometric Dimensioning and Tolerancing (GD&T) in 2D and 3D technical drawings. The main contributions of this software are:
 
 -	Allows the GD&T information to be added to the design itself, thus linking design, manufacturing and quality specifications.
--	Implements the ISO16792 standard for both 2D and 3D parts.
+-	Implements the [ISO16792](https://www.iso.org/fr/standard/73871.html) standard for both 2D and 3D parts.
 -	Incorporates a homogeneous graphical interface and integrated with the technical design tools and 3D.
 -	There is no precedent developed as free software.
 
-The initial source code as been developped by [Juan Vañó Cerdá](https://github.com/juanvanyo) during his final master's work in university. He developed a module to solve the problem of Geometric Dimensioning and Tolerancing (GD&T) the initial source code is based on the [FreeCadDraft Workbench](https://wiki.freecad.org/Draft_Workbench) .
-
 The implementation of the software is done as a module of the parametric modeling free software application [FreeCAD](http://freecadweb.org). This is a multiplatform project since the development of the module is done with Python and FreeCAD has compilations for multiple Operating Systems.
+
+The initial source code as been developped by [Juan Vañó Cerdá](https://github.com/juanvanyo) during his final master's work in university. He developed a module to solve the problem of Geometric Dimensioning and Tolerancing (GD&T) the initial source code is based on the [FreeCadDraft Workbench](https://wiki.freecad.org/Draft_Workbench) .
 
 Installing
 ----------
