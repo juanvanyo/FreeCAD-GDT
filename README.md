@@ -34,9 +34,9 @@ Download and install your corresponding version of FreeCAD from [wiki Download p
 Operation of the module
 ----------
 
-When doing a GD&T labeling, the first thing to do is to define an annotation plane on which the annotations we make will be painted. To do this, first select a face of the piece and click the command on the toolbar add annotation plane. This will define a plane on that face and we can also apply an offset to place our annotation plane to the height we want in parallel on the selected face. Defining an annotation plane.
+When doing a GD&T labeling, the first thing to do is to define an annotation plane on which the annotations you make will be created. To do this, first select a face of the piece and click the command on the toolbar add annotation plane. This will define a plane on that face and you can also apply an offset to place our annotation plane to the height you want in parallel on the selected face. Defining an annotation plane.
 
-The next step we must do is to create a datum reference or a geometric tolerance. Although it is important to note that if the first thing to be created is a geometric tolerance, it can not contain any datum system since there will not be any created yet. However, this can be added later by modifying the geometric tolerance from the inventory of GD&T elements.
+The next step you must do is to create a datum reference or a geometric tolerance. Although it is important to note that if the first thing to be created is a geometric tolerance, it can not contain any datum system since there will not be any created yet. However, this can be added later by modifying the geometric tolerance from the inventory of GD&T elements.
 
 In all cases, when creating a reference or a geometric feature, the user must choose certain parameters that will define the element to be created. These include the annotation plane on which the annotation will be represented. Everything that follows must allow the selection of a point on the plane. This is the point on which the representation of the frame that will encapsulate the data of your annotation will start.
 
