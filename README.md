@@ -55,4 +55,4 @@ Commands
 
 ----
 
-### :scroll: License ? [![GitHub license](https://img.shields.io/github/license/juanvanyo/FreeCAD-GDT.svg)](https://github.com/juanvanyo/FreeCAD-GDT/blob/master/LICENSE)
+### :scroll: License ? [![GitHub license](https://img.shields.io/github/license/5axes/FreeCAD-GDT.svg)](https://github.com/5axes/FreeCAD-GDT/blob/master/LICENSE)
