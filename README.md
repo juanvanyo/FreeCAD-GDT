@@ -19,6 +19,8 @@ The project is aimed at the development of a labeling software module for Geomet
 -	Incorporates a homogeneous graphical interface and integrated with the technical design tools and 3D.
 -	There is no precedent developed as free software.
 
+The initial source code as been developped by [Juan Vañó Cerdá](https://github.com/juanvanyo) during his final master's work in university. He developed a module to solve the problem of Geometric Dimensioning and Tolerancing (GD&T) the initial source code is based on the [FreeCadDraft Workbench](https://wiki.freecad.org/Draft_Workbench) .
+
 The implementation of the software is done as a module of the parametric modeling free software application [FreeCAD](http://freecadweb.org). This is a multiplatform project since the development of the module is done with Python and FreeCAD has compilations for multiple Operating Systems.
 
 Installing
@@ -36,13 +38,14 @@ When doing a GD&T labeling, the first thing to do is to define an annotation pla
 
 The next step we must do is to create a datum reference or a geometric tolerance. Although it is important to note that if the first thing to be created is a geometric tolerance, it can not contain any datum system since there will not be any created yet. However, this can be added later by modifying the geometric tolerance from the inventory of GD&T elements.
 
-In any case, when creating a datum reference or a geometric characteristic, the user must choose some parameters that will define the element to be created. These include the annotation plane on which the annotation will be represented. Everything followed should select a point on the plane. Point on which will start the representation of the frame that will encapsulate the data of our annotation.
+In all cases, when creating a reference or a geometric feature, the user must choose certain parameters that will define the element to be created. These include the annotation plane on which the annotation will be represented. Everything that follows must allow the selection of a point on the plane. This is the point on which the representation of the frame that will encapsulate the data of your annotation will start.
 
-In addition, at any time, you can create a datum system with the datum reference elements that have been created and this system can be applied to the geometric tolerances that we consider appropriate. This will indicate that said geometric tolerance will be applied to the face or faces corresponding to the annotation with respect to the datum references that make up the associated datum system.
+In addition, at any time, you can create a datum system with the created datum elements and this datum system can be applied to the geometric tolerances that you consider appropriate. This will indicate that said geometric tolerance will be applied to the face or faces corresponding to the annotation in relation to the datum references that make up the associated datum system.
 
-Subsequently, if you want to apply a datum reference or a geometric tolerance to a face or faces that already have an annotation associated with it, this module will automatically detect which annotation is and it will add the new element to that annotation.
+Thereafter, if you wish to apply a reference or a geometric tolerance to one or more faces to which an annotation is already associated, this module will automatically detect this annotation and add the new element.
 
-Therefore, the running of our module could be summarized in that we have to add geometric tolerances to our design but in order to carry this out, we would first have to create different elements like annotation planes to place our annotation in the desired place, or Datum references and datum systems to provide necessary information to our geometric tolerances. So we have to create different elements until we have our piece completely labeled with all the geometric tolerances that we need to indicate.
+Therefore, the flow of our module could be summarized as follows: you need to add geometric tolerances to your drawing, but to do so, you first need to create different elements such as annotation planes to place our annotations where you want them, or references and datums to provide the necessary information for your geometric tolerances. So you have to create different elements until your part is completely labeled with all the geometric tolerances you need to indicate.
+
 
 Commands
 ----------
