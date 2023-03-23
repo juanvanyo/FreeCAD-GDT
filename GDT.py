@@ -292,7 +292,7 @@ def getAnnotationWithGT(obj):
     return None
 
 #-----------------------------------
-# Geometric creation for the entity
+# Geometric creation for the entities
 #-----------------------------------
 
 # Points definition for the geometry
@@ -482,6 +482,7 @@ def plotStrings(self, fp, points):
     X = FreeCAD.Vector(1.0,0.0,0.0)
     Y = FreeCAD.Vector(0.0,1.0,0.0)
     #AP Annotation Plane
+    
     Direction = X if abs(X.dot(fp.AP.Direction)) < 0.8 else Y
     Vertical = fp.AP.Direction.cross(Direction).normalize()
     Horizontal = Vertical.cross(fp.AP.Direction).normalize()
@@ -490,6 +491,7 @@ def plotStrings(self, fp, points):
     indexIcon = 0
     displacement = 0
     
+    """ Define a Geometrix Tolerance """
     if fp.GT != []:
         for i in range(len(fp.GT)):
             distance = 0
@@ -519,6 +521,7 @@ def plotStrings(self, fp, points):
             self.points[indexSYMB].point.setValues([[auxPoint.x,auxPoint.y,auxPoint.z],[points[5+displacement].x,points[5+displacement].y,points[5+displacement].z],[points[4+displacement].x,points[4+displacement].y,points[4+displacement].z],[points[3+displacement].x,points[3+displacement].y,points[3+displacement].z]])
             
             # print("Label {}".format(fp.GT[i].Characteristic))
+            # print("AP.Direction {}".format(fp.AP.Direction))
 
             try:
                 #Unicode display
@@ -720,8 +723,11 @@ def plotStrings(self, fp, points):
             else:
                 break
 
-                
+    """ 
+        Define a Datum Feature 
+    """  
     if fp.DF != None:
+        # print("Datum Feature Label {}".format(str(fp.DF.Label)))
         self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
         distance = 0
         v = (points[-3] - points[-2])
@@ -731,9 +737,19 @@ def plotStrings(self, fp, points):
             distance = (v.y)/2
         else:
             distance = (v.z)/2
+            
         centerPoint = points[-2] + Horizontal * (distance)
-        centerPoint = centerPoint + Vertical * (sizeOfLine/2)
+        # print("Datum Feature Vertical {}".format(Vertical))
+        # Modif 5@xes https://github.com/5axes/FreeCAD-GDT/issues/21
+        # Must be tested on different Case
+        Epsilon = 1E-10
+        if Vertical.z < -Epsilon :   
+            centerPoint = centerPoint + Vertical * (sizeOfLine*1.5)
+        else :
+            centerPoint = centerPoint + Vertical * (sizeOfLine/2)
+        
         self.textDFpos.translation.setValue([centerPoint.x, centerPoint.y, centerPoint.z])
+
         try:
             #AP Annotation Plane
             DirectionAux = FreeCAD.Vector(fp.AP.Direction)
@@ -741,9 +757,11 @@ def plotStrings(self, fp, points):
             DirectionAux.y = abs(DirectionAux.y)
             DirectionAux.z = abs(DirectionAux.z)
             rotation=(DraftGeomUtils.getRotation(DirectionAux)).Q
+
             self.textDFpos.rotation.setValue(rotation)
         except:
             pass
+            
     else:
         self.textDF.string = self.textDF3d.string = ""
     
@@ -1451,6 +1469,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
                 cnt=cnt+1
             self.lines.coordIndex.setNum(len(segments))
             self.lines.coordIndex.setValues(0,len(segments),segments)
+            
             plotStrings(self, fp, points)
         
         if prop == "faces" and fp.faces != []:         
