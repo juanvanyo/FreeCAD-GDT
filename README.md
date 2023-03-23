@@ -49,7 +49,7 @@ Commands
 
 - ![Add Annotation Plane](Resources/icons/annotationPlane.svg) Add Annotation Plane
 - ![Add Datum Feature](Resources/icons/datumFeature.svg) Add Datum Feature
-- ![Add Datum System](Resources/icons/datumSystem.svg) Add Annotation System
+- ![Add Annotation System](Resources/icons/datumSystem.svg) Add Annotation System
 - ![Add Geometric Tolerance](Resources/icons/geometricTolerance.svg) Add Geometric Tolerance
 - ![Inventory of the elements of GD&T](Resources/icons/inventory.svg) Inventory of the elements of GD&T
 

@@ -1024,7 +1024,7 @@ class _Annotation(_GDTObject):
 
     def execute(self, fp):
         '''"Print a short message when doing a recomputation, this method is mandatory" '''
-        # FreeCAD.Console.PrintMessage('Executed\n')
+        FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
         if fp.circumferenceBool:
             vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1]).Vertexes

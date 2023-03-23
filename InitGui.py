@@ -24,10 +24,11 @@ import os
 import GDT
 import GDT_locator
 
+global GDTWBpath
 GDTWBpath = os.path.dirname(GDT_locator.__file__)
-GDTWB_icons_path =  os.path.join( GDTWBpath, 'GUI', 'Resources', 'icons')
 
 global main_DWB_Icon
+GDTWB_icons_path =  os.path.join( GDTWBpath, 'Resources', 'icons')
 main_DWB_Icon = os.path.join( GDTWB_icons_path , 'GDT.svg')
 
 """
@@ -43,6 +44,17 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
     def GetClassName(self):
         return "Gui::PythonWorkbench"
 
+    def __init__(self):
+        "This function is executed when FreeCAD starts"
+        from PySide import QtGui
+        GDTWB_fonts_path =  os.path.join( GDTWBpath, 'Resources', 'fonts')
+        fontFile = os.path.join(GDTWB_fonts_path, "osifont-lgpl3fe.ttf")
+        fontId = QtGui.QFontDatabase.addApplicationFont(fontFile)
+        Msg ("{} Added as QtGui Font Id : {}\n".format(fontFile,fontId))
+        fontFile = os.path.join(GDTWB_fonts_path, "Iso-Gps.ttf")
+        fontId = QtGui.QFontDatabase.addApplicationFont(fontFile)
+        Msg ("{} Added as QtGui Font Id : {}\n".format(fontFile,fontId))        
+        pass
 
     """
     +-----------------------------------------------+
@@ -79,11 +91,11 @@ class GeometricDimensioningAndTolerancingWorkbench ( Workbench ):
         Log ("Loading Geometric Dimensioning & Tolerancing... done\n")
 
     def Activated(self):
-        # do something here if needed...
+        "This function is executed when the workbench is activated"
         Msg ("Geometric Dimensioning & Tolerancing workbench activated\n")
 
     def Deactivated(self):
-        # do something here if needed...
+        "This function is executed when the workbench is deactivated"
         Msg ("Geometric Dimensioning & Tolerancing workbench desactivated\n")
 
     """

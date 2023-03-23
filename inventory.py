@@ -79,7 +79,7 @@ class GDTGuiClass:
                 characteristics = makeCharacteristics()
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=characteristics.Label, Icons=characteristics.Icon, Data = self.data, Obj = obj) )
                 featureControlFrame = makeFeatureControlFrame()
-                self.dialogWidgets.append( fieldLabeCombolWidget_inv(Text='Tolerance value:', List=featureControlFrame.Label, Circumference=['',':/dd/icons/diameter.svg'] , Icons=featureControlFrame.Icon, ToolTip=featureControlFrame.toolTip, Data = self.data, Obj = obj) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+                self.dialogWidgets.append( fieldLabelComboWidget_inv(Text='Tolerance value:', List=featureControlFrame.Label, Circumference=['',':/dd/icons/diameter.svg'] , Icons=featureControlFrame.Icon, ToolTip=featureControlFrame.toolTip, Data = self.data, Obj = obj) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=[None] + [l for l in getAllDatumSystemObjects()], Data = self.data, Obj = obj) )
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='In annotation:', List=[l for l in getAllAnnotationObjects()], Data = self.data, Obj = obj) )
 
@@ -108,8 +108,6 @@ class GDTGuiClass:
         Modify Function 
     """
     def modifyFunc(self, obj, data):
-        print("5@xes modifyFunc = {}".format(obj))
-        print("5@xes modifyFunc getType = {}".format(getType(obj)))    
         if "AnnotationPlane" == getType(obj):
             obj.Label = data.textName
             obj.Offset = data.OffsetValue
@@ -171,6 +169,7 @@ class GDTGuiClass:
             obj.Label = data.textName
             obj.Characteristic = data.characteristic.Label
             obj.CharacteristicIcon = data.characteristic.Icon
+            obj.CharacteristicCode = data.characteristic.Code
             obj.ToleranceValue = data.toleranceValue
             obj.Circumference = data.circumference
             obj.FeatureControlFrame = data.featureControlFrame
@@ -492,7 +491,7 @@ class groupBoxWidget_inv:
         self.group.setLayout(vbox)
         return self.group
 
-class fieldLabeCombolWidget_inv:
+class fieldLabelComboWidget_inv:
     def __init__(self, Text='Label', List=[''], Circumference = [''], Icons=None, ToolTip = None, Data = None, Obj = None):
         self.Text = Text
         self.List = List
