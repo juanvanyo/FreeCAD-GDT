@@ -54,7 +54,7 @@ Commands
 - ![Add Datum Feature](Resources/icons/datumFeature.svg) Add Datum Feature
 - ![Add Annotation System](Resources/icons/datumSystem.svg) Add Annotation System
 - ![Add Geometric Tolerance](Resources/icons/geometricTolerance.svg) Add Geometric Tolerance
-- ![Inventory of the elements of GD&T](Resources/icons/inventory.svg) Inventory of the elements of GD&T
+- ![Inventory of the elements of GD&T](Resources/icons/inventory.svg) Inventory and modification of the elements of GD&T
 
 ----
 
