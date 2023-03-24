@@ -56,6 +56,13 @@ Commands
 - ![Add Geometric Tolerance](Resources/icons/geometricTolerance.svg) Add Geometric Tolerance
 - ![Inventory of the elements of GD&T](Resources/icons/inventory.svg) Inventory and modification of the elements of GD&T
 
+GD&T Group structure
+----------
+
+- ![Main GD&T Group](Resources/icons/GDT.svg) Main GD&T Group
+  - ![GD&T Group for Feature System](Resources/icons/subGDT.svg) GD&T Group for the Feature System
+  - ![One GD&T Group by AP](Resources/icons/planeGDT.svg) One GD&T Group by Annotation Plane
+
 ----
 
 ### :scroll: License ? [![GitHub license](https://img.shields.io/github/license/5axes/FreeCAD-GDT.svg)](https://github.com/5axes/FreeCAD-GDT/blob/master/LICENSE)
