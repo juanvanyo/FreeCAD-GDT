@@ -56,6 +56,7 @@ Commands
 - ![Add Geometric Tolerance](Resources/icons/geometricTolerance.svg) Add Geometric Tolerance
 - ![Inventory of the elements of GD&T](Resources/icons/inventory.svg) Inventory and modification of the elements of GD&T
 
+
 GD&T Group structure
 ----------
 
