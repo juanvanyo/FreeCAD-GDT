@@ -78,10 +78,21 @@ class GDTGuiClass:
                 self.dialogWidgets.append(textLabelWidget_inv(Text = 'Name:', Mask='NNNn', Data = self.data, Obj = obj))
                 characteristics = makeCharacteristics()
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Characteristic:', List=characteristics.Label, Icons=characteristics.Icon, Data = self.data, Obj = obj) )
+                
                 featureControlFrame = makeFeatureControlFrame()
+                
+                # Annotation = makeAnnotation(self.data.faces,self.data.AP)
+                print("self.data          {}".format(self.data))
+                print("self.data textName {}".format(self.data.textName))
+                # print("self.data characteristic {}".format(self.data.characteristic))
+                print("self.data circumference {}".format(self.data.circumference))
+
+
                 self.dialogWidgets.append( fieldLabelComboWidget_inv(Text='Tolerance value:', List=featureControlFrame.Label, Circumference=['',':/dd/icons/diameter.svg'] , Icons=featureControlFrame.Icon, ToolTip=featureControlFrame.toolTip, Data = self.data, Obj = obj) ) #http://doc.qt.io/qt-5/qlineedit.html#inputMask-prop
+                
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='Datum system:', List=[None] + [l for l in getAllDatumSystemObjects()], Data = self.data, Obj = obj) )
                 self.dialogWidgets.append( comboLabelWidget_inv(Text='In annotation:', List=[l for l in getAllAnnotationObjects()], Data = self.data, Obj = obj) )
+
 
             for widg in self.dialogWidgets:
                 w = widg.generateWidget()
@@ -108,7 +119,7 @@ class GDTGuiClass:
         Modify Function 
     """
     def modifyFunc(self, obj, data):
-        Code = ['', '\u24BB', '\u24C1', '\u24C2', '\u24C5', '\u24C8', '\u24C9', '\u24C4']
+        Code = ['', '\u24BB', '\u24C1', '\u24C2', '\u24C5', '\u24C8', '\u24C9', '\u24CA']
         ToolTip = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
         Icon = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
 
@@ -371,7 +382,7 @@ class comboLabelWidget_inv:
                 self.data.combo[1].setEnabled(True)
                 if self.data.combo[1].currentIndex() != 0:
                     self.data.combo[2].setEnabled(True)
-        self.data.combo[self.k].activated.connect(lambda comboIndex = self.data.combo[self.k].currentIndex(): self.updateDate(comboIndex))
+        self.data.combo[self.k].activated.connect(lambda comboIndex = self.data.combo[self.k].currentIndex(): self.updateData(comboIndex))
 
         return GDTDialog_hbox_inv(self.Text, self.data.combo[self.k])
 
@@ -426,8 +437,9 @@ class comboLabelWidget_inv:
                 pass
             elif self.List[i].Label == actualValue:
                 return i
-
-    def updateDate(self, comboIndex):
+                
+    # Update of the Data
+    def updateData(self, comboIndex):
         if self.ToolTip != None:
             self.data.combo[self.k].setToolTip( self.ToolTip[self.data.combo[self.k].currentIndex()] )
         if self.Text == 'Primary:':
@@ -537,15 +549,15 @@ class fieldLabelComboWidget_inv:
         pos = self.getPos(actualValue)
         self.combo.setCurrentIndex(pos)
         self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
-        self.updateDate()
-        self.combo.activated.connect(self.updateDate)
+        self.updateData()
+        self.combo.activated.connect(self.updateData)
         if self.obj.Circumference:
             self.comboCircumference.setCurrentIndex(1)
             self.data.circumference = True
         else:
             self.comboCircumference.setCurrentIndex(0)
             self.data.circumference = False
-        self.comboCircumference.activated.connect(self.updateDateCircumference)
+        self.comboCircumference.activated.connect(self.updateDataCircumference)
         hbox = QtGui.QHBoxLayout()
         self.inputfield = self.uiloader.createWidget("Gui::InputField")
         auxText = displayExternal(self.obj.ToleranceValue,self.DECIMALS,'Length',True)
@@ -568,13 +580,13 @@ class fieldLabelComboWidget_inv:
                 if self.ToolTip[i] == actualValue:
                     return i
 
-    def updateDate(self):
+    def updateData(self):
         if self.ToolTip != None:
             self.combo.setToolTip( self.ToolTip[self.combo.currentIndex()] )
         if self.Text == 'Tolerance value:':
             self.data.featureControlFrame = '' if self.combo.currentIndex() == 0 else self.ToolTip[self.combo.currentIndex()]
 
-    def updateDateCircumference(self):
+    def updateDataCircumference(self):
         if self.comboCircumference.currentIndex() != 0:
             self.data.circumference = True
         else:

@@ -371,7 +371,7 @@ def getPointsToPlotGT(obj, points, segments, Vertical, Horizontal):
             lengthToleranceValue += 2
         
         if obj.GT[i].Circumference :
-            lengthToleranceValue += 2
+            lengthToleranceValue += 1
             
         P4 = P2 + Horizontal * (sizeOfLine*lengthToleranceValue)
         P5 = P3 + Horizontal * (sizeOfLine*lengthToleranceValue)
@@ -604,7 +604,7 @@ def plotStrings(self, fp, points):
                 indexSYMB+=1
             
             self.textGT[index].string = self.textGT3d[index].string = string_encode(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
-            self.textGTpos[index].translation.setValue([posToleranceValue.x, posToleranceValue.y, posToleranceValue.z])
+            self.textGTpos[index].translation.setValue([posToleranceValue.x-(sizeOfLine*0.3), posToleranceValue.y, posToleranceValue.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
             displacement+=6
@@ -855,7 +855,6 @@ def displayExternal(internValue,decimals=4,dim='Length',showUnit=True):
         conversion = pref[1]
         uom = pref[2]  # can gibe uom  Micron
         # To suppress the Micron conversion
-        # Msg("uom {}".format(uom))
         if uom == "µm" :
             decimals = 3
             conversion = 1.0
@@ -897,7 +896,8 @@ class _GDTObject:
         '''Add some custom properties to our GDT feature'''
         obj.Proxy = self
         self.Type = tp
-        # print("COIN_MAJOR_VERSION {}".format(coin.COIN_MAJOR_VERSION))
+        obj.addProperty("App::PropertyString","Type","GDT","Type for icon")
+        obj.Type = "unkwon"
 
     def __getstate__(self):
         return self.Type
@@ -918,11 +918,11 @@ class _GDTObject:
 class _ViewProviderGDT:
     "The base class for GDT Viewproviders"
 
-    def __init__(self, vobj,tp="Unknown"):
+    def __init__(self, vobj):
         '''Set this object to the proxy object of the actual view provider'''
         vobj.Proxy = self
         self.Object = vobj.Object
-        self.Type = tp
+        self.Type = vobj.Object.Type
 
     def __getstate__(self):
         return None
@@ -933,11 +933,18 @@ class _ViewProviderGDT:
     def attach(self,vobj):
         '''Setup the scene sub-graph of the view provider, this method is mandatory'''
         self.Object = vobj.Object
+        
+        if not hasattr(vobj.Object, "Type") :
+            FreeCAD.Console.PrintMessage("Update _GDTObject {}\n".format(vobj.Object))
+            vobj.Object.addProperty("App::PropertyString","Type","GDT","Type for icon")
+            vobj.Object.Type = "unkwon"
+        self.Type = vobj.Object.Type
+        
         return
 
     def updateData(self, vobj, prop):
         '''If a property of the handled feature has changed we have the chance to handle this here'''
-        # fp is the handled feature, prop is the name of the property that has changed
+        # vobj is the handled feature, prop is the name of the property that has changed
         return
 
     def getDisplayModes(self, vobj):
@@ -955,6 +962,7 @@ class _ViewProviderGDT:
         return
 
     def execute(self,vobj):
+        FreeCAD.Console.PrintMessage("execute _GDTObject {}\n".format(vobj.Object.Type))
         return
 
     def getIcon(self):
@@ -1014,9 +1022,10 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
 def makeAnnotationPlane(Name, Offset):
     ''' Explanation
     '''
-    groupPlaneName = "Plane " + Name
+    groupPlaneName = "Plane_" + Name
     
-    if len(getAllAnnotationPlaneObjects()) == 0:
+    print("makeAnnotationPlane getAllAnnotationPlaneObjects {}".format(len(getAllAnnotationPlaneObjects())))
+    if len(getAllAnnotationPlaneObjects()) == 0 :
         group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "GDT")
         _GDTObject(group)
         _ViewProviderGDT(group.ViewObject)
@@ -1024,26 +1033,32 @@ def makeAnnotationPlane(Name, Offset):
         subgroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "DS")
         _GDTObject(subgroup)
         # Define the icone and So on
-        _ViewProviderGDT(subgroup.ViewObject, tp = "DS")
+        subgroup.Type = "DS"
+        _ViewProviderGDT(subgroup.ViewObject)
  
         group.addObject(subgroup)
          
         planeGroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", groupPlaneName)
         _GDTObject(planeGroup)
         # Define the icone and So on
-        _ViewProviderGDT(planeGroup.ViewObject, tp = "Plane")
+        planeGroup.Type = "Plane"
+        _ViewProviderGDT(planeGroup.ViewObject)
 
         group.addObject(planeGroup)
 
     else:
-        planeGroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", groupPlaneName)
+        # The 'GDT' Group already exist
+        group = FreeCAD.ActiveDocument.getObject("GDT")  
+        
+        planeGroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", groupPlaneName) 
         _GDTObject(planeGroup)
+        planeGroup.Type = "Plane"
         # Define the icone and So on
-        _ViewProviderGDT(planeGroup.ViewObject, tp = "Plane")
+        _ViewProviderGDT(planeGroup.ViewObject)
+        
+        group.addObject(planeGroup)
         
     # group = FreeCAD.ActiveDocument.getObject("GDT")   
-
-    # print("5@xes makeAnnotationPlane Group = {}".format(group.Name))
     
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","AnnotationPlane")
     _AnnotationPlane(obj)
@@ -1290,10 +1305,12 @@ def makeGeometricTolerance(Name, ContainerOfData):
 class _Annotation(_GDTObject):
     "The GDT Annotation object"
     def __init__(self, obj):
+        # https://wiki.freecad.org/PropertyLink:_InList_and_OutList/fr
         _GDTObject.__init__(self,obj,"Annotation")
-        obj.addProperty("App::PropertyLinkSubList","faces","GDT","Linked faces of the object")
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
-        obj.addProperty("App::PropertyLink","DF","GDT","Datum Feature associated with the annotation").DF=None
+        obj.addProperty("App::PropertyLinkSubList","faces","GDT","Linked faces of the object")
+        obj.addProperty("App::PropertyLinkSubList","TED","GDT","Linked TED of the object")
+        obj.addProperty("App::PropertyLink","DF","GDT","A Datum Feature associated with the annotation").DF=None
         obj.addProperty("App::PropertyLinkList","GT","GDT","Geometric Tolerance(s)").GT=[]
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Start point")
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of your annotation plane")
@@ -1682,7 +1699,7 @@ class Characteristics(object):
 def makeCharacteristics(label=None):
     Label = ['Straightness', 'Flatness', 'Circularity', 'Cylindricity', 'Profile of a line', 'Profile of a surface', 'Perpendicularity', 'Angularity', 'Parallelism', 'Symmetry', 'Position', 'Concentricity','Circular run-out', 'Total run-out']
     Icon = [':/dd/icons/Characteristic/straightness.svg', ':/dd/icons/Characteristic/flatness.svg', ':/dd/icons/Characteristic/circularity.svg', ':/dd/icons/Characteristic/cylindricity.svg', ':/dd/icons/Characteristic/profileOfALine.svg', ':/dd/icons/Characteristic/profileOfASurface.svg', ':/dd/icons/Characteristic/perpendicularity.svg', ':/dd/icons/Characteristic/angularity.svg', ':/dd/icons/Characteristic/parallelism.svg', ':/dd/icons/Characteristic/symmetry.svg', ':/dd/icons/Characteristic/position.svg', ':/dd/icons/Characteristic/concentricity.svg',':/dd/icons/Characteristic/circularRunOut.svg', ':/dd/icons/Characteristic/totalRunOut.svg']
-    Code = ['\u23E4', '\u23E5', '\u25CB', '\u232D', '\u2312', '\u2313', '\u23CA', '\u2220', '\u2AFD', '\u232F', '\u2316', '\u25CE','\u2336', '\u2330']
+    Code = ['\u23E4', '\u23E5', '\u25CB', '\u232D', '\u2312', '\u2313', '\u23CA', '\u2220', '\u2AFD', '\u232F', '\u2316', '\u25CE','\u2197', '\u2330']
     
     if label == None:
         characteristics = Characteristics(Label, Code, Icon)
@@ -1706,7 +1723,7 @@ def makeFeatureControlFrame(toolTip=None):
     # F L M P S T U
     Label = ['','','','','','','','']
     Icon = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
-    Code = ['', '\u24BB', '\u24C1', '\u24C2', '\u24C5', '\u24C8', '\u24C9', '\u24C4']
+    Code = ['', '\u24BB', '\u24C1', '\u24C2', '\u24C5', '\u24C8', '\u24C9', '\u24CA']
     ToolTip = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
     
     if toolTip == None:
