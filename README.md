@@ -61,7 +61,13 @@ GD&T Group structure
 
 - ![Main GD&T Group](Resources/icons/GDT.svg) Main GD&T Group
   - ![GD&T Group for Feature System](Resources/icons/subGDT.svg) GD&T Group for the Feature System
+    - ![GD&T Group for Feature System](Resources/icons/subGDT.svg) GD&T Group for the Feature System
   - ![One GD&T Group by AP](Resources/icons/planeGDT.svg) One GD&T Group by Annotation Plane
+    - ![Annotation Group](Resources/icons/annotation.svg) Annotation DF A
+      - ![Datum Feature](Resources/icons/datumFeature.svg) A Datum Feature
+  - ![One GD&T Group by AP](Resources/icons/planeGDT.svg) an other GD&T Group by Annotation Plane IE for a Tolerance
+    - ![Annotation Group](Resources/icons/annotation.svg) Annotation Group 01
+      - ![Geometric Tolerance](Resources/icons/geometricTolerance.svg) A Geometric Tolerance
 
 ----
 
