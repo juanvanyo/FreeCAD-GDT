@@ -737,12 +737,23 @@ def plotStrings(self, fp, points):
             distance = (v.y)/2
         else:
             distance = (v.z)/2
-            
-        centerPoint = points[-2] + Horizontal * (distance)
-        # print("Datum Feature Vertical {}".format(Vertical))
+        
+        """     
+        print("Datum Feature Label      {}".format(str(fp.DF.Label)))
+        print("Datum Feature Vertical   {}".format(Vertical))
+        print("Datum Feature Horizontal {}".format(Horizontal))
+        """
         # Modif 5@xes https://github.com/5axes/FreeCAD-GDT/issues/21
         # Must be tested on different Case
+        # Code not valid it's just a patch but if the plan is particular it doesn't work 
+        # To be reviewed
         Epsilon = 1E-10
+        vectCor = FreeCAD.Vector(0,distance/2,distance/2)
+        if Horizontal.y > Epsilon :   
+            centerPoint = points[-2] + vectCor 
+        else :
+            centerPoint = points[-2] + Horizontal * (distance)        
+        
         if Vertical.z < -Epsilon :   
             centerPoint = centerPoint + Vertical * (sizeOfLine*1.5)
         else :
@@ -765,8 +776,6 @@ def plotStrings(self, fp, points):
     else:
         self.textDF.string = self.textDF3d.string = ""
     
-      
-
     """
     print("5@xes fp.Name = {}".format(fp.Name)) 
     print("5@xes fp.Label = {}".format(fp.Label))
@@ -1013,15 +1022,13 @@ def makeAnnotationPlane(Name, Offset):
     if gui:
         _ViewProviderAnnotationPlane(obj.ViewObject)
     
-    # print("5@xes makeAnnotationPlane Name = {}".format(Name))
-    
     obj.Label = str(Name)
     obj.Offset = Offset
 
-    # print("5@xes makeAnnotationPlane Group = {}".format(group.Name))
-    # print("5@xes makeAnnotationPlane obj = {}".format(obj))    
-    group.addObject(obj)
-    # print("5@xes makeAnnotationPlane Group = {}".format(group.Group))
+    try:
+        group.addObject(obj)
+    except:
+        pass
     
     hideGrid()
     for l in getAllAnnotationObjects():
@@ -1057,15 +1064,14 @@ def makeDatumFeature(Name, ContainerOfData):
     _DatumFeature(obj)
     if gui:
         _ViewProviderDatumFeature(obj.ViewObject)
-    
-    # print("5@xes makeDatumFeature Name = {}".format(Name))   
+
     obj.Label = str(Name)
     group = FreeCAD.ActiveDocument.getObject("GDT")
     
-    # print("5@xes makeDatumFeature group = {}".format(group.Name))
-    # print("5@xes makeDatumFeature obj = {}".format(obj))    
-    group.addObject(obj)
-    # print("5@xes makeDatumFeature group = {}".format(group))
+    try:
+        group.addObject(obj)
+    except:
+        pass
     
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
@@ -1082,11 +1088,11 @@ def makeDatumFeature(Name, ContainerOfData):
         lowLimit = AnnotationObj.lowLimit
         highLimit = AnnotationObj.highLimit
         group = makeAnnotation(faces, AP, DF=obj, GT=GT, modify = True, Object = AnnotationObj, diameter=diameter, toleranceSelect=toleranceSelect, toleranceDiameter=toleranceDiameter, lowLimit=lowLimit, highLimit=highLimit)
-        
-        # print("5@xes makeDatumFeature group makeAnnotation = {}".format(group.Name))
-        # print("5@xes makeDatumFeature obj makeAnnotation = {}".format(obj))         
-        group.addObject(obj)
-        # print("5@xes makeDatumFeature group makeAnnotation = {}".format(group))
+   
+        try:
+            group.addObject(obj)
+        except:
+            pass
         
     # Update   
     for l in getAllAnnotationObjects():
@@ -1142,12 +1148,12 @@ def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     obj.Tertiary = Tertiary
     
     group = FreeCAD.ActiveDocument.getObject("GDT")
-    
-    # print("5@xes makeDatumSystem group = {}".format(group.Name))
-    # print("5@xes makeDatumSystem obj = {}".format(obj))  
-    group.addObject(obj)
-    # print("5@xes makeDatumSystem group = {}".format(group))
-    
+      
+    try:
+        group.addObject(obj)
+    except:
+        pass
+
     for l in getAllAnnotationObjects():
         l.touch()
         
@@ -1215,10 +1221,12 @@ def makeGeometricTolerance(Name, ContainerOfData):
     obj.DS = ContainerOfData.datumSystem
     
     group = FreeCAD.ActiveDocument.getObject("GDT")
-    # print("5@xes makeGeometricTolerance group = {}".format(group.Name))
-    # print("5@xes makeGeometricTolerance obj = {}".format(obj))  
-    group.addObject(obj)
-    # print("5@xes makeGeometricTolerance group = {}".format(group))
+
+    try:
+        group.addObject(obj)
+    except:
+        pass
+
     
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
@@ -1243,10 +1251,12 @@ def makeGeometricTolerance(Name, ContainerOfData):
             highLimit = AnnotationObj.highLimit
         
         group = makeAnnotation(faces, AP, DF=DF, GT=gt, modify = True, Object = AnnotationObj, diameter=diameter, toleranceSelect=toleranceSelect, toleranceDiameter=toleranceDiameter, lowLimit=lowLimit, highLimit=highLimit)
-        # print("5@xes makeGeometricTolerance AnnotationObj group = {}".format(group.Name))
-        # print("5@xes makeGeometricTolerance AnnotationObj obj = {}".format(obj))          
-        group.addObject(obj)
-        # print("5@xes makeGeometricTolerance AnnotationObj group = {}".format(group))
+       
+        try:
+            group.addObject(obj)
+        except:
+            pass
+
         
     for l in getAllAnnotationObjects():
         l.touch()
@@ -1263,8 +1273,8 @@ class _Annotation(_GDTObject):
         _GDTObject.__init__(self,obj,"Annotation")
         obj.addProperty("App::PropertyLinkSubList","faces","GDT","Linked faces of the object")
         obj.addProperty("App::PropertyLink","AP","GDT","Annotation plane used")
-        obj.addProperty("App::PropertyLink","DF","GDT","Text").DF=None
-        obj.addProperty("App::PropertyLinkList","GT","GDT","Text").GT=[]
+        obj.addProperty("App::PropertyLink","DF","GDT","Datum Feature associated with the annotation").DF=None
+        obj.addProperty("App::PropertyLinkList","GT","GDT","Geometric Tolerance(s)").GT=[]
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Start point")
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of your annotation plane")
         obj.addProperty("App::PropertyVector","selectedPoint","GDT","Selected point to where plot the annotation")
@@ -1518,7 +1528,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
                     self.font.size = vobj.FontSize.Value
             if hasattr(self,"font3d"):
                 if vobj.FontSize.Value > 0:
-                    self.font3d.size = vobj.FontSize.Value*100
+                    self.font3d.size = vobj.FontSize.Value*10
             vobj.Object.touch()
         elif (prop == "FontName") and hasattr(vobj,"FontName"):
             if hasattr(self,"font") and hasattr(self,"font3d"):
@@ -1533,9 +1543,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
 def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diameter = 0.0, toleranceSelect = True, toleranceDiameter = 0.0, lowLimit = 0.0, highLimit = 0.0):
     ''' Explanation
     '''
-    # print("5@xes makeAnnotation Object = {}".format(Object))
     if not modify:
-        print("5@xes makeAnnotation getAllAnnotationObjects = {}".format(getAllAnnotationObjects()))
+        # print("5@xes makeAnnotation getAllAnnotationObjects = {}".format(getAllAnnotationObjects()))
         obj = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython",dictionaryAnnotation[len(getAllAnnotationObjects())])
         _Annotation(obj)
         
@@ -1544,11 +1553,10 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
         
         group = FreeCAD.ActiveDocument.getObject("GDT")
         
-        # print("5@xes makeAnnotation Group = {}".format(group.Name))
-        # print("5@xes makeAnnotation obj = {}".format(obj))
-        group.addObject(obj)
-        # print("5@xes makeAnnotation Group = {}".format(group))
-        # print("5@xes makeAnnotation Group = {}".format(group.Group))
+        try:
+            group.addObject(obj)
+        except:
+            pass
         
         obj.faces = faces
         obj.AP = AP
@@ -1595,13 +1603,9 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.spBool = True
             obj.selectedPoint = point
             hideGrid()
-            # print("5@xes getPoint {}".format(obj.DF))
             if obj.DF is not None:
-                # print("5@xes getPoint DF {}".format(obj.DF))
-                obj.addObject(obj.DF)
-                
+                obj.addObject(obj.DF)               
             else:
-                # print("5@xes getPoint GT {}".format(obj.GT[0]))
                 obj.addObject(obj.GT[0])
                 
             select(obj)
@@ -1805,8 +1809,7 @@ class GDTGuiClass(QtGui.QWidget):
         global auxDictionaryDS
         # 5@xes modif for test
         # self.textName = self.ContainerOfData.textName.encode('utf-8')
-        self.textName = str(self.ContainerOfData.textName)
-        
+        self.textName = str(self.ContainerOfData.textName)     
         # print("5@xes createObject textName {}".format(self.textName))
         
         if self.idGDT == 1:

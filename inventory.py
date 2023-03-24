@@ -108,6 +108,11 @@ class GDTGuiClass:
         Modify Function 
     """
     def modifyFunc(self, obj, data):
+        Code = ['', '\u24BB', '\u24C1', '\u24C2', '\u24C5', '\u24C8', '\u24C9', '\u24C4']
+        ToolTip = ['Feature control frame', 'Free state', 'Least material condition', 'Maximum material condition', 'Projected tolerance zone', 'Regardless of feature size', 'Tangent plane', 'Unequal Bilateral']
+        Icon = ['', ':/dd/icons/FeatureControlFrame/freeState.svg', ':/dd/icons/FeatureControlFrame/leastMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/maximumMaterialCondition.svg', ':/dd/icons/FeatureControlFrame/projectedToleranceZone.svg', ':/dd/icons/FeatureControlFrame/regardlessOfFeatureSize.svg', ':/dd/icons/FeatureControlFrame/tangentPlane.svg', ':/dd/icons/FeatureControlFrame/unequalBilateral.svg']
+
+        
         if "AnnotationPlane" == getType(obj):
             obj.Label = data.textName
             obj.Offset = data.OffsetValue
@@ -166,6 +171,7 @@ class GDTGuiClass:
                 gt = data.annotation.GT
                 gt.append(obj)
                 data.annotation.GT = gt
+                
             obj.Label = data.textName
             obj.Characteristic = data.characteristic.Label
             obj.CharacteristicIcon = data.characteristic.Icon
@@ -173,6 +179,15 @@ class GDTGuiClass:
             obj.ToleranceValue = data.toleranceValue
             obj.Circumference = data.circumference
             obj.FeatureControlFrame = data.featureControlFrame
+            if hasattr(obj,"FeatureControlFrameCode"):
+                if data.featureControlFrame != "":
+                    index = ToolTip.index(data.featureControlFrame)
+                    obj.FeatureControlFrameCode = Code[index]
+                    obj.FeatureControlFrameIcon = Icon[index]
+                else:
+                    obj.FeatureControlFrameCode = ''
+                    obj.FeatureControlFrameIcon = ''
+                
             obj.DS = data.datumSystem
 
         FreeCADGui.Control.closeDialog()
@@ -186,8 +201,8 @@ class GDTGuiClass:
         Delete Function
     """
     def deleteFunc(self, obj, data):
-        print("5@xes deleteFunc = {}".format(obj))
-        print("5@xes deleteFunc getType = {}".format(getType(obj)))
+        # print("5@xes deleteFunc = {}".format(obj))
+        # print("5@xes deleteFunc getType = {}".format(getType(obj)))
         if "AnnotationPlane" == getType(obj):
             ok = True
             for l in getAllAnnotationObjects():
