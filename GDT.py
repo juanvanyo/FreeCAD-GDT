@@ -914,13 +914,15 @@ class _GDTObject:
         '''Do something when a property has changed'''
         pass
 
+# Define the class for the main Folder        
 class _ViewProviderGDT:
     "The base class for GDT Viewproviders"
 
-    def __init__(self, vobj):
+    def __init__(self, vobj,tp="Unknown"):
         '''Set this object to the proxy object of the actual view provider'''
         vobj.Proxy = self
         self.Object = vobj.Object
+        self.Type = tp
 
     def __getstate__(self):
         return None
@@ -956,8 +958,12 @@ class _ViewProviderGDT:
         return
 
     def getIcon(self):
-        '''Return the icon in XPM format which will appear in the tree view. This method is\
+        '''Return the icon which will appear in the tree view. This method is\
                 optional and if not defined a default icon is shown.'''
+        if self.Type == "Plane" :
+            return(":/dd/icons/planeGDT.svg")
+        if self.Type == "DS" :
+            return(":/dd/icons/subGDT.svg")
         return(":/dd/icons/GDT.svg")
 
 #-----------------------------------------------------------------------
@@ -1008,12 +1014,34 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
 def makeAnnotationPlane(Name, Offset):
     ''' Explanation
     '''
+    groupPlaneName = "Plane " + Name
+    
     if len(getAllAnnotationPlaneObjects()) == 0:
         group = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "GDT")
         _GDTObject(group)
         _ViewProviderGDT(group.ViewObject)
+        
+        subgroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", "DS")
+        _GDTObject(subgroup)
+        # Define the icone and So on
+        _ViewProviderGDT(subgroup.ViewObject, tp = "DS")
+ 
+        group.addObject(subgroup)
+         
+        planeGroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", groupPlaneName)
+        _GDTObject(planeGroup)
+        # Define the icone and So on
+        _ViewProviderGDT(planeGroup.ViewObject, tp = "Plane")
+
+        group.addObject(planeGroup)
+
     else:
-        group = FreeCAD.ActiveDocument.getObject("GDT")   
+        planeGroup = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython", groupPlaneName)
+        _GDTObject(planeGroup)
+        # Define the icone and So on
+        _ViewProviderGDT(planeGroup.ViewObject, tp = "Plane")
+        
+    # group = FreeCAD.ActiveDocument.getObject("GDT")   
 
     # print("5@xes makeAnnotationPlane Group = {}".format(group.Name))
     
@@ -1026,7 +1054,7 @@ def makeAnnotationPlane(Name, Offset):
     obj.Offset = Offset
 
     try:
-        group.addObject(obj)
+        planeGroup.addObject(obj)
     except:
         pass
     
@@ -1147,7 +1175,7 @@ def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     obj.Secondary = Secondary
     obj.Tertiary = Tertiary
     
-    group = FreeCAD.ActiveDocument.getObject("GDT")
+    group = FreeCAD.ActiveDocument.getObject("DS")
       
     try:
         group.addObject(obj)
@@ -1219,19 +1247,11 @@ def makeGeometricTolerance(Name, ContainerOfData):
     obj.FeatureControlFrameIcon = ContainerOfData.featureControlFrame.Icon
     obj.FeatureControlFrameCode = ContainerOfData.featureControlFrame.Code
     obj.DS = ContainerOfData.datumSystem
-    
-    group = FreeCAD.ActiveDocument.getObject("GDT")
 
-    try:
-        group.addObject(obj)
-    except:
-        pass
-
-    
     AnnotationObj = getAnnotationObj(ContainerOfData)
     if AnnotationObj == None:
         makeAnnotation(ContainerOfData.faces, ContainerOfData.annotationPlane, DF=None, GT=obj, diameter=ContainerOfData.diameter, toleranceSelect=ContainerOfData.toleranceSelect, toleranceDiameter=ContainerOfData.toleranceDiameter, lowLimit=ContainerOfData.lowLimit, highLimit=ContainerOfData.highLimit)
-    else:
+    else:        
         gt=AnnotationObj.GT
         gt.append(obj)
         faces = AnnotationObj.faces
@@ -1543,6 +1563,12 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
 def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diameter = 0.0, toleranceSelect = True, toleranceDiameter = 0.0, lowLimit = 0.0, highLimit = 0.0):
     ''' Explanation
     '''
+    
+    if AP is not None:
+        groupPlaneName = "Plane " + AP.Name              
+    else:
+        groupPlaneName = "GDT"
+                
     if not modify:
         # print("5@xes makeAnnotation getAllAnnotationObjects = {}".format(getAllAnnotationObjects()))
         obj = FreeCAD.ActiveDocument.addObject("App::DocumentObjectGroupPython",dictionaryAnnotation[len(getAllAnnotationObjects())])
@@ -1551,7 +1577,7 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
         if gui:
             _ViewProviderAnnotation(obj.ViewObject)
         
-        group = FreeCAD.ActiveDocument.getObject("GDT")
+        group = FreeCAD.ActiveDocument.getObject(groupPlaneName)
         
         try:
             group.addObject(obj)
