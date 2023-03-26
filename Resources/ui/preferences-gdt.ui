@@ -61,6 +61,44 @@
          </widget>
         </item>
         <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Tolerance Size</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Gui::PrefDoubleSpinBox" name="gui::prefdoublespinbox_2">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Default size for tolerance texts</string>
+          </property>
+          <property name="suffix">
+           <string>mm</string>
+          </property>
+          <property name="minimum">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>9999.989999999999782</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>tolerancetextSize</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/GDT</cstring>
+          </property>
+         </widget>
+        </item>		
+        <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
