@@ -62,7 +62,7 @@ GD&T Group structure
 
 - ![Main GD&T Group](Resources/icons/GDT.svg) Main GD&T Group
   - ![GD&T Group for Feature System](Resources/icons/subGDT.svg) GD&T Group for the Feature System
-    - ![GD&T Group for Feature System](Resources/icons/datumSystem.svg) GD&T Group for the Feature System
+    - ![GD&T Group for Feature System](Resources/icons/datumSystem.svg) GD&T Feature System
   - ![One GD&T Group by AP](Resources/icons/planeGDT.svg) One GD&T Group by Annotation Plane
     - ![Annotation Group](Resources/icons/annotation.svg) Annotation DF A
       - ![Datum Feature](Resources/icons/datumFeature.svg) A Datum Feature
