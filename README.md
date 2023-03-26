@@ -15,7 +15,7 @@ Abstract
 The project is aimed at the development of a labeling software module for Geometric Dimensioning and Tolerancing (GD&T) in 2D and 3D technical drawings. The main contributions of this software are:
 
 -	Allows the GD&T information to be added to the design itself, thus linking design, manufacturing and quality specifications.
--	Implements the [ISO16792](https://www.iso.org/fr/standard/73871.html) standard for both 2D and 3D parts.
+-	Implements the [ISO16792](https://www.iso.org/standard/73871.html) standard for both 2D and 3D parts.
 -	Incorporates a homogeneous graphical interface and integrated with the technical design tools and 3D.
 -	There is no precedent developed as free software.
 
