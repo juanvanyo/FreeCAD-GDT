@@ -252,7 +252,7 @@ def getSelection():
 def getSelectionEx():
     "getSelectionEx(): returns the current FreeCAD selection (with subobjects)"
     if gui:
-        return FreeCADGui.Selection.getSelectionEx()
+        return FreeCADGui.Selection.getSelectionEx("",0)
     return None
 
 def select(objt):
@@ -918,7 +918,7 @@ class _GDTObject:
         obj.Proxy = self
         self.Type = tp
         obj.addProperty("App::PropertyString","Type","GDT","Type for icon")
-        obj.Type = "unkwon"
+        obj.Type = "Unknown"
 
     def __getstate__(self):
         return self.Type
@@ -958,7 +958,7 @@ class _ViewProviderGDT:
         if not hasattr(vobj.Object, "Type") :
             FreeCAD.Console.PrintMessage("Update _GDTObject {}\n".format(vobj.Object))
             vobj.Object.addProperty("App::PropertyString","Type","GDT","Type for icon")
-            vobj.Object.Type = "unkwon"
+            vobj.Object.Type = "Unknown"
         self.Type = vobj.Object.Type
         
         return
