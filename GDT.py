@@ -642,7 +642,7 @@ def plotStrings(self, fp, points):
         if fp.circumferenceBool and True in [l.Circumference for l in fp.GT]:
             # posDiameterTolerance
             auxPoint1 = FreeCAD.Vector(points[4]) # Point Diameter
-            dec=len(str(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit)))-1
+            dec=len(str(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit)))-2
             auxPoint2 = auxPoint1 + Horizontal * (sizeOfLine*2)  # Point Nominal
             auxPoint3 = auxPoint2 + Horizontal * (sizeOfLine*dec) + Vertical * (sizeOfLine*3) # Point Upper Tol
             auxPoint4 = auxPoint2 + Horizontal * (sizeOfLine*dec) + Vertical * sizeOfLine     # Point Lower Tol
@@ -678,16 +678,19 @@ def plotStrings(self, fp, points):
             
             else:
                 text = string_encode(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+                self.textGT[index].justification = coin.SoAsciiText.LEFT
                 self.textGT[index].string = self.textGT3d[index].string = text
                 index+=1
                 
                 text = string_encode(displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))    
                 self.textGT[index].string = self.textGT3d[index].string = text
+                self.textGT[index].justification = coin.SoAsciiText.LEFT
                 self.textGTpos[index].translation.setValue([auxPoint3.x, auxPoint3.y, auxPoint3.z])
                 index+=1
                 
                 text = string_encode(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
                 self.textGT[index].string = self.textGT3d[index].string = text
+                self.textGT[index].justification = coin.SoAsciiText.LEFT
                 self.textGTpos[index].translation.setValue([auxPoint4.x, auxPoint4.y, auxPoint4.z])
                 index+=1  
         
