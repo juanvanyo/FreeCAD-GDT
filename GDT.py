@@ -265,9 +265,9 @@ def select(objt):
 def makeContainerOfData():
     ""
     faces = []
-    for i in range(len(getSelectionEx())):
-        for j in range(len(getSelectionEx()[i].SubElementNames)):
-            faces.append((getSelectionEx()[i].Object, getSelectionEx()[i].SubElementNames[j]))
+    for i in range(len(FreeCADGui.Selection.getSelectionEx("",0))):
+        for j in range(len(FreeCADGui.Selection.getSelectionEx("",1)[i].SubElementNames)):
+            faces.append((FreeCADGui.Selection.getSelectionEx("",0)[i].Object, FreeCADGui.Selection.getSelectionEx("",1)[i].SubElementNames[j]))
     faces.sort()
     container = ContainerOfData(faces)
     return container
@@ -798,20 +798,6 @@ def plotStrings(self, fp, points):
         self.textDF.string = self.textDF3d.string = ""
     
     """
-    print("5@xes fp.Name = {}".format(fp.Name)) 
-    print("5@xes fp.Label = {}".format(fp.Label))
-    
-    print("5@xes size = {}".format(numpy.size(fp.faces)))
-    print("5@xes size = {}".format(numpy.size(fp.faces[0])))
-    print("5@xes size = {}".format(numpy.size(fp.faces[0][1])))
-
-    print("5@xes fp.faces = {}".format(fp.faces))
-    print("5@xes fp.faces = {}".format(fp.faces[0]))
-    print("5@xes fp.faces = {}".format(fp.faces[0][0]))
-    print("5@xes fp.faces = {}".format(fp.faces[0][1]))
-    """
-    
-    """
         Write the 2x on the GT if 2 faces
     """    
     if fp.GT != [] or fp.DF != None:
@@ -1004,7 +990,7 @@ class _AnnotationPlane(_GDTObject):
     def __init__(self, obj):
         _GDTObject.__init__(self,obj,"AnnotationPlane")
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
-        obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (getSelectionEx()[0].Object, getSelectionEx()[0].SubElementNames[0])
+        obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (FreeCADGui.Selection.getSelectionEx("",0)[0].Object, FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0])
         obj.addProperty("App::PropertyVectorDistance","p1","GDT","Center point of Grid").p1 = obj.faces[0].Shape.getElement(obj.faces[1][0]).CenterOfMass
         obj.addProperty("App::PropertyVector","Direction","GDT","The normal direction of this annotation plane").Direction = obj.faces[0].Shape.getElement(obj.faces[1][0]).normalAt(0,0)
         obj.addProperty("App::PropertyVectorDistance","PointWithOffset","GDT","Center point of Grid with offset applied")
@@ -1369,22 +1355,39 @@ class _Annotation(_GDTObject):
                 obj.setEditorMode('highLimit',2)
 
     def execute(self, fp):
-        '''"Print a short message when doing a recomputation, this method is mandatory" '''
+        ''' "Print a short message when doing a recomputation, this method is mandatory" '''
         # FreeCAD.Console.PrintMessage('Executed\n')
         auxP1 = fp.p1
-        # print("Faces {}".format(fp.faces[0][1][0]))
+        
+        '''
+        print("Face {}".format(fp.faces[0][0]))
+        print("Face {}".format(fp.faces[0][1][0]))
+        '''        
+
         if fp.circumferenceBool:
             vertexex = fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Vertexes
             fp.p1 = vertexex[0].Point if vertexex[0].Point.z > vertexex[1].Point.z else vertexex[1].Point
             fp.Direction = fp.AP.Direction
         else:
+            '''
+            print("5@xes _Annotation")
+            print("5@xes fp.faces  : {}".format(fp.faces[0][1][0]))
+            print("5@xes CenterOfMass {}".format(fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).CenterOfMass))
+            print("5@xes AP Direction {}".format(fp.AP.Direction))
+            print("5@xes PointWithOffset {}".format(fp.AP.PointWithOffset))
+            '''
             fp.p1 = (fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).CenterOfMass).projectToPlane(fp.AP.PointWithOffset, fp.AP.Direction)
             fp.Direction = fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).normalAt(0,0)
-        
+            '''
+            print("5@xes p1 {}".format(fp.p1))
+            print("5@xes Direction {}".format(fp.Direction))
+            '''
+            
         diff = fp.p1-auxP1
         
         if fp.spBool:
             fp.selectedPoint = fp.selectedPoint + diff
+
 
 class _ViewProviderAnnotation(_ViewProviderGDT):
     "A View Provider for the GDT Annotation object"
@@ -1643,21 +1646,20 @@ def makeAnnotation(faces, AP, DF=None, GT=[], modify=False, Object=None, diamete
             obj.p1 = vertexex[index].Point
             obj.Direction = obj.AP.Direction
         else:
-            
             '''
+            print("5@xes makeAnnotation")
             print("5@xes obj.faces  : {}".format(obj.faces[0][1][0]))
             print("5@xes CenterOfMass {}".format(obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass))
-            print("5@xes Direction {}".format(obj.AP.Direction))
+            print("5@xes AP Direction {}".format(obj.AP.Direction))
             print("5@xes PointWithOffset {}".format(obj.AP.PointWithOffset))
             '''
-            
             obj.p1 = (obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).CenterOfMass).projectToPlane(obj.AP.PointWithOffset, obj.AP.Direction)            
             obj.Direction = obj.faces[0][0].Shape.getElement(obj.faces[0][1][0]).normalAt(0,0)
-            
             '''
             print("5@xes p1 {}".format(obj.p1))
             print("5@xes Direction {}".format(obj.Direction))
             '''
+
     else:
         obj = Object
         
