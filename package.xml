@@ -3,7 +3,7 @@
   <name>GDT</name>
   <description>Geometric Dimensioning and Tolerancing (GDT) workbench for FreeCAD</description>
   <version>0.20.1</version>
-  <date>2022-03-20</date>
+  <date>2022-03-28</date>
   <maintainer email="5axe@free.fr">5@xes</maintainer>
   <license file="LICENSE">LGPLv2.1</license>
   <url type="repository" branch="master">https://github.com/5axes/FreeCAD-GDT</url>

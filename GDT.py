@@ -1060,7 +1060,7 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
 def makeAnnotationPlane(Name, Offset):
     ''' Explanation
     '''
-    setColor("PF")
+    # setColor("PF")
     groupPlaneName = "Plane_" + Name
     
     print("makeAnnotationPlane getAllAnnotationPlaneObjects {}".format(len(getAllAnnotationPlaneObjects())))
