@@ -87,6 +87,9 @@ from PySide import QtCore, QtGui
 
 couleur = QtGui.QColorDialog.getColor()
 
+print(couleur)
+print(couleur.name())
+
 if couleur.isValid():
     r = int(str(couleur.name()[1:3]),16)
     v = int(str(couleur.name()[3:5]),16)
@@ -110,12 +113,35 @@ if couleur.isValid():
             fce = int(a[0].SubElementNames[i][4:])-1
             colors[fce] = (float(r)/255,float(v)/255,float(b)/255,float(t)/255)                         
             aa[i].ViewObject.DiffuseColor = colors 
+			
         print( colors)
     except Exception:
         print ("Select one face")
 else:
     print ("Aborded")
 
+
+
+def setColorOfSelectedFaces(sel, colorSelected, colorBase):
+	# faces can be selected with mouse
+	obj = sel.Object
+	# got all faces indexes
+	faceIdx = []
+	for item in sel.SubElementNames:
+		if item.startswith('Face'):
+			faceIdx.append(int(item[4:])-1)
+	print('[*] Object %s contains %d faces'%(obj.Name, len(faceIdx)))
+	# Loop over whole object faces, make list of colors
+	setColor = []
+	for idx in range(len(obj.Shape.Faces)):
+		if idx in faceIdx:
+			setColor.append(colorSelected)
+		else:
+			setColor.append(colorBase)
+	obj.ViewObject.DiffuseColor = setColor
+	print('[*] ... colored %d faces'%(len(setColor),))
+	
+	
 # File Dialog
 
 filename = QtGui.QFileDialog.getOpenFileName(QtGui.QApplication.activeWindow(), translate("Arch","Import CSV File"), None, "CSV file (*.csv)");

@@ -38,7 +38,7 @@ import Draft
 import Part
 from pivy import coin
 import FreeCADGui, WorkingPlane
-from PySide import QtGui, QtCore
+
 
 
 if FreeCAD.GuiUp:
@@ -48,6 +48,7 @@ else:
     gui = True
 
 try:
+    import PySide
     from PySide import QtCore,QtGui,QtSvg
 except ImportError:
     FreeCAD.Console.PrintMessage("Error: Python-pyside package must be installed on your system to use the Geometric Dimensioning & Tolerancing module.")
@@ -262,12 +263,42 @@ def select(objt):
         for i in range(len(objt.faces)):
             FreeCADGui.Selection.addSelection(objt.faces[i][0],objt.faces[i][1])
 
+def setColor(type):
+    a = FreeCADGui.Selection.getSelectionEx()    # selection SubElementNames
+    aa = FreeCADGui.Selection.getSelection()     # selection object
+
+    try:
+        cols = colors = []
+        cols = FreeCAD.ActiveDocument.getObject(aa[0].Name).ViewObject.DiffuseColor
+        
+        if len(cols) == 1:
+            for i in aa[0].Shape.Faces:
+                colors += [(cols[0])]
+        else:
+            colors = cols
+        
+        for i in range(len(aa)):
+            fce = int(a[0].SubElementNames[i][4:])-1
+            if type == "PF" :
+                colors[fce] = (float(1),float(0),float(0),float(0)) 
+            elif type == "DF" :
+                colors[fce] = (float(0),float(0),float(1),float(0)) 
+            elif type == "GT" :
+                colors[fce] = (float(1),float(1),float(0),float(0))                 
+            else :
+                colors[fce] = (float(0),float(1),float(0),float(0)) 
+                
+            aa[i].ViewObject.DiffuseColor = colors 
+    except Exception:
+        print ("Select one face")
+        
 def makeContainerOfData():
     ""
     faces = []
     for i in range(len(FreeCADGui.Selection.getSelectionEx("",0))):
         for j in range(len(FreeCADGui.Selection.getSelectionEx("",1)[i].SubElementNames)):
             faces.append((FreeCADGui.Selection.getSelectionEx("",0)[i].Object, FreeCADGui.Selection.getSelectionEx("",1)[i].SubElementNames[j]))
+
     faces.sort()
     container = ContainerOfData(faces)
     return container
@@ -1029,6 +1060,7 @@ class _ViewProviderAnnotationPlane(_ViewProviderGDT):
 def makeAnnotationPlane(Name, Offset):
     ''' Explanation
     '''
+    setColor("PF")
     groupPlaneName = "Plane_" + Name
     
     print("makeAnnotationPlane getAllAnnotationPlaneObjects {}".format(len(getAllAnnotationPlaneObjects())))
@@ -1110,6 +1142,7 @@ class _ViewProviderDatumFeature(_ViewProviderGDT):
 def makeDatumFeature(Name, ContainerOfData):
     ''' Explanation
     '''
+    setColor("DF")
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumFeature")
     _DatumFeature(obj)
     if gui:
@@ -1185,6 +1218,7 @@ class _ViewProviderDatumSystem(_ViewProviderGDT):
 def makeDatumSystem(Name, Primary, Secondary=None, Tertiary=None):
     ''' Explanation
     '''
+    
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","DatumSystem")
     
     _DatumSystem(obj)
@@ -1255,6 +1289,7 @@ class _ViewProviderGeometricTolerance(_ViewProviderGDT):
 def makeGeometricTolerance(Name, ContainerOfData):
     ''' Explanation
     '''
+    setColor("GT")    
     obj = FreeCAD.ActiveDocument.addObject("App::FeaturePython","GeometricTolerance")
     _GeometricTolerance(obj)
     if gui:
