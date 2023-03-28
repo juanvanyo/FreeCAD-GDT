@@ -1780,12 +1780,15 @@ class ContainerOfData(object):
         self.faces = faces
         self.diameter = 0.0
         if self.faces != []:
-            self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
-            self.DirectionAxis = self.faces[0][0].Shape.getElement(self.faces[0][1]).Surface.Axis
-            self.p1 = self.faces[0][0].Shape.getElement(self.faces[0][1]).CenterOfMass
+            _face = self.faces[0][0].Shape.getElement(self.faces[0][1])
+            self.Direction = _face.normalAt(0,0)
+            self.DirectionAxis = _face.Surface.Axis
+            self.p1 = _face.CenterOfMass
             try:
-                edge = [l.Closed for l in self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges].index(True)
-                self.diameter = self.faces[0][0].Shape.getElement(self.faces[0][1]).Edges[edge].Length/pi
+                # get the first Closed
+                edge = [l.Closed for l in _face.Edges].index(True)
+                print ("Edge {}".format(edge))
+                self.diameter = _face.Edges[edge].Length/pi
             except:
                 pass
         
