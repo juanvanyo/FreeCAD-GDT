@@ -68,3 +68,58 @@ class _AnnotationPlane(_GDTObject):
         obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
         obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (FreeCADGui.Selection.getSelectionEx("",0)[0].Object, FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0])
 
+
+# Face Color
+
+# -*- coding: utf-8 -*-
+#https://forum.freecadweb.org/viewtopic.php?p=94640
+#Couleur differentes sur les faces
+
+__title__   = "Macro_Colored_Faces"
+__author__  = "Mario52"
+__url__     = "http://www.freecadweb.org/index-fr.html"
+__Wiki__    = ""
+__version__ = "00.01"
+__date__    = "19/02/2017"
+
+import PySide
+from PySide import QtCore, QtGui
+
+couleur = QtGui.QColorDialog.getColor()
+
+if couleur.isValid():
+    r = int(str(couleur.name()[1:3]),16)
+    v = int(str(couleur.name()[3:5]),16)
+    b = int(str(couleur.name()[5:7]),16)
+    t = 0   # transparence de 0 a 255
+
+    try:
+        a = FreeCADGui.Selection.getSelectionEx()    # selection sous objet
+        aa = FreeCADGui.Selection.getSelection()     # selection objet
+    
+        cols = colors = []
+        cols = FreeCAD.ActiveDocument.getObject(aa[0].Name).ViewObject.DiffuseColor
+        
+        if len(cols) == 1:
+            for i in aa[0].Shape.Faces:
+                colors += [(cols[0])]
+        else:
+            colors = cols
+        
+        for i in range(len(aa)):
+            fce = int(a[0].SubElementNames[i][4:])-1
+            colors[fce] = (float(r)/255,float(v)/255,float(b)/255,float(t)/255)                         
+            aa[i].ViewObject.DiffuseColor = colors 
+        print( colors)
+    except Exception:
+        print ("Select one face")
+else:
+    print ("Aborded")
+
+# File Dialog
+
+filename = QtGui.QFileDialog.getOpenFileName(QtGui.QApplication.activeWindow(), translate("Arch","Import CSV File"), None, "CSV file (*.csv)");
+
+filename = QtGui.QFileDialog.getSaveFileName(QtGui.QApplication.activeWindow(), translate("Arch","Export CSV File"), None, "CSV file (*.csv)");
+
+path = QtGui.QFileDialog.getExistingDirectory(self)
