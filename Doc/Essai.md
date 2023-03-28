@@ -31,7 +31,7 @@ FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]
 
 objt = FreeCADGui.Selection.getSelectionEx("",0)[0].Object
 c_name = FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]
-<<<<<<< Updated upstream
+
 vertexex = objt.Shape.getElement(c_name).Vertexes
 
 c_face=objt.Shape.getElement(c_name)
@@ -42,16 +42,12 @@ c_face.Surface.Axis
 vertexex[0].Point
 =======
  
->>>>>>> Stashed changes
  
 objt.Shape.getElement(c_name).normalAt(0,0)
 Vector (0.0, 0.0, 1.0)
 
-<<<<<<< Updated upstream
-
-=======
 vertexex = objt.Shape.getElement(c_name).Vertexes
->>>>>>> Stashed changes
+
 
 
 makeContainerOfData():
