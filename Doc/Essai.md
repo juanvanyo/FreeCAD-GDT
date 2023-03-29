@@ -9,21 +9,21 @@
 
 # getSelectionEx
 
-FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Name
-'Part'
+	FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Name
+	'Part'
 
-FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Name
-'Pocket001'
+	FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Name
+	'Pocket001'
 
-FreeCADGui.Selection.getSelectionEx()[0].Object.Name
-'Pocket001'
+	FreeCADGui.Selection.getSelectionEx()[0].Object.Name
+	'Pocket001'
 
 
-FreeCADGui.Selection.getSelectionEx("",0)[0].SubElementNames[0]
-'Body.Pocket001.Face5'
- 
-FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]
-'Face5'
+	FreeCADGui.Selection.getSelectionEx("",0)[0].SubElementNames[0]
+	'Body.Pocket001.Face5'
+	 
+	FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]
+	'Face5'
 
 ## faces
 
