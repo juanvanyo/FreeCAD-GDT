@@ -182,7 +182,7 @@
          <string notr="true">Show the unit suffix in dimensions</string>
         </property>
         <property name="checked">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="prefEntry" stdset="0">
          <cstring>showUnit</cstring>
@@ -192,6 +192,22 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="Gui::PrefCheckBox" name="checkFace">
+        <property name="text">
+         <string notr="true">Change Face Color</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="prefEntry" stdset="0">
+         <cstring>changeColor</cstring>
+        </property>
+        <property name="prefPath" stdset="0">
+         <cstring>Mod/GDT</cstring>
+        </property>
+       </widget>
+      </item>	  
      </layout>
     </widget>
    </item>

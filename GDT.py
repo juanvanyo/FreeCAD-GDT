@@ -80,7 +80,7 @@ def getParamType(param):
         return "string"
     elif param in ["textSize","tolerancetextSize","lineScale"]:
         return "float"
-    elif param in ["alwaysShowGrid","showUnit"]:
+    elif param in ["alwaysShowGrid","showUnit", "changeColor"]:
         return "bool"
     elif param in ["textColor","lineColor"]:
         return "unsigned"
@@ -264,33 +264,35 @@ def select(objt):
             FreeCADGui.Selection.addSelection(objt.faces[i][0],objt.faces[i][1])
 
 def setColor(type):
-    a = FreeCADGui.Selection.getSelectionEx()    # selection SubElementNames
-    aa = FreeCADGui.Selection.getSelection()     # selection object
+    paracol = getParam("changeColor",True)
+    if paracol == True :
+        a = FreeCADGui.Selection.getSelectionEx()    # selection SubElementNames
+        aa = FreeCADGui.Selection.getSelection()     # selection object
 
-    try:
-        cols = colors = []
-        cols = FreeCAD.ActiveDocument.getObject(aa[0].Name).ViewObject.DiffuseColor
-        
-        if len(cols) == 1:
-            for i in aa[0].Shape.Faces:
-                colors += [(cols[0])]
-        else:
-            colors = cols
-        
-        for i in range(len(aa)):
-            fce = int(a[0].SubElementNames[i][4:])-1
-            if type == "PF" :
-                colors[fce] = (float(1),float(0),float(0),float(0)) 
-            elif type == "DF" :
-                colors[fce] = (float(0),float(0),float(1),float(0)) 
-            elif type == "GT" :
-                colors[fce] = (float(1),float(1),float(0),float(0))                 
-            else :
-                colors[fce] = (float(0),float(1),float(0),float(0)) 
-                
-            aa[i].ViewObject.DiffuseColor = colors 
-    except Exception:
-        print ("Select one face")
+        try:
+            cols = colors = []
+            cols = FreeCAD.ActiveDocument.getObject(aa[0].Name).ViewObject.DiffuseColor
+            
+            if len(cols) == 1:
+                for i in aa[0].Shape.Faces:
+                    colors += [(cols[0])]
+            else:
+                colors = cols
+            
+            for i in range(len(aa)):
+                fce = int(a[0].SubElementNames[i][4:])-1
+                if type == "PF" :
+                    colors[fce] = (float(1),float(0),float(0),float(0)) 
+                elif type == "DF" :
+                    colors[fce] = (float(0),float(0),float(1),float(0)) 
+                elif type == "GT" :
+                    colors[fce] = (float(1),float(1),float(0),float(0))                 
+                else :
+                    colors[fce] = (float(0),float(1),float(0),float(0)) 
+                    
+                aa[i].ViewObject.DiffuseColor = colors 
+        except Exception:
+            print ("Select one face")
         
 def makeContainerOfData():
     ""
@@ -637,7 +639,7 @@ def plotStrings(self, fp, points):
                 self.textSYMB[indexSYMB].justification = coin.SoAsciiText.CENTER
                 indexSYMB+=1
             
-            self.textGT[index].string = self.textGT3d[index].string = string_encode(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
+            self.textGT[index].string = string_encode(displayExternal(fp.GT[i].ToleranceValue, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
             self.textGTpos[index].translation.setValue([posToleranceValue.x-(sizeOfLine*0.3), posToleranceValue.y, posToleranceValue.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             index+=1
@@ -650,21 +652,21 @@ def plotStrings(self, fp, points):
                 if fp.GT[i].Circumference:
                     distance -= (sizeOfLine*2)
                 posPrimary = posToleranceValue + Horizontal * (distance+sizeOfLine)
-                self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Primary.Label)
+                self.textGT[index].string = str(fp.GT[i].DS.Primary.Label)
                 self.textGTpos[index].translation.setValue([posPrimary.x, posPrimary.y, posPrimary.z])
                 self.textGT[index].justification = coin.SoAsciiText.CENTER
                 index+=1
                 displacement+=2
                 if fp.GT[i].DS.Secondary != None:
                     posSecondary = posPrimary + Horizontal * (sizeOfLine*2)
-                    self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Secondary.Label)
+                    self.textGT[index].string = str(fp.GT[i].DS.Secondary.Label)
                     self.textGTpos[index].translation.setValue([posSecondary.x, posSecondary.y, posSecondary.z])
                     self.textGT[index].justification = coin.SoAsciiText.CENTER
                     index+=1
                     displacement+=2
                     if fp.GT[i].DS.Tertiary != None:
                         posTertiary = posSecondary + Horizontal * (sizeOfLine*2)
-                        self.textGT[index].string = self.textGT3d[index].string = str(fp.GT[i].DS.Tertiary.Label)
+                        self.textGT[index].string = str(fp.GT[i].DS.Tertiary.Label)
                         self.textGTpos[index].translation.setValue([posTertiary.x, posTertiary.y, posTertiary.z])
                         self.textGT[index].justification = coin.SoAsciiText.CENTER
                         index+=1
@@ -704,23 +706,23 @@ def plotStrings(self, fp, points):
             
             if fp.toleranceSelectBool:
                 text = string_encode(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit) + stringplusminus() + displayExternal(fp.toleranceDiameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
-                self.textGT[index].string = self.textGT3d[index].string = text
+                self.textGT[index].string = text
                 index+=1           
             
             else:
                 text = string_encode(displayExternal(fp.diameter, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
                 self.textGT[index].justification = coin.SoAsciiText.LEFT
-                self.textGT[index].string = self.textGT3d[index].string = text
+                self.textGT[index].string = text
                 index+=1
                 
                 text = string_encode(displayExternal(fp.highLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))    
-                self.textGT[index].string = self.textGT3d[index].string = text
+                self.textGT[index].string = text
                 self.textGT[index].justification = coin.SoAsciiText.LEFT
                 self.textGTpos[index].translation.setValue([auxPoint3.x, auxPoint3.y, auxPoint3.z])
                 index+=1
                 
                 text = string_encode(displayExternal(fp.lowLimit, fp.ViewObject.Decimals, 'Length', fp.ViewObject.ShowUnit))
-                self.textGT[index].string = self.textGT3d[index].string = text
+                self.textGT[index].string = text
                 self.textGT[index].justification = coin.SoAsciiText.LEFT
                 self.textGTpos[index].translation.setValue([auxPoint4.x, auxPoint4.y, auxPoint4.z])
                 index+=1  
@@ -751,7 +753,7 @@ def plotStrings(self, fp, points):
                 
         for i in range(index,len(self.textGT)):
             if str(self.textGT[i].string) != "":
-                self.textGT[i].string = self.textGT3d[i].string = ""
+                self.textGT[i].string = ""
                 
             else:
                 break
@@ -768,7 +770,7 @@ def plotStrings(self, fp, points):
     else:
         for i in range(len(self.textGT)):
             if str(self.textGT[i].string) != "" or str(self.svg[i].filename) != "":
-                self.textGT[i].string = self.textGT3d[i].string = ""
+                self.textGT[i].string = ""
                 self.textSYMB[i].string = ""
                 self.face[i].numVertices = 0
                 self.svg[i].filename = ""
@@ -780,7 +782,7 @@ def plotStrings(self, fp, points):
     """  
     if fp.DF != None:
         # print("Datum Feature Label {}".format(str(fp.DF.Label)))
-        self.textDF.string = self.textDF3d.string = str(fp.DF.Label)
+        self.textDF.string = str(fp.DF.Label)
         distance = 0
         v = (points[-3] - points[-2])
         if v.x != 0:
@@ -826,7 +828,7 @@ def plotStrings(self, fp, points):
             pass
             
     else:
-        self.textDF.string = self.textDF3d.string = ""
+        self.textDF.string = ""
     
     """
         Write the 2x on the GT if 2 faces
@@ -837,7 +839,7 @@ def plotStrings(self, fp, points):
             centerPoint = points[3] + Horizontal * (sizeOfLine)
             posNumFaces = centerPoint + Vertical * (sizeOfLine/2)
             # 2x
-            self.textGT[index].string = self.textGT3d[index].string = (str(numpy.size(fp.faces[0][1]))+'x')
+            self.textGT[index].string = (str(numpy.size(fp.faces[0][1]))+'x')
             self.textGTpos[index].translation.setValue([posNumFaces.x, posNumFaces.y, posNumFaces.z])
             self.textGT[index].justification = coin.SoAsciiText.CENTER
             try:
@@ -1443,7 +1445,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         "called on object creation"
         from pivy import coin
         self.node = coin.SoGroup()
-        self.node3d = coin.SoGroup()
         self.lineColor = coin.SoBaseColor()
         self.textColor = coin.SoBaseColor()
 
@@ -1458,30 +1459,21 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         selectionNode.addChild(self.lines)
 
         self.font = coin.SoFont()
-        self.font3d = coin.SoFont()
         self.tolerancefont = coin.SoFont()
-        self.tolerancefont3d = coin.SoFont()
         self.textDF = coin.SoAsciiText()
-        self.textDF3d = coin.SoText2()
         self.textDF.string = "" # some versions of coin crash if string is not set
-        self.textDF3d.string = ""
         self.textDFpos = coin.SoTransform()
-        self.textDF.justification = self.textDF3d.justification = coin.SoAsciiText.CENTER
+        self.textDF.justification = coin.SoAsciiText.CENTER
         labelDF = coin.SoSeparator()
         labelDF.addChild(self.textDFpos)
         labelDF.addChild(self.textColor)
         labelDF.addChild(self.font)
         labelDF.addChild(self.textDF)
-        labelDF3d = coin.SoSeparator()
-        labelDF3d.addChild(self.textDFpos)
-        labelDF3d.addChild(self.textColor)
-        labelDF3d.addChild(self.font3d)
-        labelDF3d.addChild(self.textDF3d)
+
 
         self.textSYMB = []
         self.textGT = []
         self.textGTpos = []
-        self.textGT3d = []
         self.textSYMBpos = []
         self.svg = []
         self.svgPos = []
@@ -1491,11 +1483,9 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         
         for i in range(20):
             self.textGT.append(coin.SoAsciiText())
-            self.textGT3d.append(coin.SoText2())
             self.textGT[i].string = ""
-            self.textGT3d[i].string = ""
             self.textGTpos.append(coin.SoTransform())
-            self.textGT[i].justification = self.textGT3d[i].justification = coin.SoAsciiText.CENTER
+            self.textGT[i].justification = coin.SoAsciiText.CENTER
             
             self.textSYMB.append(coin.SoAsciiText())
             self.textSYMB[i].string = ""
@@ -1514,12 +1504,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             labelSYMB.addChild(self.font)
             labelSYMB.addChild(self.textSYMB[i])
             
-            labelGT3d = coin.SoSeparator()
-            labelGT3d.addChild(self.textGTpos[i])
-            labelGT3d.addChild(self.textColor)
-            labelGT3d.addChild(self.font3d)
-            labelGT3d.addChild(self.textGT3d[i])
-            
             self.svg.append(coin.SoTexture2())
             self.face.append(coin.SoFaceSet())
             self.textureTransform.append(coin.SoTexture2Transform())
@@ -1536,9 +1520,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             
             self.node.addChild(labelGT)
             self.node.addChild(labelSYMB)
-            self.node3d.addChild(labelGT3d)
             self.node.addChild(image)
-            self.node3d.addChild(image)
 
         self.drawstyle = coin.SoDrawStyle()
         self.drawstyle.style = coin.SoDrawStyle.LINES
@@ -1549,14 +1531,9 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         self.node.addChild(self.data)
         self.node.addChild(self.lines)
         self.node.addChild(selectionNode)
+        
         obj.addDisplayMode(self.node,"2D")
 
-        self.node3d.addChild(labelDF3d)
-        self.node3d.addChild(self.lineColor)
-        self.node3d.addChild(self.data)
-        self.node3d.addChild(self.lines)
-        self.node3d.addChild(selectionNode)
-        obj.addDisplayMode(self.node3d,"3D")
         
         self.onChanged(obj,"LineColor")
         self.onChanged(obj,"LineWidth")
@@ -1598,7 +1575,6 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
         "Return a list of display modes."
         modes=[]
         modes.append("2D")
-        modes.append("3D")
         return modes
 
     def getDefaultDisplayMode(self):
@@ -1626,21 +1602,15 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             if hasattr(self,"font"):
                 if vobj.FontSize.Value > 0:
                     self.font.size = vobj.FontSize.Value
-            if hasattr(self,"font3d"):
-                if vobj.FontSize.Value > 0:
-                    self.font3d.size = vobj.FontSize.Value*10
             vobj.Object.touch()
         elif (prop == "ToleranceFontSize") and hasattr(vobj,"ToleranceFontSize"):
             if hasattr(self,"tolerancefont"):
                 if vobj.ToleranceFontSize.Value > 0:
                     self.tolerancefont.size = vobj.ToleranceFontSize.Value
-            if hasattr(self,"tolerancefont3d"):
-                if vobj.ToleranceFontSize.Value > 0:
-                    self.tolerancefont3d.size = vobj.ToleranceFontSize.Value*10
             vobj.Object.touch()            
         elif (prop == "FontName") and hasattr(vobj,"FontName"):
-            if hasattr(self,"font") and hasattr(self,"font3d"):
-                self.font.name = self.font3d.name = str(vobj.FontName)
+            if hasattr(self,"font") :
+                self.font.name = str(vobj.FontName)
                 vobj.Object.touch()
         else:
             self.updateData(vobj.Object, "selectedPoint")
