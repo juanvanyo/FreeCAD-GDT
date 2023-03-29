@@ -7,7 +7,7 @@
 	FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Shape.getElement(FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]).normalAt(0,0)
 	FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Shape.getElement(FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]).CenterOfMass
 
-# getSelectionEx
+## getSelectionEx
 
 	FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Name
 	'Part'
@@ -46,6 +46,7 @@
 
 	vertexex = objt.Shape.getElement(c_name).Vertexes
 
+Test
 
 	makeContainerOfData():
 		""
