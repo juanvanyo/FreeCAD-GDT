@@ -1,4 +1,6 @@
 
+Small piece of code for testing in the Python console.
+
 # Selection issue
 
 	self.Direction = self.faces[0][0].Shape.getElement(self.faces[0][1]).normalAt(0,0)
