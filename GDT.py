@@ -1545,6 +1545,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def updateData(self, fp, prop):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
+        print("updateData {} / {}".format(fp.ViewObject, prop))
         if prop in "selectedPoint" and hasattr(fp.ViewObject,"Decimals") and hasattr(fp.ViewObject,"ShowUnit") and fp.spBool:
             points, segments = getPointsToPlot(fp)
             # print str(points)
@@ -1784,6 +1785,8 @@ class ContainerOfData(object):
     def __init__(self, faces = []):
         self.faces = faces
         self.diameter = 0.0
+        print ("ContainerOfData {}".format(object))
+        
         if self.faces != []:
             _face = self.faces[0][0].Shape.getElement(self.faces[0][1])
             self.Direction = _face.normalAt(0,0)
@@ -1792,7 +1795,7 @@ class ContainerOfData(object):
             try:
                 # get the first Closed
                 edge = [l.Closed for l in _face.Edges].index(True)
-                print ("Edge {}".format(edge))
+                # print ("Edge {}".format(edge))
                 self.diameter = _face.Edges[edge].Length/pi
             except:
                 pass
@@ -1820,7 +1823,6 @@ class ContainerOfData(object):
 #---------------------------------------------------------------------------
 # Customized widgets
 #---------------------------------------------------------------------------
-
 class GDTWidget:
     def __init__(self):
         self.dialogWidgets = []
@@ -1896,7 +1898,7 @@ class GDTGuiClass(QtGui.QWidget):
         # 5@xes modif for test
         # self.textName = self.ContainerOfData.textName.encode('utf-8')
         self.textName = str(self.ContainerOfData.textName)     
-        # print("5@xes createObject textName {}".format(self.textName))
+        print("5@xes createObject textName {} / {}".format(self.textName,self.idGDT))
         
         if self.idGDT == 1:
             obj = makeDatumFeature(self.textName, self.ContainerOfData)
