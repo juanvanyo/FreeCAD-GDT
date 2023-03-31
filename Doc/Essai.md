@@ -9,6 +9,8 @@ Small piece of code for testing in the Python console.
 	FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Shape.getElement(FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]).normalAt(0,0)
 	FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Shape.getElement(FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]).CenterOfMass
 
+	FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Shape.getElement('Face5').normalAt(0,0)
+
 ## getSelectionEx
 
 	FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Name
@@ -20,7 +22,6 @@ Small piece of code for testing in the Python console.
 	FreeCADGui.Selection.getSelectionEx()[0].Object.Name
 	'Pocket001'
 
-
 	FreeCADGui.Selection.getSelectionEx("",0)[0].SubElementNames[0]
 	'Body.Pocket001.Face5'
 	 
@@ -28,6 +29,9 @@ Small piece of code for testing in the Python console.
 	'Face5'
 	
 	FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].ShapeType
+	
+	FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.Name,'Part','Body001.Pocket003.Face5')
+	FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.Name,FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Name,FreeCADGui.Selection.getSelectionEx("",0)[0].SubElementNames[0])
 
 ## faces
 
@@ -57,7 +61,18 @@ Small piece of code for testing in the Python console.
 
 	vertexex = objt.Shape.getElement(c_name).Vertexes
 
-Test
+# Info Surface
+	
+	## Cylinder
+	
+	face = FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Shape.getElement('Face7')
+	
+	face.Surface.Radius
+	face.Surface.Center
+	face.Surface.isUClosed()
+	face.Surface.isVClosed()
+
+# Test
 
 	makeContainerOfData():
 		""
@@ -68,6 +83,7 @@ Test
 		faces.sort()
 		container = ContainerOfData(faces)
 		return container
+
 
 
 	class _AnnotationPlane(_GDTObject):
