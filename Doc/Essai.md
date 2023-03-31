@@ -26,6 +26,8 @@ Small piece of code for testing in the Python console.
 	 
 	FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]
 	'Face5'
+	
+	FreeCADGui.Selection.getSelectionEx()[0].SubObjects[0].ShapeType
 
 ## faces
 
@@ -33,6 +35,13 @@ Small piece of code for testing in the Python console.
 	objt = FreeCADGui.Selection.getSelectionEx("",0)[0].SubObjects
 	c_name = FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0]
 
+	Obj=FreeCADGui.Selection.getSelectionEx()[0].Object.Shape
+	Obj.getElement('Face9')
+	Obj.getElement(FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0])
+	face=FreeCADGui.Selection.getSelectionEx()[0].Object.Shape.getElement('Face9')
+	<Face object at 0000016B9B2C5FC0>
+	
+	
 	vertexex = objt.Shape.getElement(c_name).Vertexes
 
 	c_face=objt.Shape.getElement(c_name)
