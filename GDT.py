@@ -1545,7 +1545,7 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
     def updateData(self, fp, prop):
         "If a property of the handled feature has changed we have the chance to handle this here"
         # fp is the handled feature, prop is the name of the property that has changed
-        print("updateData {} / {}".format(fp.ViewObject, prop))
+        # print("updateData {} / {}".format(fp.ViewObject, prop))
         if prop in "selectedPoint" and hasattr(fp.ViewObject,"Decimals") and hasattr(fp.ViewObject,"ShowUnit") and fp.spBool:
             points, segments = getPointsToPlot(fp)
             # print str(points)
@@ -1560,7 +1560,8 @@ class _ViewProviderAnnotation(_ViewProviderGDT):
             
             plotStrings(self, fp, points)
         
-        if prop == "faces" and fp.faces != []:         
+        if prop == "faces" and fp.faces != []:   
+            print("updateData {} / {}".format(fp.ViewObject, prop))
             if (True in [l.Closed for l in fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Edges] and len(fp.faces[0][0].Shape.getElement(fp.faces[0][1][0]).Vertexes) == 2) :
                 fp.circumferenceBool = True
             else:

@@ -19,6 +19,9 @@ Small piece of code for testing in the Python console.
 	FreeCADGui.Selection.getSelectionEx("",1)[0].Object.Name
 	'Pocket001'
 
+	FreeCADGui.Selection.getSelectionEx("",2)[0].Object.Name
+	'Pocket001
+	
 	FreeCADGui.Selection.getSelectionEx()[0].Object.Name
 	'Pocket001'
 
@@ -36,7 +39,22 @@ Small piece of code for testing in the Python console.
 ## Selection of the right face
 
 	FreeCADGui.ActiveDocument.getObject("Body001")
-	Marche pas : FreeCADGui.ActiveDocument.getObject('Body001.Pocket003.Face5')
+	fc = FreeCADGui.ActiveDocument.getObject("Body001").Object.getSubObject("Face5")
+
+	### Fonctionne
+	FreeCADGui.ActiveDocument.getObject("Body001").Object.getSubObject("Face5").BoundBox
+
+	### Ok
+	ob = FreeCADGui.Selection.getSelectionEx("",1)[0].Object
+	ob.Shape.BoundBox
+	>>> BoundBox (0, 0, 0, 28.8174, 24.4012, 10)
+	ob = FreeCADGui.Selection.getSelectionEx("",0)[0].Object
+	ob.Shape.BoundBox
+	>>> BoundBox (0, -8.88178e-16, 0, 75.8174, 24.4012, 10)
+	
+	
+	FreeCADGui.Selection.getSelectionEx("",0)[0].Object.getSubObject("Face5").BoundBox
+	
 
 ## faces
 
@@ -97,6 +115,18 @@ Small piece of code for testing in the Python console.
 			_GDTObject.__init__(self,obj,"AnnotationPlane")
 			obj.addProperty("App::PropertyFloat","Offset","GDT","The offset value to aply in this annotation plane")
 			obj.addProperty("App::PropertyLinkSub","faces","GDT","Linked face of the object").faces = (FreeCADGui.Selection.getSelectionEx("",0)[0].Object, FreeCADGui.Selection.getSelectionEx("",1)[0].SubElementNames[0])
+
+#  Undo
+
+To use the Ctrl+Z
+
+	doc = App.ActiveDocument
+	doc.openTransaction()
+	# some undoable actions
+	doc.commitTransaction()
+
+	# in case of error
+	doc.abortTransaction()
 
 
 # Face Color
