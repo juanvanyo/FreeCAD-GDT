@@ -33,6 +33,11 @@ Small piece of code for testing in the Python console.
 	FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.Name,'Part','Body001.Pocket003.Face5')
 	FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.Name,FreeCADGui.Selection.getSelectionEx("",0)[0].Object.Name,FreeCADGui.Selection.getSelectionEx("",0)[0].SubElementNames[0])
 
+## Selection of the right face
+
+	FreeCADGui.ActiveDocument.getObject("Body001")
+	Marche pas : FreeCADGui.ActiveDocument.getObject('Body001.Pocket003.Face5')
+
 ## faces
 
 	objt = FreeCADGui.Selection.getSelectionEx("",0)[0].Object
