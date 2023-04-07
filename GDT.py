@@ -39,7 +39,7 @@ import Part
 from pivy import coin
 import FreeCADGui, WorkingPlane
 
-
+translate = FreeCAD.Qt.translate
 
 if FreeCAD.GuiUp:
     gui = True
