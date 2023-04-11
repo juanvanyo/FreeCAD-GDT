@@ -3,8 +3,8 @@ FontName: Iso-Gps
 FullName: Iso-Gps
 FamilyName: Iso-Gps
 Weight: Book
-Copyright: 5.0 Copyright (c) CETIM 2021. All rights reserved\n\nDistributed under GNU GPL licence version 3 with GPL font exception:\n\nAs a special exception, if you create a document which uses this font, and embed this font or unaltered portions of this font into the document, this font does not by itself cause the resulting document to be covered by the GNU General Public License. This exception does not however invalidate any other reasons why the document might be covered by the GNU General Public License. If you modify this font, you may extend this exception to your version of the font, but you are not obligated to do so. If you do not wish to do so, delete this exception statement from your version. 
-Version: 5.0 04-01-2023
+Copyright: 5.0 Copyright (c) LALLIARD 2023. All rights reserved\n\nDistributed under GNU GPL licence version 3 with GPL font exception:\n\nAs a special exception, if you create a document which uses this font, and embed this font or unaltered portions of this font into the document, this font does not by itself cause the resulting document to be covered by the GNU General Public License. This exception does not however invalidate any other reasons why the document might be covered by the GNU General Public License. If you modify this font, you may extend this exception to your version of the font, but you are not obligated to do so. If you do not wish to do so, delete this exception statement from your version. 
+Version: 5.0 04-11-2023
 ItalicAngle: 0
 UnderlinePosition: -2870
 UnderlineWidth: 300
@@ -22,7 +22,7 @@ OS2Version: 1
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 0
 CreationTime: 1633702819
-ModificationTime: 1672836611
+ModificationTime: 1681206773
 PfmFamily: 81
 TTFWeight: 400
 TTFWidth: 5
@@ -754,7 +754,7 @@ ShortTable: maxp 16
   1
 EndShort
 LangName: 1033 "" "" "" "Iso-Gps : 04-01-2023"
-LangName: 1036 "5.0 Copyright (c) CETIM 2023. All rights reserved" "Iso-Gps" "Regular" "" "Sp+AOkA-cification g+AOkA-om+AOkA-trique des produits (GPS)" "5.0" "" "" "" "" "" "" "wwww.cetim.fr"
+LangName: 1036 "5.0 Copyright (c) LALLIARD 2023. All rights reserved" "Iso-Gps" "Regular" "" "Sp+AOkA-cification g+AOkA-om+AOkA-trique des produits (GPS)" "5.0"
 GaspTable: 3 8 2 17 3 65535 3 0
 Encoding: UnicodeBmp
 UnicodeInterp: none
@@ -870,7 +870,8 @@ Grid
 -2048 1980 m 5
  4096 1980 l 1029
 EndSplineSet
-BeginChars: 65539 1026
+TeXData: 1 0 0 220160 110080 73386 455680 -1048576 73386 783286 444596 497025 792723 393216 433062 380633 303038 157286 324010 404750 52429 2506097 1059062 262144
+BeginChars: 65539 1034
 
 StartChar: .notdef
 Encoding: 65536 -1 0
@@ -32138,6 +32139,106 @@ SplineSet
  -64 -649 l 1
 EndSplineSet
 Refer: 922 436 N 1 0 0 1 -80 160 2
+Validated: 1
+EndChar
+
+StartChar: Atilde
+Encoding: 195 195 1026
+Width: 1172
+Flags: W
+LayerCount: 2
+Fore
+Refer: 36 65 N 1 0 0 1 0 0 2
+Refer: 97 126 S 1 0 0 1 207 -32 2
+Validated: 1
+EndChar
+
+StartChar: Aring
+Encoding: 197 197 1027
+Width: 1168
+Flags: W
+LayerCount: 2
+Fore
+Refer: 110 176 N 1 0 0 1 309 159 2
+Refer: 36 65 N 1 0 0 1 0 0 2
+Validated: 5
+EndChar
+
+StartChar: Igrave
+Encoding: 204 204 1028
+Width: 1040
+Flags: W
+HStem: -3 21G<486.75 552.25> 1262 20G<486.75 552.25> 1374 253
+VStem: 308 369 454 131<-1.07983 1280.05>
+LayerCount: 2
+Fore
+Refer: 44 73 N 1 0 0 1 324 -3 2
+Refer: 67 96 S 1 0 0 1 168 -9 2
+Validated: 1
+EndChar
+
+StartChar: Iacute
+Encoding: 205 205 1029
+Width: 1040
+Flags: W
+HStem: 3 21G<492.75 558.25> 1268 20G<492.75 558.25> 1383 253
+VStem: 362 365 460 131<4.92017 1286.05>
+LayerCount: 2
+Fore
+Refer: 44 73 S 1 0 0 1 330 3 2
+Refer: 114 180 N 1 0 0 1 219 0 2
+Validated: 1
+EndChar
+
+StartChar: Ntilde
+Encoding: 209 209 1030
+Width: 1172
+Flags: W
+HStem: 1267 20G<228 278 881 947> 1400 239<298.37 350.436 801.626 848.341>
+VStem: 199 131<-0.07983 964> 243 125<1414.47 1525.59> 783 125<1512.68 1619.53> 849 130<310 1285.11>
+LayerCount: 2
+Fore
+Refer: 49 78 N 1 0 0 1 69 3 2
+Refer: 97 126 N 1 0 0 1 190 -2 2
+Validated: 1
+EndChar
+
+StartChar: Ograve
+Encoding: 210 210 1031
+Width: 909
+Flags: W
+HStem: 3 130<303.999 601.687> 1154 130<306.375 597.94> 1383 253
+VStem: 56 129<255.427 1040.25> 224 369 722 127<252.483 1037.71>
+LayerCount: 2
+Fore
+Refer: 50 79 S 1 0 0 1 -64 3 2
+Refer: 67 96 N 1 0 0 1 84 0 2
+Validated: 1
+EndChar
+
+StartChar: Oacute
+Encoding: 211 211 1032
+Width: 909
+Flags: WO
+HStem: 0 130<311.999 609.687> 1151 130<314.375 605.94> 1377 253
+VStem: 64 129<252.427 1037.25> 290 365 730 127<249.483 1034.71>
+LayerCount: 2
+Fore
+Refer: 50 79 S 1 0 0 1 -56 0 2
+Refer: 114 180 N 1 0 0 1 147 -6 2
+Validated: 1
+EndChar
+
+StartChar: Otilde
+Encoding: 213 213 1033
+Width: 1172
+Flags: W
+HStem: 3 130<432.999 730.687> 1154 130<435.375 726.94> 1370 239<315.37 367.436 818.626 865.341>
+VStem: 185 129<255.427 1040.25> 260 125<1384.47 1495.59> 800 125<1482.68 1589.53> 851 127<252.483 1037.71>
+LayerCount: 2
+Fore
+Refer: 50 79 S 1 0 0 1 65 3 2
+Refer: 97 126 N 1 0 0 1 207 -32 2
 Validated: 1
 EndChar
 EndChars
